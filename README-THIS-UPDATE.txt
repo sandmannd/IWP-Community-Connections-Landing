@@ -1,13 +1,13 @@
-IWP LANDING PAGE HERO PHOTOS UPDATE
+IWP LANDING PAGE FEATURED ADVENTURE UPDATE
 
-This update:
-- Adds kayaking, bonfire, hiking, and ice-fishing photos as four separate files.
-- Restores the hero photo gallery.
-- Keeps the disclaimer, public app URL, same-tab launch, and production sections.
-- Adds responsive photo sizing and subtle hover effects.
+Adds:
+- Featured Adventure section
+- Live adventure call-to-action
+- Facebook community link
+- Three clear benefits
+- Responsive mobile layout
 
-Replace every matching file and the assets folder in:
-IWP-Community-Connections-Landing
+Replace the matching landing-page files.
 
 Commit:
-Add production hero adventure photos
+Add featured adventure section to landing page
