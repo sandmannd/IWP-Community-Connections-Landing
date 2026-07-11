@@ -635,6 +635,7 @@ h1 {
 }
 
 
+
 /* Production hero without low-resolution placeholder photos */
 .hero-grid {
   grid-template-columns: minmax(0, 1.02fr) minmax(430px, .98fr) !important;
@@ -824,3 +825,4 @@ h1 {
     width: 100%;
   }
 }
+
