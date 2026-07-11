@@ -1,14 +1,15 @@
-IWP LANDING PAGE SPRINT 4 OVERHAUL
+IWP LANDING PAGE SPRINT 5 LAUNCH POLISH
 
 Adds:
-- Community Impact section
-- Testimonials / member story section
-- Improved footer with useful links
-- Better mobile behavior
-- More polished hover and card interactions
-- Navigation link to Community Impact
+- Mobile navigation menu
+- FAQ section
+- Support and emergency-information section
+- Better keyboard accessibility and focus states
+- Image loading and decoding improvements
+- Footer FAQ and Support links
+- Mobile refinements
 
 Replace the matching landing-page files.
 
 Commit:
-Sprint 4 - Complete landing page overhaul
+Sprint 5 - Add FAQ, support, mobile navigation, and launch polish

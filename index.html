@@ -14,13 +14,14 @@
 <header class="site-header">
   <div class="container nav">
     <a class="brand" href="index.html">
-      <img src="assets/iwp-logo.png" alt="Invisible Wounds Project logo">
+      <img src="assets/iwp-logo.png" alt="Invisible Wounds Project logo" width="82" height="82" decoding="async">
       <span>
         <span class="brand-title">IWP COMMUNITY CONNECTIONS</span>
         <span class="brand-subtitle">You Are Not Alone.</span>
       </span>
     </a>
-    <nav class="nav-links" aria-label="Main navigation">
+    <button class="mobile-menu-button" type="button" aria-expanded="false" aria-controls="mainNavigation">Menu</button>
+    <nav class="nav-links" id="mainNavigation" aria-label="Main navigation">
       <a href="index.html">Home</a>
       <a href="index.html#about">About</a>
       <a href="index.html#impact">Impact</a>
@@ -56,16 +57,16 @@
       </div>
       <div class="production-collage" aria-label="Community adventure photos">
         <figure class="photo-card">
-          <img src="assets/kayak.jpg" alt="Men and women kayaking together on a wooded river">
+          <img src="assets/kayak.jpg" loading="eager" fetchpriority="high" decoding="async" alt="Men and women kayaking together on a wooded river">
         </figure>
         <figure class="photo-card">
-          <img src="assets/bonfire.jpg" alt="Men and women gathering and laughing around a bonfire">
+          <img src="assets/bonfire.jpg" loading="lazy" decoding="async" alt="Men and women gathering and laughing around a bonfire">
         </figure>
         <figure class="photo-card">
-          <img src="assets/hiking.jpg" alt="A mixed group hiking together through the woods">
+          <img src="assets/hiking.jpg" loading="lazy" decoding="async" alt="A mixed group hiking together through the woods">
         </figure>
         <figure class="photo-card">
-          <img src="assets/ice-fishing.jpg" alt="A family enjoying ice fishing together">
+          <img src="assets/ice-fishing.jpg" loading="lazy" decoding="async" alt="A family enjoying ice fishing together">
         </figure>
       </div>
     </div>
@@ -263,6 +264,68 @@
     </div>
   </section>
 
+
+  <section class="faq-section reveal" id="faq">
+    <div class="container faq-layout">
+      <div class="faq-intro">
+        <span class="eyebrow">Questions</span>
+        <h2>What members should know.</h2>
+        <p>Community Connections is designed to be welcoming and simple. These answers cover the most common questions before someone registers.</p>
+        <a class="button secondary" data-mailto-config="supportEmail" href="#">Contact Support</a>
+      </div>
+
+      <div class="faq-list">
+        <details class="faq-item reveal-item">
+          <summary>Who can participate?</summary>
+          <p>Community Connections activities are intended for Veterans, First Responders, Front-Line Workers, and their families. Individual event listings may include additional eligibility, age, or safety requirements.</p>
+        </details>
+
+        <details class="faq-item reveal-item">
+          <summary>Are these official IWP events?</summary>
+          <p>No. Community Connections activities are member-organized and are not official IWP events. They are not facilitated, monitored, or organized by IWP staff.</p>
+        </details>
+
+        <details class="faq-item reveal-item">
+          <summary>What happens when an adventure is full?</summary>
+          <p>If a waitlist is available, the registration page will offer the option to join it. Organizers may promote participants when spots become available.</p>
+        </details>
+
+        <details class="faq-item reveal-item">
+          <summary>How do payments work?</summary>
+          <p>Each paid adventure lists the accepted payment methods and deadline. A reservation may remain pending until the organizer confirms payment.</p>
+        </details>
+
+        <details class="faq-item reveal-item">
+          <summary>Can families and children participate?</summary>
+          <p>Many activities welcome spouses, partners, and children. Check the individual adventure listing for family participation, age, and supervision details.</p>
+        </details>
+
+        <details class="faq-item reveal-item">
+          <summary>How will I receive updates?</summary>
+          <p>Organizers may send confirmation messages, reminders, schedule changes, and other important event information to the email address used during registration.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="support-section reveal" id="support">
+    <div class="container support-card">
+      <div class="support-copy">
+        <span class="eyebrow">Support & Safety</span>
+        <h2>Need help beyond an adventure?</h2>
+        <p>Invisible Wounds Project connects Veterans, First Responders, Front-Line Workers, and families with support, resources, and community.</p>
+      </div>
+      <div class="support-actions">
+        <a class="button" data-href-config="helpPhoneHref">
+          Call <span data-config="helpPhoneDisplay">855-HELP-IWP (435-7497)</span>
+        </a>
+        <a class="button secondary" data-href-config="iwpWebsiteUrl" target="_blank" rel="noopener">Visit Invisible Wounds Project</a>
+      </div>
+      <p class="support-note"><strong>Emergency:</strong> Call 911. The IWP help line is not a 24-hour emergency or crisis line.</p>
+    </div>
+  </section>
+
   <section class="contact-strip reveal" id="launch">
     <div class="container contact-grid">
       <div class="contact-item"><span>🛡</span><span>Part of the <a data-href-config="iwpWebsiteUrl" target="_blank" rel="noopener">Invisible Wounds Project</a></span></div>
@@ -274,7 +337,7 @@
 <footer class="site-footer">
   <div class="container footer-main">
     <div class="footer-brand">
-      <img src="assets/iwp-logo.png" alt="Invisible Wounds Project logo">
+      <img src="assets/iwp-logo.png" alt="Invisible Wounds Project logo" width="82" height="82" decoding="async">
       <div>
         <strong>IWP Community Connections</strong>
         <span>You Are Not Alone.</span>
@@ -286,6 +349,8 @@
       <a data-href-config="facebookUrl" target="_blank" rel="noopener">Facebook Group</a>
       <a data-href-config="iwpWebsiteUrl" target="_blank" rel="noopener">Invisible Wounds Project</a>
       <a href="privacy.html">Privacy</a>
+      <a href="#faq">FAQ</a>
+      <a href="#support">Support</a>
       <a href="terms.html">Terms</a>
     </nav>
   </div>
