@@ -1,12 +1,14 @@
-IWP LANDING PAGE HOW IT WORKS UPDATE
+IWP LANDING PAGE SPRINT 4 OVERHAUL
 
 Adds:
-- Three-step How It Works section
-- Browse, register, and connect workflow
-- Adventure and Facebook calls to action
-- Responsive mobile layout
+- Community Impact section
+- Testimonials / member story section
+- Improved footer with useful links
+- Better mobile behavior
+- More polished hover and card interactions
+- Navigation link to Community Impact
 
 Replace the matching landing-page files.
 
 Commit:
-Add how Community Connections works section
+Sprint 4 - Complete landing page overhaul
