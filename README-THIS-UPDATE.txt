@@ -1,16 +1,13 @@
-IWP LANDING PAGE PRODUCTION HERO UPDATE
+IWP LANDING PAGE HERO PHOTOS UPDATE
 
-This update removes the low-resolution mockup crops entirely and replaces them with a polished mission-based hero panel.
+This update:
+- Adds kayaking, bonfire, hiking, and ice-fishing photos as four separate files.
+- Restores the hero photo gallery.
+- Keeps the disclaimer, public app URL, same-tab launch, and production sections.
+- Adds responsive photo sizing and subtle hover effects.
 
-Also included:
-- What Is Community Connections section
-- Upcoming Adventures callout
-- Correct public Apps Script URL
-- Same-tab launch behavior retained
-- Existing disclaimer retained
-- Mobile responsive layout
-
-Replace all matching files in the landing-page repository.
+Replace every matching file and the assets folder in:
+IWP-Community-Connections-Landing
 
 Commit:
-Replace placeholder collage with production landing page hero
+Add production hero adventure photos
