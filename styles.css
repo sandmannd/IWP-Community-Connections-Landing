@@ -541,3 +541,95 @@ h1 {
     transform: none !important;
   }
 }
+
+
+/* Hero and image layout correction */
+.hero-grid > * {
+  min-width: 0;
+}
+.hero-grid {
+  grid-template-columns: minmax(0, .92fr) minmax(520px, 1.08fr);
+}
+.hero h1,
+.hero-copy,
+.member-event-disclaimer {
+  overflow-wrap: anywhere;
+}
+.member-event-disclaimer {
+  display: grid;
+  gap: 4px;
+  max-width: 700px;
+  margin-top: 20px;
+  padding: 15px 17px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-left: 4px solid #a7afb0;
+  border-radius: 10px;
+  background: rgba(255,255,255,.035);
+  color: #c7ceca;
+  font-size: .92rem;
+  line-height: 1.45;
+}
+.member-event-disclaimer strong {
+  color: #fff;
+  font-size: .94rem;
+}
+.collage {
+  width: 100%;
+  max-width: 720px;
+  justify-self: end;
+  align-self: center;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto auto;
+  gap: 14px;
+}
+.collage figure {
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: 3 / 4;
+  border-radius: 14px;
+  background: #020504;
+}
+.collage img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  background: #020504;
+}
+.collage figure:hover img {
+  transform: scale(1.018);
+}
+
+@media (max-width: 1100px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .collage {
+    justify-self: center;
+    max-width: 760px;
+  }
+}
+
+@media (max-width: 760px) {
+  .collage {
+    max-width: 620px;
+    gap: 9px;
+  }
+  .collage figure {
+    aspect-ratio: 3 / 4;
+    min-height: 0;
+  }
+  .member-event-disclaimer {
+    font-size: .86rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .collage {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .collage figure {
+    min-height: 0;
+    aspect-ratio: 3 / 4;
+  }
+}

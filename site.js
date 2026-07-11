@@ -25,8 +25,8 @@
       });
     } else {
       el.href = c.appUrl;
-      el.target = "_blank";
-      el.rel = "noopener";
+      el.removeAttribute("target");
+      el.removeAttribute("rel");
     }
   });
 
