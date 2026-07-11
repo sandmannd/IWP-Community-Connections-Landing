@@ -633,3 +633,106 @@ h1 {
     aspect-ratio: 3 / 4;
   }
 }
+
+/* FINAL HERO FIX - built from the exact live project */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.hero {
+  overflow: hidden;
+}
+
+.hero-grid {
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr) !important;
+  gap: clamp(28px, 4vw, 54px) !important;
+  width: 100%;
+  align-items: start !important;
+}
+
+.hero-grid > div {
+  min-width: 0;
+}
+
+.hero h1 {
+  max-width: 100% !important;
+  font-size: clamp(3rem, 5.2vw, 5.35rem) !important;
+  line-height: .94 !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+.hero-copy,
+.member-event-disclaimer {
+  max-width: 100% !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+.collage {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr) !important;
+  grid-template-rows: auto auto !important;
+  gap: 12px !important;
+  width: 100% !important;
+  max-width: 760px !important;
+  min-width: 0 !important;
+  justify-self: end !important;
+  align-self: start !important;
+}
+
+.collage figure {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  aspect-ratio: auto !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border-radius: 12px !important;
+  background: #020504 !important;
+}
+
+.collage img {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  object-fit: initial !important;
+  object-position: initial !important;
+  background: transparent !important;
+}
+
+.member-event-disclaimer {
+  margin-top: 18px !important;
+}
+
+@media (max-width: 1180px) {
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .collage {
+    max-width: 820px !important;
+    justify-self: center !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero h1 {
+    font-size: clamp(2.75rem, 13vw, 4.25rem) !important;
+  }
+  .collage {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  .collage figure {
+    border-radius: 10px !important;
+  }
+}
+
+@media (max-width: 460px) {
+  .collage {
+    grid-template-columns: 1fr !important;
+  }
+}
