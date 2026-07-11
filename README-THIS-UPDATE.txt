@@ -1,15 +1,16 @@
-IWP LANDING PAGE SPRINT 5 LAUNCH POLISH
+SPRINT 6 LANDING UPDATE
+
+Replace:
+- config.js
+- index.html
+- site.js
+- styles.css
 
 Adds:
-- Mobile navigation menu
-- FAQ section
-- Support and emergency-information section
-- Better keyboard accessibility and focus states
-- Image loading and decoding improvements
-- Footer FAQ and Support links
-- Mobile refinements
-
-Replace the matching landing-page files.
+- Live featured adventure
+- Next four upcoming adventures
+- Images, dates, cost, location, capacity, and waitlist status
+- Loading and error states
 
 Commit:
-Sprint 5 - Add FAQ, support, mobile navigation, and launch polish
+Sprint 6 - Connect landing page to live adventure data

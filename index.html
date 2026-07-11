@@ -75,23 +75,11 @@
 
 
   <section class="featured-adventure reveal" id="featured">
-    <div class="container featured-adventure-card">
-      <div class="featured-badge">⭐ Featured Adventure</div>
-      <div class="featured-content">
-        <div>
-          <span class="eyebrow">Your next connection starts here</span>
-          <h2>Find Your Next Adventure</h2>
-          <p>See the newest Community Connections activities, check availability, and reserve your spot through the live adventure list.</p>
-        </div>
-        <div class="featured-actions">
-          <a class="button" data-launch-app href="#">View Featured Adventures →</a>
-          <a class="button secondary" data-href-config="facebookUrl" target="_blank" rel="noopener">Join the Facebook Group</a>
-        </div>
-      </div>
-      <div class="featured-highlights">
-        <div><strong>Live availability</strong><span>Capacity and waitlist details</span></div>
-        <div><strong>Simple registration</strong><span>Reserve your spot in minutes</span></div>
-        <div><strong>Community first</strong><span>Activities built around connection</span></div>
+    <div class="container featured-adventure-card" id="featuredAdventureContent">
+      <div class="featured-loading">
+        <span class="featured-badge">⭐ Featured Adventure</span>
+        <h2>Loading the next adventure...</h2>
+        <p>Checking the live Community Connections schedule.</p>
       </div>
     </div>
   </section>
@@ -239,15 +227,18 @@
   </section>
 
   <section class="live-adventures reveal" id="events">
-    <div class="container live-adventure-card">
-      <div>
-        <span class="eyebrow">Upcoming Adventures</span>
-        <h2>See what the community is doing next.</h2>
-        <p>The live adventure list shows current dates, locations, cost, capacity, waitlist availability, and registration details.</p>
+    <div class="container">
+      <div class="live-section-heading">
+        <div>
+          <span class="eyebrow">Upcoming Adventures</span>
+          <h2>See what the community is doing next.</h2>
+        </div>
+        <a class="button secondary" data-launch-app href="#">View All Adventures</a>
       </div>
-      <div class="live-actions">
-        <a class="button" data-launch-app href="#">Browse Live Adventures →</a>
-        <a class="button secondary" data-href-config="facebookUrl" target="_blank" rel="noopener">Facebook Group</a>
+      <div class="live-event-grid" id="upcomingAdventureGrid">
+        <article class="live-event-card loading-card"><div class="loading-line wide"></div><div class="loading-line"></div><div class="loading-line short"></div></article>
+        <article class="live-event-card loading-card"><div class="loading-line wide"></div><div class="loading-line"></div><div class="loading-line short"></div></article>
+        <article class="live-event-card loading-card"><div class="loading-line wide"></div><div class="loading-line"></div><div class="loading-line short"></div></article>
       </div>
     </div>
   </section>

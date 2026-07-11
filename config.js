@@ -3,6 +3,7 @@ window.IWP_SITE_CONFIG = {
   organizationName: "Invisible Wounds Project",
   supportEmail: "sandmannd@gmail.com",
   appUrl: "https://script.google.com/macros/s/AKfycbxPNqswpRLvj0LZ0ZaVw6DTSpTcZIDt0S0zWFJgOES7g864n734dDF2UpGMwdpsEPGK4Q/exec",
+  apiUrl: "https://script.google.com/macros/s/AKfycbxPNqswpRLvj0LZ0ZaVw6DTSpTcZIDt0S0zWFJgOES7g864n734dDF2UpGMwdpsEPGK4Q/exec?api=landing",
   facebookUrl: "https://www.facebook.com/groups/1000568346273790/?sorting_setting=CHRONOLOGICAL",
   iwpWebsiteUrl: "https://invisiblewoundsproject.org/",
   helpPhoneDisplay: "855-HELP-IWP (435-7497)",
