@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="IWP Community Connections helps members discover, register for, and stay connected through community adventures and activities.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="IWP Community Connections brings Veterans, First Responders, Front-Line Workers, and families together through meaningful adventures and community activities.">
   <title>IWP Community Connections</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -11,15 +11,19 @@
 <header class="site-header">
   <div class="container nav">
     <a class="brand" href="index.html">
-      <span class="brand-mark">IWP</span>
-      <span><span data-config="siteName">IWP Community Connections</span><small data-config="organizationName">Invisible Wounds Project</small></span>
+      <img src="assets/iwp-logo.png" alt="Invisible Wounds Project logo">
+      <span>
+        <span class="brand-title">IWP COMMUNITY CONNECTIONS</span>
+        <span class="brand-subtitle">You Are Not Alone.</span>
+      </span>
     </a>
     <nav class="nav-links" aria-label="Main navigation">
+      <a href="index.html">Home</a>
       <a href="index.html#about">About</a>
-      <a href="index.html#how">How It Works</a>
-      <a href="privacy.html">Privacy</a>
-      <a href="terms.html">Terms</a>
-      <a class="button" data-launch-app href="#">Open Community Connections</a>
+      <a data-launch-app href="#">Events</a>
+      <a href="index.html#resources">Resources</a>
+      <a data-mailto-config="supportEmail" href="#">Contact</a>
+      <a class="button" data-launch-app href="#">Launch Community Connections →</a>
     </nav>
   </div>
 </header>
@@ -27,71 +31,83 @@
   <section class="hero">
     <div class="container hero-grid">
       <div>
-        <span class="eyebrow">You Are Not Alone</span>
-        <h1>Building connections. Strengthening lives.</h1>
-        <p>IWP Community Connections brings Veterans, First Responders, Front-Line Workers, and their families together through activities that build friendships, strengthen support networks, and remind us that nobody has to walk alone.</p>
+        <span class="eyebrow">Building Connections. Healing Together.</span>
+        <h1>Stronger Together.<br>Better Together.</h1>
+        <p class="hero-copy">IWP Community Connections brings Veterans, First Responders, Front-Line Workers, and families together through adventure, camaraderie, and community.</p>
         <div class="actions">
-          <a class="button" data-launch-app href="#">Explore Adventures</a>
-          <a class="button secondary" data-href-config="facebookUrl" target="_blank" rel="noopener">IWP Community Connections Facebook Group</a>
+          <a class="button" data-launch-app href="#">🗓 View Upcoming Events</a>
+          <a class="button secondary" data-href-config="facebookUrl" target="_blank" rel="noopener">👥 Join Our Community</a>
+        </div>
+        <div class="inclusion-row" aria-label="Community inclusion">
+          <div class="inclusion"><span class="inclusion-icon">👥</span>All Genders</div>
+          <div class="inclusion"><span class="inclusion-icon">🛡</span>All Branches</div>
+          <div class="inclusion"><span class="inclusion-icon">♥</span>All Welcome</div>
+          <div class="inclusion"><span class="inclusion-icon">👨‍👩‍👧</span>Families Included</div>
         </div>
       </div>
-      <aside class="hero-card" aria-label="Community Connections highlights">
-        <h2 style="font-size:1.7rem">Connection starts here.</h2>
-        <p style="color:var(--muted)">Browse upcoming adventures, register in minutes, receive event updates, and stay connected with the community.</p>
-        <div class="stat-grid">
-          <div class="stat"><strong>Easy</strong><span>Online registration</span></div>
-          <div class="stat"><strong>Secure</strong><span>Private event details</span></div>
-          <div class="stat"><strong>Helpful</strong><span>Reminders and updates</span></div>
-          <div class="stat"><strong>Connected</strong><span>Community first</span></div>
-        </div>
-      </aside>
-    </div>
-  </section>
-
-  <section class="section" id="about">
-    <div class="container">
-      <span class="eyebrow">About the platform</span>
-      <h2>Community adventures made easier.</h2>
-      <p class="section-copy">IWP Community Connections is an event and registration platform created to help members find activities, reserve their spots, receive important updates, and connect with others through shared experiences.</p>
-      <div class="cards">
-        <article class="card"><div class="card-icon">🗓️</div><h3>Discover adventures</h3><p>See upcoming activities, dates, locations, costs, capacity, and registration details in one place.</p></article>
-        <article class="card"><div class="card-icon">✅</div><h3>Register simply</h3><p>Reserve a spot, join a waitlist when necessary, and receive confirmation without complicated account setup.</p></article>
-        <article class="card"><div class="card-icon">💬</div><h3>Stay connected</h3><p>Receive reminders, event updates, and links back to the IWP Community Connections Facebook Group.</p></article>
+      <div class="collage" aria-label="Community adventure photos">
+        <figure><img src="assets/kayak-family.jpg" alt="Woman and child kayaking together at sunset"></figure>
+        <figure><img src="assets/campfire-community.jpg" alt="Men and women connecting around a campfire"></figure>
+        <figure><img src="assets/hiking-families.jpg" alt="Adults and children hiking together"></figure>
+        <figure><img src="assets/ice-fishing-family.jpg" alt="Woman, man, and child ice fishing together"></figure>
       </div>
     </div>
   </section>
 
-  <section class="section" id="how">
-    <div class="container">
-      <div class="callout" id="launch">
-        <div><h2 style="margin-bottom:8px">Ready for your next adventure?</h2><p>Open Community Connections to browse current activities and register.</p></div>
-        <a class="button" data-launch-app href="#">Open Community Connections</a>
-      </div>
+  <section class="features" id="about">
+    <div class="container feature-grid">
+      <article class="feature">
+        <div class="feature-icon">🗓</div>
+        <h2>Community Events</h2>
+        <p>Find and join events that bring our community together.</p>
+        <a data-launch-app href="#">Explore Events →</a>
+      </article>
+      <article class="feature">
+        <div class="feature-icon">👥</div>
+        <h2>Build Connections</h2>
+        <p>Meet others who understand and support your journey.</p>
+        <a data-href-config="facebookUrl" target="_blank" rel="noopener">Connect Today →</a>
+      </article>
+      <article class="feature">
+        <div class="feature-icon">⛰</div>
+        <h2>Adventure Awaits</h2>
+        <p>From outdoor adventures to casual meetups and more. There is something for everyone.</p>
+        <a data-launch-app href="#">See What's Next →</a>
+      </article>
+      <article class="feature">
+        <div class="feature-icon">♥</div>
+        <h2>You Are Not Alone</h2>
+        <p>A community that stands together, heals together, and grows together.</p>
+        <a data-href-config="iwpWebsiteUrl" target="_blank" rel="noopener">Learn More →</a>
+      </article>
     </div>
   </section>
 
-  <section class="section">
-    <div class="container">
-      <div class="cards">
-        <article class="card"><h3>Need application support?</h3><p>Email <a data-mailto-config="supportEmail" href="#"><span data-config="supportEmail">sandmannd@gmail.com</span></a>.</p></article>
-        <article class="card"><h3>Connect with the community</h3><p><a data-href-config="facebookUrl" target="_blank" rel="noopener">Visit the IWP Community Connections Facebook Group.</a></p></article>
-        <article class="card"><h3>Need help from IWP?</h3><p>Call <a data-href-config="helpPhoneHref"><span data-config="helpPhoneDisplay">855-HELP-IWP</span></a>. This is not a 24-hour crisis line.</p></article>
+  <section class="belong" id="resources">
+    <div class="container belong-panel">
+      <img class="belong-photo" src="assets/hands-community.jpg" alt="Diverse community members placing their hands together">
+      <div class="belong-copy">
+        <h2>Whatever your story, you belong here.</h2>
+        <p>Together we can break the isolation, support one another, and build a stronger, healthier community.</p>
+        <strong>YOU ARE NOT ALONE.</strong>
       </div>
+      <img class="belong-logo" src="assets/iwp-logo.png" alt="">
+    </div>
+  </section>
+
+  <section class="contact-strip" id="launch">
+    <div class="container contact-grid">
+      <div class="contact-item"><span>🛡</span><span>Part of the <a data-href-config="iwpWebsiteUrl" target="_blank" rel="noopener">Invisible Wounds Project</a></span></div>
+      <div class="contact-item"><span>☎</span><a data-href-config="helpPhoneHref"><span data-config="helpPhoneDisplay">855-HELP-IWP (435-7497)</span></a></div>
+      <div class="contact-item"><span>👥</span><span>Veterans • First Responders • Front-Line Workers • Families • All Genders</span></div>
     </div>
   </section>
 </main>
 <footer class="site-footer">
-  <div class="container footer-grid">
-    <div>
-      <strong data-config="siteName">IWP Community Connections</strong><br>
-      <span style="color:var(--muted)">Built with care for the Invisible Wounds Project community.</span>
-    </div>
-    <div class="footer-links">
-      <a href="privacy.html">Privacy Policy</a>
-      <a href="terms.html">Terms of Service</a>
-      <a data-href-config="facebookUrl" target="_blank" rel="noopener">Facebook Group</a>
-      <a data-mailto-config="supportEmail" href="#">Support</a>
-    </div>
+  <div class="container signature">
+    <div class="built">Built by <strong>Redline Creates</strong></div>
+    <div>Designed &amp; Developed by Shane Hendricks</div>
+    <em>Building Things That Matter.</em>
   </div>
 </footer>
 <script src="config.js"></script>
