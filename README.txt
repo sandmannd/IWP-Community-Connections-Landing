@@ -32,3 +32,6 @@ Google requires the OAuth homepage to be hosted on a verified domain you own. A 
 LEGAL NOTE
 ----------
 The included Privacy Policy and Terms of Service are practical drafts tailored to this platform. They are not a substitute for review by qualified legal counsel.
+
+Cloudflare deployment initialized.
+
