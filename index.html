@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="IWP Community Connections brings Veterans, First Responders, Front-Line Workers, and families together through meaningful adventures and community activities.">
   <title>IWP Community Connections</title>
+  <link rel="icon" href="assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -22,13 +25,14 @@
       <a href="index.html#about">About</a>
       <a data-launch-app href="#">Events</a>
       <a href="index.html#resources">Resources</a>
+      <a class="facebook-nav" data-href-config="facebookUrl" target="_blank" rel="noopener">Facebook Group</a>
       <a data-mailto-config="supportEmail" href="#">Contact</a>
       <a class="button" data-launch-app href="#">Launch Community Connections →</a>
     </nav>
   </div>
 </header>
 <main>
-  <section class="hero">
+  <section class="hero reveal is-visible">
     <div class="container hero-grid">
       <div>
         <span class="eyebrow">Building Connections. Healing Together.</span>
@@ -46,35 +50,35 @@
         </div>
       </div>
       <div class="collage" aria-label="Community adventure photos">
-        <figure><img src="assets/kayak-family.jpg" alt="Woman and child kayaking together at sunset"></figure>
-        <figure><img src="assets/campfire-community.jpg" alt="Men and women connecting around a campfire"></figure>
-        <figure><img src="assets/hiking-families.jpg" alt="Adults and children hiking together"></figure>
-        <figure><img src="assets/ice-fishing-family.jpg" alt="Woman, man, and child ice fishing together"></figure>
+        <figure class="reveal-item"><img src="assets/kayak-family.jpg" alt="Woman and child kayaking together at sunset"></figure>
+        <figure class="reveal-item"><img src="assets/campfire-community.jpg" alt="Men and women connecting around a campfire"></figure>
+        <figure class="reveal-item"><img src="assets/hiking-families.jpg" alt="Adults and children hiking together"></figure>
+        <figure class="reveal-item"><img src="assets/ice-fishing-family.jpg" alt="Woman, man, and child ice fishing together"></figure>
       </div>
     </div>
   </section>
 
-  <section class="features" id="about">
+  <section class="features reveal" id="about">
     <div class="container feature-grid">
-      <article class="feature">
+      <article class="feature reveal-item">
         <div class="feature-icon">🗓</div>
         <h2>Community Events</h2>
         <p>Find and join events that bring our community together.</p>
         <a data-launch-app href="#">Explore Events →</a>
       </article>
-      <article class="feature">
+      <article class="feature reveal-item">
         <div class="feature-icon">👥</div>
         <h2>Build Connections</h2>
         <p>Meet others who understand and support your journey.</p>
         <a data-href-config="facebookUrl" target="_blank" rel="noopener">Connect Today →</a>
       </article>
-      <article class="feature">
+      <article class="feature reveal-item">
         <div class="feature-icon">⛰</div>
         <h2>Adventure Awaits</h2>
         <p>From outdoor adventures to casual meetups and more. There is something for everyone.</p>
         <a data-launch-app href="#">See What's Next →</a>
       </article>
-      <article class="feature">
+      <article class="feature reveal-item">
         <div class="feature-icon">♥</div>
         <h2>You Are Not Alone</h2>
         <p>A community that stands together, heals together, and grows together.</p>
@@ -83,7 +87,7 @@
     </div>
   </section>
 
-  <section class="belong" id="resources">
+  <section class="belong reveal" id="resources">
     <div class="container belong-panel">
       <img class="belong-photo" src="assets/hands-community.jpg" alt="Diverse community members placing their hands together">
       <div class="belong-copy">
@@ -95,7 +99,7 @@
     </div>
   </section>
 
-  <section class="contact-strip" id="launch">
+  <section class="contact-strip reveal" id="launch">
     <div class="container contact-grid">
       <div class="contact-item"><span>🛡</span><span>Part of the <a data-href-config="iwpWebsiteUrl" target="_blank" rel="noopener">Invisible Wounds Project</a></span></div>
       <div class="contact-item"><span>☎</span><a data-href-config="helpPhoneHref"><span data-config="helpPhoneDisplay">855-HELP-IWP (435-7497)</span></a></div>

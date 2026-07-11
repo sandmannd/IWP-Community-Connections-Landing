@@ -1,0 +1,25 @@
+REAL IWP PHOTO SWAP
+
+The site is now prepared for real IWP photos.
+
+Replace these files inside the assets folder with real IWP photos using the exact same filenames:
+
+kayak-family.jpg
+campfire-community.jpg
+hiking-families.jpg
+ice-fishing-family.jpg
+hands-community.jpg
+
+Recommended image size:
+- Hero collage: at least 1400 x 1000 pixels
+- Hands/community banner: at least 1600 x 900 pixels
+- JPG quality: 80-90%
+- Landscape orientation
+
+After replacing the files:
+1. Save.
+2. Commit in GitHub Desktop.
+3. Push origin.
+4. Cloudflare publishes automatically.
+
+Use only photos IWP has permission to publish. For photos containing children, confirm parental or guardian permission before public use.
