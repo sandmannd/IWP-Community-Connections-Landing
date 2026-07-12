@@ -1,16 +1,3 @@
-SPRINT 6 LANDING UPDATE
+IWP-Community-Connections-Landing-V20.5-Broken-Image-Fallback
 
-Replace:
-- config.js
-- index.html
-- site.js
-- styles.css
-
-Adds:
-- Live featured adventure
-- Next four upcoming adventures
-- Images, dates, cost, location, capacity, and waitlist status
-- Loading and error states
-
-Commit:
-Sprint 6 - Connect landing page to live adventure data
+Broken or private Google Drive event images now automatically switch to the matching category icon instead of displaying a broken image.
