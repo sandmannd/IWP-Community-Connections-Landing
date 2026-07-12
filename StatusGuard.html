@@ -1,0 +1,157 @@
+<script>
+(function () {
+  var originalDrawEventCards = window.drawEventCards;
+  var originalDrawEventDetail = window.drawEventDetail;
+
+  if (typeof originalDrawEventCards === 'function') {
+    window.drawEventCards = function (events) {
+      originalDrawEventCards(events);
+      applyCardRegistrationStatus_(events || []);
+    };
+  }
+
+  if (typeof originalDrawEventDetail === 'function') {
+    window.drawEventDetail = function (data) {
+      originalDrawEventDetail(data);
+      applyDetailRegistrationStatus_(data && data.event ? data.event : null);
+    };
+  }
+})();
+
+function registrationIsOpen_(event) {
+  if (!event) return false;
+
+  var status = String(event.Status || '').trim().toLowerCase();
+
+  return (
+    status === 'published' &&
+    toBool(event.RegistrationRequired)
+  );
+}
+
+function applyCardRegistrationStatus_(events) {
+  events.forEach(function (event) {
+    var eventId = String(event.EventId || '');
+    if (!eventId) return;
+
+    var card = document.querySelector('[data-event-id="' + cssEscape_(eventId) + '"]');
+
+    if (!card) {
+      var buttons = document.querySelectorAll('button[onclick*="' + jsSelectorEscape_(eventId) + '"]');
+      for (var i = 0; i < buttons.length; i++) {
+        var possibleCard = buttons[i].closest('.card');
+        if (possibleCard) {
+          card = possibleCard;
+          break;
+        }
+      }
+    }
+
+    if (!card) return;
+
+    var registerButtons = card.querySelectorAll(
+      'button[onclick*="showRegistration"], button[onclick*="openRegistration"]'
+    );
+
+    for (var j = 0; j < registerButtons.length; j++) {
+      var button = registerButtons[j];
+
+      if (registrationIsOpen_(event)) {
+        button.disabled = false;
+        button.textContent = 'Register';
+        button.classList.remove('registration-closed-button');
+      } else {
+        button.disabled = true;
+        button.classList.add('registration-closed-button');
+        button.textContent = getClosedRegistrationLabel_(event);
+      }
+    }
+  });
+}
+
+function applyDetailRegistrationStatus_(event) {
+  if (!event) return;
+
+  var detailView = document.getElementById('eventDetailView') ||
+    document.getElementById('detailView') ||
+    document.querySelector('.detail-card');
+
+  if (!detailView) return;
+
+  var registerButtons = detailView.querySelectorAll(
+    'button[onclick*="showRegistration"], button[onclick*="openRegistration"]'
+  );
+
+  for (var i = 0; i < registerButtons.length; i++) {
+    var button = registerButtons[i];
+
+    if (registrationIsOpen_(event)) {
+      button.disabled = false;
+      button.textContent = 'Register';
+      button.classList.remove('registration-closed-button');
+    } else {
+      button.disabled = true;
+      button.classList.add('registration-closed-button');
+      button.textContent = getClosedRegistrationLabel_(event);
+    }
+  }
+
+  var existing = detailView.querySelector('.registration-status-notice');
+  if (existing) existing.remove();
+
+  if (!registrationIsOpen_(event) && toBool(event.RegistrationRequired)) {
+    var notice = document.createElement('div');
+    notice.className = 'notice registration-status-notice';
+    notice.style.marginTop = '14px';
+    notice.textContent = getClosedRegistrationMessage_(event);
+
+    var actionArea = detailView.querySelector('.actions') || detailView;
+    actionArea.appendChild(notice);
+  }
+}
+
+function getClosedRegistrationLabel_(event) {
+  var status = String(event.Status || '').trim().toLowerCase();
+
+  if (status === 'registration closed') return 'Registration Closed';
+  if (status === 'complete' || status === 'completed') return 'Adventure Completed';
+  if (status === 'cancelled' || status === 'canceled') return 'Adventure Cancelled';
+  if (status === 'draft') return 'Not Yet Published';
+
+  return 'Registration Unavailable';
+}
+
+function getClosedRegistrationMessage_(event) {
+  var status = String(event.Status || '').trim().toLowerCase();
+
+  if (status === 'registration closed') {
+    return 'Registration is currently closed for this adventure.';
+  }
+
+  if (status === 'complete' || status === 'completed') {
+    return 'This adventure has been marked complete.';
+  }
+
+  if (status === 'cancelled' || status === 'canceled') {
+    return 'This adventure has been cancelled.';
+  }
+
+  if (status === 'draft') {
+    return 'This adventure has not been published yet.';
+  }
+
+  return 'Registration is not currently available for this adventure.';
+}
+
+function cssEscape_(value) {
+  if (window.CSS && typeof window.CSS.escape === 'function') {
+    return window.CSS.escape(value);
+  }
+
+  return value.replace(/["\\]/g, '\\$&');
+}
+
+function jsSelectorEscape_(value) {
+  return value.replace(/["\\]/g, '\\$&');
+}
+</script>

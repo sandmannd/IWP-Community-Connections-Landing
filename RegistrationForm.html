@@ -1,0 +1,231 @@
+<section id="registrationFormCard" class="form-card registration-card registration-experience">
+<div class="registration-brand-hero" aria-label="IWP Community Connections">
+  <div class="registration-brand-photo registration-brand-photo-one"></div>
+  <div class="registration-brand-photo registration-brand-photo-two"></div>
+  <div class="registration-brand-photo registration-brand-photo-three"></div>
+  <div class="registration-brand-photo registration-brand-photo-four"></div>
+  <div class="registration-brand-overlay"></div>
+  <div class="registration-brand-content">
+    <img src="https://connections.redlinecreates.com/assets/iwp-logo.png?v=13" alt="Invisible Wounds Project logo" />
+    <div>
+      <span class="eyebrow">IWP Community Connections</span>
+      <strong>Find Your Next Adventure</strong>
+      <p>Register, connect, and be part of the community.</p>
+    </div>
+  </div>
+</div>
+  <div class="registration-trust-strip" aria-label="Registration information">
+    <span><strong>Simple</strong> registration</span>
+    <span><strong>Direct</strong> organizer updates</span>
+    <span><strong>Member-led</strong> community connection</span>
+  </div>
+  <div id="registrationHeader" class="registration-event-header">
+    <div class="notice">Loading registration...</div>
+  </div>
+
+  <div class="registration-progress" aria-label="Registration progress">
+    <div id="registrationStep1" class="registration-progress-step is-active">
+      <span>1</span><strong>Your Information</strong>
+    </div>
+    <div id="registrationStep2" class="registration-progress-step">
+      <span>2</span><strong>Event Details</strong>
+    </div>
+    <div id="registrationStep3" class="registration-progress-step">
+      <span>3</span><strong>Acknowledgements</strong>
+    </div>
+  </div>
+
+  <form id="registrationForm">
+    <input type="hidden" id="registrationEventId" />
+
+    <div id="registrationError" class="notice hidden"></div>
+
+    <section class="registration-section">
+      <div class="registration-section-heading">
+        <span class="registration-section-number">01</span>
+        <div>
+          <span class="eyebrow">Who Is Attending?</span>
+          <h3>Your Information</h3>
+          <p>Tell the organizer who is coming and how to reach you.</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div>
+          <label for="regName">Your Name <span class="required-mark">*</span></label>
+          <input id="regName" autocomplete="name" required />
+        </div>
+
+        <div>
+          <label for="regEmail">Email <span class="contact-required-note">(email or phone required)</span></label>
+          <input id="regEmail" type="email" autocomplete="email" />
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div>
+          <label for="regPhone">Phone <span class="contact-required-note">(email or phone required)</span></label>
+          <input id="regPhone" type="tel" autocomplete="tel" />
+          <p class="field-help">Email or phone is required.</p>
+        </div>
+
+        <div>
+          <label for="adultCount">Number of Adults <span class="required-mark">*</span></label>
+          <input id="adultCount" type="number" min="1" value="1" inputmode="numeric" />
+        </div>
+      </div>
+
+      <div id="adultGuestNamesSection" class="hidden">
+        <label for="adultGuestNames">Additional Adult Names</label>
+        <p id="adultGuestNamesHelp" class="field-help"></p>
+        <textarea id="adultGuestNames" placeholder="Enter each additional adult name, one per line"></textarea>
+      </div>
+
+      <div id="childrenSection" class="hidden children-count-panel">
+        <label for="childCount">Number of Children</label>
+        <input id="childCount" type="number" min="0" value="0" inputmode="numeric" />
+      </div>
+
+      <div id="childNamesSection" class="hidden">
+        <label for="childNames">Child Names</label>
+        <p id="childNamesHelp" class="field-help"></p>
+        <textarea id="childNames" placeholder="Enter each child name, one per line"></textarea>
+      </div>
+
+      <div class="form-grid">
+        <div>
+          <label for="emergencyContactName">Emergency Contact Name</label>
+          <input id="emergencyContactName" autocomplete="name" />
+        </div>
+
+        <div>
+          <label for="emergencyContactPhone">Emergency Contact Phone</label>
+          <input id="emergencyContactPhone" type="tel" autocomplete="tel" />
+        </div>
+      </div>
+    </section>
+
+    <section id="paymentSection" class="registration-section payment-panel hidden">
+      <div class="registration-section-heading">
+        <span class="registration-section-number">02</span>
+        <div>
+          <span class="eyebrow">Event Cost</span>
+          <h3>Payment Information</h3>
+          <p>Choose how you plan to complete payment for this adventure.</p>
+        </div>
+      </div>
+
+      <div id="paymentInstructions" class="payment-instructions"></div>
+
+      <label for="paymentMethod">Payment Method <span class="required-mark">*</span></label>
+      <select id="paymentMethod">
+        <option value="">Select one</option>
+        <option value="Venmo">Venmo</option>
+        <option value="Cash App">Cash App</option>
+        <option value="Cash">Cash</option>
+        <option value="Pay at Event">Pay at Event</option>
+        <option value="Buy Own Ticket">Buy Own Ticket</option>
+      </select>
+    </section>
+
+    <section class="registration-section">
+      <div class="registration-section-heading">
+        <span class="registration-section-number">03</span>
+        <div>
+          <span class="eyebrow">Before You Register</span>
+          <h3>Acknowledgements</h3>
+          <p>Please review and accept the participation expectations.</p>
+        </div>
+      </div>
+
+      <div class="acknowledgement-box acknowledgement-grid">
+        <label class="check-item">
+          <input id="ackMemberOrganized" type="checkbox" />
+          <span>I understand this is a member-organized Community Connections event and is not facilitated, monitored, or organized by IWP staff.</span>
+        </label>
+
+        <label class="check-item">
+          <input id="ackVoluntary" type="checkbox" />
+          <span>I understand I am participating voluntarily and am responsible for my own safety throughout the event.</span>
+        </label>
+
+        <label class="check-item">
+          <input id="ackRespect" type="checkbox" />
+          <span>I agree to treat all participants with courtesy, respect, and kindness while helping create a welcoming, inclusive, and supportive environment.</span>
+        </label>
+
+        <label id="ackPaymentWrap" class="check-item hidden">
+          <input id="ackPayment" type="checkbox" />
+          <span>I understand my reservation is not confirmed until payment has been received.</span>
+        </label>
+
+        <label id="ackRefundWrap" class="check-item hidden">
+          <input id="ackRefund" type="checkbox" />
+          <span>I understand refunds cannot be guaranteed after payment has been submitted unless the event organizer or venue cancels the event or other arrangements are made.</span>
+        </label>
+
+        <label class="check-item optional-check">
+          <input id="showNameOnAttendeeList" type="checkbox" />
+          <span>Show my name on the attendee list.</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="registration-section">
+      <div class="registration-section-heading compact-heading">
+        <span class="registration-section-number">04</span>
+        <div>
+          <span class="eyebrow">Optional</span>
+          <h3>Notes for the Organizer</h3>
+        </div>
+      </div>
+      <textarea id="regNotes" placeholder="Accessibility needs, questions, or anything else the organizer should know."></textarea>
+    </section>
+
+    <div class="registration-submit-bar">
+      <div>
+        <strong id="registrationReadyTitle">Complete the required information</strong>
+        <p id="registrationRequiredHelp" class="meta">Required fields and acknowledgements must be completed.</p>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="secondary" onclick="returnHome()">Cancel</button>
+        <button id="completeRegistrationBtn" type="button" class="primary" onclick="submitRegistration()" disabled>
+          Complete Registration
+        </button>
+      </div>
+    </div>
+  </form>
+</section>
+
+<section id="registrationSuccessCard" class="form-card registration-card registration-success-card hidden">
+<div class="registration-brand-hero" aria-label="IWP Community Connections">
+  <div class="registration-brand-photo registration-brand-photo-one"></div>
+  <div class="registration-brand-photo registration-brand-photo-two"></div>
+  <div class="registration-brand-photo registration-brand-photo-three"></div>
+  <div class="registration-brand-photo registration-brand-photo-four"></div>
+  <div class="registration-brand-overlay"></div>
+  <div class="registration-brand-content">
+    <img src="https://connections.redlinecreates.com/assets/iwp-logo.png?v=13" alt="Invisible Wounds Project logo" />
+    <div>
+      <span class="eyebrow">IWP Community Connections</span>
+      <strong>Find Your Next Adventure</strong>
+      <p>Register, connect, and be part of the community.</p>
+    </div>
+  </div>
+</div>
+  <div class="registration-trust-strip registration-success-trust" aria-label="Community Connections">
+    <span>Connection</span><span>Community</span><span>Adventure</span>
+  </div>
+  <div class="registration-success-icon">✓</div>
+  <span class="eyebrow">Registration Submitted</span>
+  <h2 id="registrationSuccessTitle">You're Registered!</h2>
+  <div id="registrationSuccessBody" class="registration-success-body"></div>
+  <div class="actions registration-success-actions">
+    <a class="button-link primary" href="https://connections.redlinecreates.com/">Back to Community Connections</a>
+    <button type="button" class="secondary" onclick="returnHome()">View More Adventures</button>
+    <a class="button-link secondary" href="https://www.facebook.com/groups/1000568346273790/?sorting_setting=CHRONOLOGICAL" target="_blank" rel="noopener">
+      Visit Facebook Group
+    </a>
+  </div>
+</section>

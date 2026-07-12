@@ -1,4 +1,14 @@
 (function () {
+
+  window.iwpAdventureImageFallback = function (img) {
+    if (!img) return;
+    var parent = img.parentNode;
+    if (!parent || parent.getAttribute('data-fallback-active') === 'true') return;
+    parent.setAttribute('data-fallback-active', 'true');
+    parent.classList.add(parent.classList.contains('featured-event-image') ? 'featured-event-image-fallback' : 'live-card-image-fallback');
+    var icon = img.getAttribute('data-fallback-icon') || '🤝';
+    parent.innerHTML = '<span>' + escapeHtml(icon) + '</span>';
+  };
   var c = window.IWP_SITE_CONFIG || {};
 
   document.querySelectorAll("[data-config]").forEach(function (el) {
@@ -87,6 +97,15 @@
     }, 12000);
   }
 
+  function isSafeLandingImageUrl(url) {
+    var value = String(url || '').trim();
+    if (!value) return false;
+    // Google Drive thumbnails frequently require cookies or sharing permissions.
+    // The landing page uses a reliable category icon instead of attempting them.
+    if (/drive\.google\.com|googleusercontent\.com/i.test(value)) return false;
+    return /^https:\/\//i.test(value);
+  }
+
   function renderFeaturedAdventure(event) {
     var container = document.getElementById("featuredAdventureContent");
     if (!container) return;
@@ -105,8 +124,8 @@
       return;
     }
 
-    var image = event.imageUrl
-      ? '<div class="featured-event-image"><img src="' + escapeAttr(event.imageUrl) + '" alt=""></div>'
+    var image = isSafeLandingImageUrl(event.imageUrl)
+      ? '<div class="featured-event-image"><img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" src="' + escapeAttr(event.imageUrl) + '" alt=""></div>'
       : '<div class="featured-event-image featured-event-image-fallback"><span>' + categoryIcon(event.type) + '</span></div>';
 
     container.innerHTML =
@@ -129,6 +148,7 @@
           '</div>' +
         '</div>' +
       '</div>';
+    activateAdventureImageFallbacks(container);
   }
 
   function renderUpcomingAdventures(events) {
@@ -145,8 +165,8 @@
     }
 
     grid.innerHTML = events.map(function (event) {
-      var image = event.imageUrl
-        ? '<div class="live-card-image"><img loading="lazy" decoding="async" src="' + escapeAttr(event.imageUrl) + '" alt=""></div>'
+      var image = isSafeLandingImageUrl(event.imageUrl)
+        ? '<div class="live-card-image"><img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" loading="lazy" decoding="async" src="' + escapeAttr(event.imageUrl) + '" alt=""></div>'
         : '<div class="live-card-image live-card-image-fallback"><span>' + categoryIcon(event.type) + '</span></div>';
 
       return '<article class="live-event-card">' +
@@ -160,6 +180,18 @@
         '</div>' +
       '</article>';
     }).join("");
+    activateAdventureImageFallbacks(grid);
+  }
+
+  function activateAdventureImageFallbacks(root) {
+    if (!root) return;
+    Array.prototype.forEach.call(root.querySelectorAll('img[data-adventure-image]'), function (img) {
+      var showFallback = function () {
+        window.iwpAdventureImageFallback(img);
+      };
+      img.addEventListener('error', showFallback, { once: true });
+      if (img.complete && img.naturalWidth === 0) showFallback();
+    });
   }
 
   function renderLandingDataError() {

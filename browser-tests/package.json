@@ -1,0 +1,12 @@
+{
+  "name": "iwp-community-connections-v20-browser-tests",
+  "version": "20.4.0",
+  "private": true,
+  "description": "One-click browser and backend regression runner for IWP Community Connections",
+  "scripts": {
+    "test": "node run-tests.js"
+  },
+  "dependencies": {
+    "playwright": "^1.54.1"
+  }
+}

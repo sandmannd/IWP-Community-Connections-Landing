@@ -1,0 +1,251 @@
+<section class="builder-shell">
+  <div class="builder-topbar">
+    <div>
+      <span class="eyebrow">Adventure Builder 2.0</span>
+      <h2>Create an Adventure</h2>
+      <p class="subtle">Build the adventure, preview it live, save it as a draft, and publish when everything is ready.</p>
+    </div>
+
+    <div class="builder-top-actions">
+      <button type="button" class="secondary" onclick="openChatGptHelper()">✨ Create With ChatGPT</button>
+      <button type="button" class="secondary" onclick="returnHome()">Back</button>
+    </div>
+  </div>
+
+  <form id="eventForm" class="builder-layout">
+    <input type="hidden" id="eventId" />
+
+    <main class="builder-editor">
+      <section class="builder-section">
+        <div class="builder-section-heading">
+          <span>01</span>
+          <div>
+            <h3>Adventure Basics</h3>
+            <p>Name the adventure and choose the activity type.</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label for="eventTitle">Adventure Name</label>
+            <input id="eventTitle" required placeholder="Example: Rum River Tubing Adventure" />
+          </div>
+          <div>
+            <label for="eventType">Adventure Type</label>
+            <select id="eventType"></select>
+          </div>
+        </div>
+
+        <div class="event-image-upload-panel builder-image-panel">
+          <div>
+            <label for="eventImageFile">Adventure Image</label>
+            <p class="meta">Choose a JPG, PNG, or WebP image up to 5 MB.</p>
+          </div>
+          <input id="eventImageFile" type="file" accept="image/*" onchange="previewEventImage()" />
+          <input id="eventImageUrl" type="hidden" />
+          <div id="eventImagePreview" class="event-image-preview builder-image-preview">
+            <span>🖼️</span>
+            <strong>No image selected</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="builder-section">
+        <div class="builder-section-heading">
+          <span>02</span>
+          <div>
+            <h3>When and Where</h3>
+            <p>Add the location, date, and schedule.</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label for="locationName">Location Name</label>
+            <input id="locationName" placeholder="Rum River North County Park" />
+          </div>
+          <div>
+            <label for="address">Address</label>
+            <input id="address" placeholder="Street, city, state" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div>
+            <label for="startDate">Start Date</label>
+            <input id="startDate" type="text" inputmode="numeric" maxlength="10" placeholder="MM/DD/YY" autocomplete="off" oninput="autoFormatAdventureDate(this)" onblur="normalizeAdventureDateField('startDate')" />
+          </div>
+          <div>
+            <label for="startTime">Start Time</label>
+            <select id="startTime"></select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div>
+            <label for="endDate">End Date</label>
+            <input id="endDate" type="text" inputmode="numeric" maxlength="10" placeholder="MM/DD/YY" autocomplete="off" oninput="autoFormatAdventureDate(this)" onblur="normalizeAdventureDateField('endDate')" />
+          </div>
+          <div>
+            <label for="endTime">End Time</label>
+            <select id="endTime"></select>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label for="organizerName">Organizer Name</label>
+            <input id="organizerName" />
+          </div>
+          <div>
+            <label for="organizerPhone">Organizer Phone</label>
+            <input id="organizerPhone" type="tel" />
+          </div>
+        </div>
+      </section>
+
+      <section class="builder-section">
+        <div class="builder-section-heading">
+          <span>03</span>
+          <div>
+            <h3>Adventure Story</h3>
+            <p>Give members the information they need to feel comfortable joining.</p>
+          </div>
+        </div>
+
+        <div>
+          <label for="description">Description</label>
+          <textarea id="description" placeholder="Describe the activity, the experience, and why people should join."></textarea>
+        </div>
+
+        <div class="builder-text-grid">
+          <div>
+            <label for="whatToExpect">What To Expect</label>
+            <textarea id="whatToExpect" placeholder="What will the day look like?"></textarea>
+          </div>
+          <div>
+            <label for="whatToBring">What To Bring</label>
+            <textarea id="whatToBring" placeholder="Clothing, food, equipment, or personal items."></textarea>
+          </div>
+          <div>
+            <label for="provided">Provided</label>
+            <textarea id="provided" placeholder="Equipment, meals, tickets, or supplies included."></textarea>
+          </div>
+          <div>
+            <label for="specialNotes">Special Notes</label>
+            <textarea id="specialNotes" placeholder="Safety, accessibility, weather, or other important notes."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section class="builder-section">
+        <div class="builder-section-heading">
+          <span>04</span>
+          <div>
+            <h3>Registration and Capacity</h3>
+            <p>Control who can register and what happens when the adventure fills.</p>
+          </div>
+        </div>
+
+        <div class="checkbox-grid builder-option-grid">
+          <label class="check-item"><input id="registrationRequired" type="checkbox" checked /> Registration Required</label>
+          <label class="check-item"><input id="childrenAllowed" type="checkbox" /> Families and Children Welcome</label>
+          <label class="check-item"><input id="freeEvent" type="checkbox" checked /> Free Adventure</label>
+          <label class="check-item"><input id="waitlistEnabled" type="checkbox" /> Enable Waitlist</label>
+          <label class="check-item"><input id="showAttendeeNames" type="checkbox" /> Show Who's Going</label>
+          <label class="check-item featured-setting"><input id="featuredEvent" type="checkbox" /> Feature on Landing Page</label>
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label for="maxParticipants">Maximum Participants</label>
+            <input id="maxParticipants" type="number" min="0" placeholder="Leave blank for unlimited" />
+          </div>
+          <div>
+            <label for="adultCost">Adult Cost</label>
+            <input id="adultCost" placeholder="$" />
+          </div>
+        </div>
+
+        <div id="childCostWrap" class="hidden">
+          <label for="childCost">Child Cost</label>
+          <input id="childCost" placeholder="$" />
+        </div>
+
+        <div id="paymentOptions" class="payment-panel hidden">
+          <h3>Payment Options</h3>
+          <div class="checkbox-grid">
+            <label class="check-item"><input id="venmoEnabled" type="checkbox" /> Venmo</label>
+            <label class="check-item"><input id="cashAppEnabled" type="checkbox" /> Cash App</label>
+            <label class="check-item"><input id="cashEnabled" type="checkbox" /> Cash</label>
+            <label class="check-item"><input id="payAtEventEnabled" type="checkbox" /> Collect Money Day Of Event</label>
+            <label class="check-item"><input id="buyOwnTicketsEnabled" type="checkbox" /> Participants Buy Their Own Tickets</label>
+          </div>
+
+          <div class="form-grid">
+            <div><label for="venmoHandle">Venmo Handle</label><input id="venmoHandle" placeholder="@username" /></div>
+            <div><label for="cashAppHandle">Cash App Handle</label><input id="cashAppHandle" placeholder="$username" /></div>
+          </div>
+
+          <div>
+            <label for="ticketPurchaseLink">Ticket Purchase Link</label>
+            <input id="ticketPurchaseLink" placeholder="https://..." />
+          </div>
+        </div>
+      </section>
+
+      <section class="builder-section builder-timeline-section">
+        <div class="builder-section-heading">
+          <span>05</span>
+          <div>
+            <h3>Organizer Timeline</h3>
+            <p>The system will create and track these organizer tasks.</p>
+          </div>
+        </div>
+
+        <div class="builder-timeline">
+          <div><span>Today</span><strong>Create and save the adventure</strong></div>
+          <div><span>Before registration closes</span><strong>Review registrations and payments</strong></div>
+          <div><span>24 hours before</span><strong>Send the final reminder</strong></div>
+          <div><span>Event day</span><strong>Use QR or organizer check-in</strong></div>
+          <div><span>After the adventure</span><strong>Send the thank-you message</strong></div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="builder-sidebar">
+      <section class="builder-preview-card">
+        <div class="builder-preview-label">Live Preview</div>
+        <div id="builderPreviewImage" class="builder-preview-image"><span>🤝</span></div>
+        <div class="builder-preview-body">
+          <div id="builderPreviewBadges" class="detail-badges"></div>
+          <h3 id="builderPreviewTitle">Your Adventure Name</h3>
+          <p id="builderPreviewSchedule">Date and time coming soon</p>
+          <p id="builderPreviewLocation">Location coming soon</p>
+          <div id="builderPreviewCapacity" class="builder-preview-capacity">Registration settings will appear here.</div>
+        </div>
+      </section>
+
+      <section class="builder-readiness-card">
+        <div class="builder-readiness-heading">
+          <div>
+            <span class="eyebrow">Adventure Readiness</span>
+            <h3 id="builderReadinessPercent">0% Ready</h3>
+          </div>
+          <div class="builder-readiness-ring"><span id="builderReadinessRing">0%</span></div>
+        </div>
+
+        <div class="builder-readiness-track"><span id="builderReadinessBar"></span></div>
+
+        <div id="builderReadinessList" class="builder-readiness-list"></div>
+      </section>
+
+      <section class="builder-sidebar-actions">
+        <button id="saveDraftBtn" type="button" class="primary wide" onclick="saveEventDraft()">Save Draft</button>
+        <button id="cloneAdventureBtn" type="button" class="secondary wide hidden" onclick="cloneCurrentAdventure()">Clone This Adventure</button>
+        <button type="button" class="secondary wide" onclick="openChatGptHelper()">✨ Create Content With ChatGPT</button>
+        <button type="button" class="secondary wide" onclick="returnHome()">Cancel</button>
+      </section>
+    </aside>
+  </form>
+</section>

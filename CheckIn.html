@@ -1,0 +1,139 @@
+<section class="detail-card checkin-page">
+  <div class="detail-topbar">
+    <button class="secondary" type="button" onclick="closeCheckInMode()">← Back to Event</button>
+    <button class="secondary" type="button" onclick="refreshCheckInMode()">Refresh</button>
+  </div>
+
+  <div class="checkin-header">
+    <div>
+      <span class="eyebrow">Event Day</span>
+      <h2 id="checkInEventTitle">Check-In</h2>
+      <p id="checkInSummary" class="meta">Loading participants...</p>
+    </div>
+    <input id="checkInSearch" class="checkin-search" type="search" placeholder="Search by name, email, or phone" oninput="filterCheckInList()" />
+  </div>
+
+  <div class="event-day-command-strip" aria-label="Event day tools">
+    <div><span class="eyebrow">Event Day Mode</span><strong>Everything you need at a glance</strong></div>
+    <div class="event-day-command-actions">
+      <button class="secondary compact" type="button" onclick="document.getElementById('checkInSearch').focus()">Find Participant</button>
+      <button class="secondary compact" type="button" onclick="window.print()">Print Roster</button>
+      <button class="secondary compact" type="button" onclick="refreshCheckInMode()">Sync Now</button>
+      <button class="secondary compact" type="button" onclick="downloadEventDayReport()">Download Report</button>
+    </div>
+    <small id="checkInLastSynced" class="event-day-sync-status">Not synced yet</small>
+  </div>
+
+  <section class="event-day-facts" aria-label="Adventure details">
+    <div><span>Date</span><strong id="checkInEventDate">Date coming soon</strong></div>
+    <div><span>Time</span><strong id="checkInEventTime">Time coming soon</strong></div>
+    <div><span>Meeting Point</span><strong id="checkInEventLocation">Location coming soon</strong></div>
+    <div class="event-day-fact-actions">
+      <a id="checkInDirectionsBtn" class="button-link secondary compact hidden" target="_blank" rel="noopener">Directions</a>
+      <a id="checkInOrganizerCallBtn" class="button-link secondary compact hidden">Call Organizer</a>
+    </div>
+  </section>
+
+  <section class="event-day-overview" aria-label="Event day overview">
+    <div class="event-day-progress-copy"><span class="eyebrow">Arrival Progress</span><strong id="checkInProgressLabel">0% checked in</strong></div>
+    <div class="event-day-progress"><span id="checkInProgressBar"></span></div>
+    <div class="event-day-notes">
+      <label for="eventDayNotes"><span>Organizer Notes</span><textarea id="eventDayNotes" rows="2" placeholder="Meeting point changes, supply reminders, volunteer notes..." oninput="saveEventDayNotes()"></textarea></label>
+      <button class="secondary compact" type="button" onclick="copyEventDaySummary()">Copy Event-Day Summary</button>
+    </div>
+  </section>
+
+  <div class="checkin-stats" aria-label="Check-in summary">
+    <div><strong id="checkInTotalCount">0</strong><span>Registrations</span></div>
+    <div><strong id="checkInPeopleCount">0</strong><span>Expected People</span></div>
+    <div><strong id="checkInCheckedCount">0</strong><span>Checked In</span></div>
+    <div><strong id="checkInRemainingCount">0</strong><span>Remaining</span></div>
+    <div><strong id="checkInUnpaidCount">0</strong><span>Unpaid</span></div>
+  </div>
+
+  <div class="checkin-filter-bar" role="group" aria-label="Filter participants">
+    <button class="secondary checkin-filter is-active" type="button" data-checkin-filter="all" onclick="setCheckInFilter('all', this)">All</button>
+    <button class="secondary checkin-filter" type="button" data-checkin-filter="remaining" onclick="setCheckInFilter('remaining', this)">Not Checked In</button>
+    <button class="secondary checkin-filter" type="button" data-checkin-filter="checked" onclick="setCheckInFilter('checked', this)">Checked In</button>
+    <button class="secondary checkin-filter" type="button" data-checkin-filter="unpaid" onclick="setCheckInFilter('unpaid', this)">Unpaid</button>
+    <button class="secondary checkin-filter" type="button" data-checkin-filter="groups" onclick="setCheckInFilter('groups', this)">Groups / Families</button>
+    <button class="secondary" type="button" onclick="clearCheckInSearch()">Clear Search</button>
+    <label class="checkin-sort-label" for="checkInSort"><span>Sort</span><select id="checkInSort" onchange="filterCheckInList()"><option value="name">Name</option><option value="unchecked">Not checked in first</option><option value="unpaid">Unpaid first</option></select></label>
+  </div>
+
+  <section class="event-day-control-grid" aria-label="Safety and communication tools">
+    <article class="event-day-control-card">
+      <div class="panel-heading"><div><span class="eyebrow">Safety Check</span><h3>Before people arrive</h3></div><span id="eventDaySafetyCount" class="mini-badge">0 of 5</span></div>
+      <div class="event-day-safety-list">
+        <label><input type="checkbox" data-event-day-safety="meeting" onchange="saveEventDaySafetyChecklist()"><span>Meeting point confirmed</span></label>
+        <label><input type="checkbox" data-event-day-safety="weather" onchange="saveEventDaySafetyChecklist()"><span>Weather and conditions reviewed</span></label>
+        <label><input type="checkbox" data-event-day-safety="supplies" onchange="saveEventDaySafetyChecklist()"><span>Supplies and equipment ready</span></label>
+        <label><input type="checkbox" data-event-day-safety="contacts" onchange="saveEventDaySafetyChecklist()"><span>Organizer and emergency contacts available</span></label>
+        <label><input type="checkbox" data-event-day-safety="headcount" onchange="saveEventDaySafetyChecklist()"><span>Headcount and participant list reviewed</span></label>
+      </div>
+    </article>
+    <article class="event-day-control-card">
+      <div class="panel-heading"><div><span class="eyebrow">Quick Communication</span><h3>Message participants</h3></div></div>
+      <p class="meta">Create a ready-to-copy update using the current event details.</p>
+      <div class="event-day-message-actions">
+        <button class="secondary" type="button" onclick="copyEventDayMessage('arrival')">Copy Arrival Message</button>
+        <button class="secondary" type="button" onclick="copyEventDayMessage('delay')">Copy Delay Message</button>
+        <button class="secondary" type="button" onclick="copyEventDayMessage('start')">Copy Starting Message</button>
+      </div>
+    </article>
+  </section>
+
+  <section class="event-day-closeout-grid" aria-label="Event closeout tools">
+    <article class="event-day-control-card">
+      <div class="panel-heading"><div><span class="eyebrow">Event Log</span><h3>Document important moments</h3></div><span id="eventDayLogCount" class="mini-badge">0 entries</span></div>
+      <div class="event-day-log-form">
+        <label for="eventDayLogType"><span>Type</span><select id="eventDayLogType"><option value="Update">Update</option><option value="Safety">Safety</option><option value="Participant">Participant</option><option value="Supply">Supply</option><option value="Other">Other</option></select></label>
+        <label for="eventDayLogText"><span>Note</span><textarea id="eventDayLogText" rows="2" placeholder="Record a delay, safety concern, participant issue, supply need, or other important detail."></textarea></label>
+        <button class="secondary" type="button" onclick="addEventDayLogEntry()">Add Log Entry</button>
+      </div>
+      <div id="eventDayLogList" class="event-day-log-list"><div class="dashboard-empty">No event log entries yet.</div></div>
+    </article>
+
+    <article class="event-day-control-card event-day-closeout-card">
+      <div class="panel-heading"><div><span class="eyebrow">Closeout</span><h3>Confirm everyone is accounted for</h3></div><span id="eventDayCloseoutStatus" class="mini-badge">Not complete</span></div>
+      <p class="meta">Use this at the end of the adventure before leaving the location.</p>
+      <div class="event-day-closeout-list">
+        <label><input type="checkbox" data-event-day-closeout="headcount" onchange="saveEventDayCloseout()"><span>Final headcount completed</span></label>
+        <label><input type="checkbox" data-event-day-closeout="participants" onchange="saveEventDayCloseout()"><span>All participants and families accounted for</span></label>
+        <label><input type="checkbox" data-event-day-closeout="property" onchange="saveEventDayCloseout()"><span>Equipment, supplies, and personal items collected</span></label>
+        <label><input type="checkbox" data-event-day-closeout="location" onchange="saveEventDayCloseout()"><span>Meeting area checked and left in good condition</span></label>
+        <label><input type="checkbox" data-event-day-closeout="followup" onchange="saveEventDayCloseout()"><span>Follow-up notes or participant concerns recorded</span></label>
+      </div>
+      <button class="secondary event-day-closeout-copy" type="button" onclick="copyEventDayCloseoutSummary()">Copy Closeout Summary</button>
+    </article>
+  </section>
+
+  <section class="event-day-export-panel" aria-label="Event day records and backup">
+    <div>
+      <span class="eyebrow">Records & Backup</span>
+      <h3>Keep a copy before you leave</h3>
+      <p class="meta">Download the roster and Event Day report, or copy participant contact information for organizer use.</p>
+    </div>
+    <div class="event-day-export-actions">
+      <button class="secondary" type="button" onclick="downloadEventDayRosterCsv()">Download Roster CSV</button>
+      <button class="secondary" type="button" onclick="downloadEventDayReport()">Download Event Report</button>
+      <button class="secondary" type="button" onclick="copyEventDayContactList()">Copy Contact List</button>
+      <button class="secondary danger-outline" type="button" onclick="resetEventDayLocalData()">Reset Local Event Data</button>
+    </div>
+    <small class="event-day-local-note">Organizer notes, safety checks, event logs, and closeout checks are saved only in this browser until downloaded.</small>
+  </section>
+
+  <section class="event-day-payment-progress" aria-label="Payment progress">
+    <div><span class="eyebrow">Payment Progress</span><strong id="checkInPaymentLabel">0% paid</strong></div>
+    <div class="event-day-progress payment-progress"><span id="checkInPaymentBar"></span></div>
+  </section>
+
+  <div id="checkInAllClear" class="event-day-all-clear hidden">
+    <strong>Everyone is checked in.</strong>
+    <span>You are ready to start the adventure.</span>
+  </div>
+
+  <div id="checkInList" class="checkin-list">
+    <div class="notice">Loading participants...</div>
+  </div>
+</section>
