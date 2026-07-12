@@ -1,0 +1,243 @@
+<section id="commandCenter" class="command-center hidden">
+  <div class="command-center-hero">
+    <div class="command-center-heading">
+      <div>
+        <div class="eyebrow">Organizer Command Center</div>
+        <h2 id="commandCenterGreeting">Welcome back, Shane</h2>
+        <p id="dashboardUpdated" class="subtle">Loading the latest Community Connections activity...</p>
+      </div>
+
+      <div class="command-center-actions">
+        <button class="primary" type="button" onclick="showCreateEvent()">+ Create Adventure</button>
+        <button class="secondary" type="button" onclick="scrollToAdventures()">View Adventures</button>
+        <button class="secondary" type="button" onclick="showAdministration()">Administration</button>
+        <button class="secondary compact" type="button" onclick="refreshCommandCenter()">Refresh</button>
+      </div>
+    </div>
+
+    <div class="dashboard-health-strip">
+      <span id="dashboardHealthDot" class="health-dot"></span>
+      <strong id="dashboardHealthTitle">Checking system status...</strong>
+      <span id="dashboardHealthText">Loading dashboard information.</span>
+      <button id="emailAutomationButton" class="secondary compact" type="button" onclick="toggleEmailAutomation()">Checking Auto Emails...</button>
+    </div>
+  </div>
+
+  <div class="organizer-mission-strip">
+    <div><span class="eyebrow">Today’s Mission</span><strong>Help people feel connected before they ever arrive.</strong></div>
+    <div class="organizer-mission-points"><span>Plan</span><span>Communicate</span><span>Welcome</span><span>Follow Up</span></div>
+  </div>
+
+  <div id="dashboardError" class="inline-error hidden"></div>
+
+  <section class="organizer-quick-dock" aria-label="Organizer quick actions">
+    <button type="button" onclick="showCreateEvent()"><span>01</span><strong>Build</strong><small>Create an adventure</small></button>
+    <button type="button" onclick="scrollToAdventures()"><span>02</span><strong>Manage</strong><small>Open event tools</small></button>
+    <button type="button" onclick="showDashboardAttention()"><span>03</span><strong>Resolve</strong><small>Handle attention items</small></button>
+    <button type="button" onclick="showDashboardWaitlists()"><span>04</span><strong>Welcome</strong><small>Review waitlists</small></button>
+  </section>
+
+  <div class="dashboard-stats dashboard-stats-v2">
+    <button class="dashboard-stat" type="button" onclick="scrollToAdventures()">
+      <span class="dashboard-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>
+      <strong id="statUpcoming">0</strong>
+      <span>Upcoming Adventures</span>
+      <small id="statThisWeek">0 this week</small>
+    </button>
+
+    <button class="dashboard-stat" type="button" onclick="scrollToAdventures()">
+      <span class="dashboard-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <strong id="statParticipants">0</strong>
+      <span>People Registered</span>
+      <small id="statRecentRegistrations">0 recent registrations</small>
+    </button>
+
+    <button class="dashboard-stat" type="button" onclick="showDashboardAttention()">
+      <span class="dashboard-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h2"/></svg></span>
+      <strong id="statPaymentsDue">0</strong>
+      <span>Payments Pending</span>
+      <small id="statPaymentEvents">Across 0 adventures</small>
+    </button>
+
+    <button class="dashboard-stat" type="button" onclick="showDashboardWaitlists()">
+      <span class="dashboard-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h12M6 22h12M8 2v5l4 5-4 5v5M16 2v5l-4 5 4 5v5"/></svg></span>
+      <strong id="statWaitlisted">0</strong>
+      <span>People Waitlisted</span>
+      <small id="statWaitlistEvents">Across 0 adventures</small>
+    </button>
+
+    <button class="dashboard-stat" type="button" onclick="showDashboardAttention()">
+      <span class="dashboard-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+      <strong id="statAttention">0</strong>
+      <span>Need Attention</span>
+      <small id="statDrafts">0 drafts</small>
+    </button>
+  </div>
+
+  <div class="dashboard-primary-grid">
+    <article class="dashboard-panel featured-dashboard-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Featured Adventure</div>
+          <h3 id="featuredDashboardTitle">No featured adventure</h3>
+        </div>
+        <span id="featuredDashboardBadge" class="mini-badge featured-badge">Not Set</span>
+      </div>
+      <div id="featuredDashboardBody" class="dashboard-empty">
+        Feature a published adventure to spotlight it on the landing page.
+      </div>
+      <div id="featuredDashboardActions" class="actions hidden"></div>
+    </article>
+
+    <article class="dashboard-panel next-event-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Next Adventure</div>
+          <h3 id="nextEventTitle">No upcoming adventure</h3>
+        </div>
+        <span id="nextEventCountdown" class="countdown-badge">Nothing scheduled</span>
+      </div>
+      <div id="nextEventBody" class="dashboard-empty">Create or publish an adventure to see it here.</div>
+      <div id="nextEventActions" class="actions hidden"></div>
+    </article>
+  </div>
+
+  <article class="dashboard-panel event-readiness-panel">
+    <div class="panel-heading">
+      <div><div class="eyebrow">Event Readiness</div><h3 id="eventReadinessTitle">Preparing your next adventure</h3></div>
+      <span id="eventReadinessScore" class="readiness-score">0%</span>
+    </div>
+    <div class="readiness-meter"><span id="eventReadinessBar"></span></div>
+    <div id="eventReadinessChecklist" class="readiness-checklist"><span>Next adventure details will appear here.</span></div>
+  </article>
+
+  <article class="dashboard-panel organizer-briefing-panel">
+    <div class="panel-heading">
+      <div><div class="eyebrow">Organizer Briefing</div><h3 id="organizerBriefingTitle">Next adventure briefing</h3></div>
+      <span id="organizerBriefingBadge" class="mini-badge">Waiting</span>
+    </div>
+    <div id="organizerBriefingBody" class="organizer-briefing-grid">
+      <div class="dashboard-empty">Your next published adventure briefing will appear here.</div>
+    </div>
+  </article>
+
+  <article class="dashboard-panel next-best-actions-panel">
+    <div class="panel-heading">
+      <div><div class="eyebrow">Next Best Actions</div><h3>Keep the next adventure moving</h3></div>
+      <span id="nextBestActionsBadge" class="mini-badge">0 actions</span>
+    </div>
+    <div id="nextBestActionsList" class="next-best-actions-list">
+      <div class="dashboard-empty">Actions will appear after the dashboard loads.</div>
+    </div>
+  </article>
+
+  <div class="dashboard-work-grid">
+    <article class="dashboard-panel dashboard-tasks-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Today</div>
+          <h3>Organizer Tasks</h3>
+        </div>
+        <span id="todayTasksBadge" class="mini-badge">0 tasks</span>
+      </div>
+      <div id="dashboardTodayTasks" class="dashboard-list">
+        <div class="dashboard-empty">Loading organizer tasks...</div>
+      </div>
+    </article>
+
+    <article class="dashboard-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Action Center</div>
+          <h3>Needs Your Attention</h3>
+        </div>
+        <span id="attentionBadge" class="mini-badge">0 items</span>
+      </div>
+      <div id="dashboardAttentionList" class="dashboard-list">
+        <div class="dashboard-empty">No alerts right now.</div>
+      </div>
+    </article>
+  </div>
+
+  <div class="dashboard-work-grid">
+    <article class="dashboard-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Recent Activity</div>
+          <h3>Latest Registrations</h3>
+        </div>
+        <span id="recentRegistrationBadge" class="mini-badge">0 new</span>
+      </div>
+      <div id="recentRegistrationList" class="dashboard-list">
+        <div class="dashboard-empty">No recent registrations.</div>
+      </div>
+    </article>
+
+    <article class="dashboard-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Waitlist Center</div>
+          <h3>Adventures With Waitlists</h3>
+        </div>
+        <span id="waitlistBadge" class="mini-badge">0 people</span>
+      </div>
+      <div id="dashboardWaitlistList" class="dashboard-list">
+        <div class="dashboard-all-clear">✓ No active waitlists.</div>
+      </div>
+    </article>
+  </div>
+
+  <article class="dashboard-panel dashboard-report-panel">
+    <div class="panel-heading">
+      <div>
+        <div class="eyebrow">Community Snapshot</div>
+        <h3>Community Connections Activity</h3>
+      </div>
+      <span class="mini-badge">All Time</span>
+    </div>
+
+    <div class="dashboard-report-grid">
+      <div class="report-stat"><strong id="reportTotalEvents">0</strong><span>Total Adventures</span></div>
+      <div class="report-stat"><strong id="reportPublishedEvents">0</strong><span>Published</span></div>
+      <div class="report-stat"><strong id="reportCompletedEvents">0</strong><span>Completed</span></div>
+      <div class="report-stat"><strong id="reportRegistrations">0</strong><span>Registrations</span></div>
+      <div class="report-stat"><strong id="reportPeople">0</strong><span>People Registered</span></div>
+      <div class="report-stat"><strong id="reportCheckedIn">0</strong><span>Checked In</span></div>
+      <div class="report-stat"><strong id="reportPaid">0</strong><span>Paid Registrations</span></div>
+    </div>
+  </article>
+
+  <article class="dashboard-panel email-queue-panel">
+    <div class="panel-heading">
+      <div>
+        <div class="eyebrow">Communications</div>
+        <h3>Email Queue</h3>
+      </div>
+      <button class="secondary compact" type="button" onclick="refreshEmailQueueStatus()">Refresh Queue</button>
+    </div>
+
+    <div class="email-queue-stats">
+      <div><strong id="emailQueueScheduled">0</strong><span>Scheduled</span></div>
+      <div><strong id="emailQueueDue">0</strong><span>Due Now</span></div>
+      <div><strong id="emailQueueFailed">0</strong><span>Failed</span></div>
+      <div><strong id="emailQueueSent">0</strong><span>Sent</span></div>
+    </div>
+
+    <p id="emailQueueUpdated" class="subtle">Loading email queue...</p>
+
+    <div class="email-queue-columns">
+      <div>
+        <h4>Upcoming Automatic Emails</h4>
+        <div id="emailQueueNext" class="dashboard-list">
+          <div class="dashboard-empty">No scheduled emails.</div>
+        </div>
+      </div>
+      <div>
+        <h4>Failed Emails</h4>
+        <div id="emailQueueFailures" class="dashboard-list">
+          <div class="dashboard-empty">No failed emails.</div>
+        </div>
+      </div>
+    </div>
+  </article>
+</section>

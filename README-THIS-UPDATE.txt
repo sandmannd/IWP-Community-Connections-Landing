@@ -1,16 +1,6 @@
-SPRINT 6 LANDING UPDATE
+IWP-Community-Connections-Landing-V20.5-Broken-Image-Fallback
 
-Replace:
-- config.js
-- index.html
-- site.js
-- styles.css
+Broken or private Google Drive event images now automatically switch to the matching category icon instead of displaying a broken image.
 
-Adds:
-- Live featured adventure
-- Next four upcoming adventures
-- Images, dates, cost, location, capacity, and waitlist status
-- Loading and error states
 
-Commit:
-Sprint 6 - Connect landing page to live adventure data
+V20.6: Adventure images now use an immediate onerror fallback to the category icon, preventing private or broken Drive thumbnails from remaining visible.

@@ -1,0 +1,134 @@
+<script>
+(function () {
+  var originalDrawEventDetail = window.drawEventDetail;
+
+  if (typeof originalDrawEventDetail !== 'function') {
+    return;
+  }
+
+  window.drawEventDetail = function (data) {
+    originalDrawEventDetail(data);
+    addLifecycleControls_(data && data.event ? data.event : null);
+  };
+})();
+
+function addLifecycleControls_(event) {
+  if (!event || !CURRENT_USER || !toBool(CURRENT_USER.isAdmin)) {
+    return;
+  }
+
+  var container = document.getElementById('detailAdminActions');
+  if (!container) return;
+
+  var status = String(event.Status || '').trim().toLowerCase();
+  var buttons = [];
+
+  buttons.push(
+    '<button class="secondary" type="button" onclick="editEvent(\'' +
+      escapeJs(event.EventId) +
+      '\')">Edit</button>'
+  );
+
+  if (status === 'published' && toBool(event.RegistrationRequired)) {
+    buttons.push(
+      '<button class="secondary" type="button" onclick="confirmLifecycleAction_(\'' +
+        escapeJs(event.EventId) +
+        '\', \'close\', \'Close Registration?\', \'People will no longer be able to register for this adventure.\')">Close Registration</button>'
+    );
+  }
+
+  if (status === 'registration closed') {
+    buttons.push(
+      '<button class="primary" type="button" onclick="confirmLifecycleAction_(\'' +
+        escapeJs(event.EventId) +
+        '\', \'reopen\', \'Reopen Registration?\', \'People will be able to register for this adventure again.\')">Reopen Registration</button>'
+    );
+  }
+
+  if (status !== 'complete' && status !== 'cancelled' && status !== 'archived') {
+    buttons.push(
+      '<button class="secondary" type="button" onclick="confirmLifecycleAction_(\'' +
+        escapeJs(event.EventId) +
+        '\', \'complete\', \'Mark Adventure Complete?\', \'This will move the adventure into completed status.\')">Mark Complete</button>'
+    );
+  }
+
+
+  if (status !== 'cancelled' && status !== 'complete' && status !== 'archived') {
+    buttons.push(
+      '<button class="danger" type="button" onclick="confirmLifecycleAction_(\'' +
+        escapeJs(event.EventId) +
+        '\', \'cancelEvent\', \'Cancel Adventure?\', \'This removes the adventure from public registration and marks it cancelled.\')">Cancel Adventure</button>'
+    );
+  }
+
+  container.innerHTML = buttons.join('');
+}
+
+function confirmLifecycleAction_(eventId, action, title, message) {
+  closeLifecycleDialog_();
+
+  var backdrop = document.createElement('div');
+  backdrop.id = 'lifecycleDialog';
+  backdrop.className = 'modal-backdrop';
+
+  backdrop.innerHTML =
+    '<div class="modal-panel">' +
+      '<div class="modal-header">' +
+        '<div>' +
+          '<h3 style="margin:0 0 8px;">' + escapeHtml(title) + '</h3>' +
+          '<p class="meta" style="margin:0;">' + escapeHtml(message) + '</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="modal-actions" style="margin-top:18px;">' +
+        '<button class="secondary" type="button" onclick="closeLifecycleDialog_()">Cancel</button>' +
+        '<button class="primary" id="lifecycleConfirmButton" type="button">OK</button>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(backdrop);
+
+  document.getElementById('lifecycleConfirmButton').onclick = function () {
+    runLifecycleAction_(eventId, action);
+  };
+}
+
+function closeLifecycleDialog_() {
+  var existing = document.getElementById('lifecycleDialog');
+  if (existing && existing.parentNode) {
+    existing.parentNode.removeChild(existing);
+  }
+}
+
+function runLifecycleAction_(eventId, action) {
+  var button = document.getElementById('lifecycleConfirmButton');
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Working...';
+  }
+
+  var runner = google.script.run
+    .withSuccessHandler(function (response) {
+      closeLifecycleDialog_();
+      showEventDetail(eventId);
+    })
+    .withFailureHandler(function (error) {
+      if (button) {
+        button.disabled = false;
+        button.textContent = 'OK';
+      }
+      showError(error);
+    });
+
+  if (action === 'close') {
+    runner.closeEventRegistration(eventId);
+  } else if (action === 'reopen') {
+    runner.reopenEventRegistration(eventId);
+  } else if (action === 'complete') {
+    runner.completeEvent(eventId);
+  } else if (action === 'cancelEvent') {
+    runner.cancelEvent(eventId);
+  }
+}
+</script>

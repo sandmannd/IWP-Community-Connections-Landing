@@ -1,0 +1,7 @@
+{
+  "landingUrl": "https://connections.redlinecreates.com/",
+  "appUrl": "https://script.google.com/macros/s/AKfycbxPNqswpRLvj0LZ0ZaVw6DTSpTcZIDt0S0zWFJgOES7g864n734dDF2UpGMwdpsEPGK4Q/exec",
+  "publicAppUrl": "https://script.google.com/macros/s/AKfycbxPNqswpRLvj0LZ0ZaVw6DTSpTcZIDt0S0zWFJgOES7g864n734dDF2UpGMwdpsEPGK4Q/exec?public=1",
+  "headless": false,
+  "timeoutMs": 60000
+}

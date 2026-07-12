@@ -1,0 +1,183 @@
+<section id="administrationView" class="administration-view hidden">
+  <div class="admin-page-header">
+    <div>
+      <div class="eyebrow">IWP Community Connections Manager</div>
+      <h2>Administration</h2>
+      <p class="subtle">Manage the application without opening Apps Script or Google Sheets.</p>
+    </div>
+    <button class="secondary" type="button" onclick="showHome()">← Back to Adventures</button>
+  </div>
+
+  <div id="administrationError" class="inline-error hidden"></div>
+
+  <div class="administration-layout">
+    <nav class="administration-nav" aria-label="Administration sections">
+      <button class="active" type="button" data-admin-tab="general" onclick="showAdministrationTab('general', this)">General</button>
+      <button type="button" data-admin-tab="branding" onclick="showAdministrationTab('branding', this)">Branding</button>
+      <button type="button" data-admin-tab="registration" onclick="showAdministrationTab('registration', this)">Registration</button>
+      <button type="button" data-admin-tab="payments" onclick="showAdministrationTab('payments', this)">Payments</button>
+      <button type="button" data-admin-tab="communications" onclick="showAdministrationTab('communications', this)">Communications</button>
+      <button type="button" data-admin-tab="categories" onclick="showAdministrationTab('categories', this)">Categories</button>
+      <button type="button" data-admin-tab="administrators" onclick="showAdministrationTab('administrators', this)">Administrators</button>
+      <button type="button" data-admin-tab="deployment" onclick="showAdministrationTab('deployment', this)">Deployment</button>
+      <button type="button" data-admin-tab="about" onclick="showAdministrationTab('about', this)">About</button>
+    </nav>
+
+    <div class="administration-content">
+      <section id="adminTab-general" class="admin-tab-panel">
+        <div class="panel-heading"><div><div class="eyebrow">General</div><h3>Organization & Community Links</h3></div></div>
+        <form id="generalAdministrationForm" class="admin-settings-form" onsubmit="saveGeneralAdministration(event)">
+          <label><span>Organization Name</span><input id="adminOrganizationName" type="text" /></label>
+          <label><span>Support Email</span><input id="adminSupportEmail" type="email" /></label>
+          <label><span>Website</span><input id="adminWebsiteUrl" type="url" placeholder="https://" /></label>
+          <label><span>Facebook Group</span><input id="adminFacebookGroupUrl" type="url" /></label>
+          <label><span>Phone Number</span><input id="adminPhoneNumber" type="text" /></label>
+          <label class="admin-form-wide"><span>Welcome Message</span><textarea id="adminWelcomeMessage" rows="3"></textarea></label>
+          <label class="admin-form-wide"><span>Footer Text</span><textarea id="adminFooterText" rows="3"></textarea></label>
+          <div class="admin-form-wide actions"><button class="primary" type="submit">Save General Settings</button></div>
+        </form>
+      </section>
+
+      <section id="adminTab-branding" class="admin-tab-panel hidden">
+        <div class="panel-heading"><div><div class="eyebrow">Branding</div><h3>Colors & Default Images</h3></div></div>
+        <form class="admin-settings-form" onsubmit="saveBrandingAdministration(event)">
+          <label><span>Primary Color</span><div class="color-setting"><input id="adminPrimaryColor" type="color" value="#38bdf8" onchange="setAdministrationColorFromPicker('primary')" /><input id="adminPrimaryColorText" type="text" maxlength="7" placeholder="#38bdf8" oninput="syncAdministrationColor('primary')" /></div></label>
+          <label><span>Accent Color</span><div class="color-setting"><input id="adminAccentColor" type="color" value="#22c55e" onchange="setAdministrationColorFromPicker('accent')" /><input id="adminAccentColorText" type="text" maxlength="7" placeholder="#22c55e" oninput="syncAdministrationColor('accent')" /></div></label>
+          <label class="admin-form-wide"><span>Default Adventure Image URL</span><input id="adminDefaultEventImage" type="url" placeholder="https://" /></label>
+          <label class="admin-form-wide"><span>Organization Logo URL</span><input id="adminLogoUrl" type="url" placeholder="https://" /></label>
+          <label class="admin-form-wide"><span>Organization Banner URL</span><input id="adminBannerUrl" type="url" placeholder="https://" /></label>
+          <div class="admin-form-wide branding-preview" id="administrationBrandingPreview">
+            <div class="branding-preview-badge">Preview</div>
+            <strong>IWP Community Connections</strong>
+            <span>Building connections. Strengthening lives.</span>
+            <button type="button" class="primary">View Adventures</button>
+          </div>
+          <div class="admin-form-wide actions"><button class="primary" type="submit">Save Branding</button></div>
+        </form>
+      </section>
+
+      <section id="adminTab-registration" class="admin-tab-panel hidden">
+        <div class="panel-heading"><div><div class="eyebrow">Registration</div><h3>Default Registration Settings</h3></div></div>
+        <form class="admin-settings-form" onsubmit="saveRegistrationAdministration(event)">
+          <label><span>Default Capacity</span><input id="adminDefaultCapacity" type="number" min="1" step="1" /></label>
+          <label><span>Default Registration Deadline (days before)</span><input id="adminRegistrationDeadlineDays" type="number" min="0" step="1" /></label>
+          <label class="check-setting"><input id="adminWaitlistEnabled" type="checkbox" /><span>Enable waitlists by default</span></label>
+          <label class="check-setting"><input id="adminChildrenAllowed" type="checkbox" /><span>Allow children by default</span></label>
+          <label class="check-setting"><input id="adminSelfCancelEnabled" type="checkbox" /><span>Allow participants to cancel their own registration</span></label>
+          <label class="admin-form-wide"><span>Default Cancellation Policy</span><textarea id="adminCancellationPolicy" rows="4"></textarea></label>
+          <label class="admin-form-wide"><span>Default Refund Policy</span><textarea id="adminRefundPolicy" rows="4"></textarea></label>
+          <div class="admin-form-wide actions"><button class="primary" type="submit">Save Registration Defaults</button></div>
+        </form>
+      </section>
+
+      <section id="adminTab-payments" class="admin-tab-panel hidden">
+        <div class="panel-heading"><div><div class="eyebrow">Payments</div><h3>Available Payment Methods</h3></div></div>
+        <form class="admin-settings-form" onsubmit="savePaymentAdministration(event)">
+          <label class="check-setting"><input id="adminPaymentCash" type="checkbox" /><span>Cash</span></label>
+          <label class="check-setting"><input id="adminPaymentVenmo" type="checkbox" /><span>Venmo</span></label>
+          <label class="check-setting"><input id="adminPaymentCashApp" type="checkbox" /><span>Cash App</span></label>
+          <label class="check-setting"><input id="adminPaymentPayPal" type="checkbox" /><span>PayPal</span></label>
+          <label class="check-setting"><input id="adminPaymentAtEvent" type="checkbox" /><span>Pay at Event</span></label>
+          <label class="check-setting"><input id="adminPaymentBuyOwnTicket" type="checkbox" /><span>Buy Own Ticket</span></label>
+          <label class="admin-form-wide"><span>Default Payment Instructions</span><textarea id="adminPaymentInstructions" rows="5"></textarea></label>
+          <div class="admin-form-wide actions"><button class="primary" type="submit">Save Payment Settings</button></div>
+        </form>
+      </section>
+
+      <section id="adminTab-communications" class="admin-tab-panel hidden">
+        <div class="panel-heading"><div><div class="eyebrow">Communications</div><h3>Email Defaults</h3></div></div>
+        <form class="admin-settings-form" onsubmit="saveCommunicationsAdministration(event)">
+          <label><span>Sender Name</span><input id="adminEmailSenderName" type="text" /></label>
+          <label><span>Reply-To Email</span><input id="adminReplyToEmail" type="email" /></label>
+          <label><span>Reminder Timing (hours before)</span><input id="adminReminderHours" type="number" min="1" step="1" /></label>
+          <label><span>Thank-You Timing (hours after)</span><input id="adminThankYouHours" type="number" min="1" step="1" /></label>
+          <label class="admin-form-wide"><span>Email Signature</span><textarea id="adminEmailSignature" rows="4"></textarea></label>
+          <label class="admin-form-wide"><span>Registration Confirmation Template</span><textarea id="adminRegistrationTemplate" rows="6"></textarea></label>
+          <label class="admin-form-wide"><span>24-Hour Reminder Template</span><textarea id="adminReminderTemplate" rows="6"></textarea></label>
+          <label class="admin-form-wide"><span>Thank-You Template</span><textarea id="adminThankYouTemplate" rows="6"></textarea></label>
+          <p class="admin-form-wide subtle">Supported placeholders: {{FirstName}}, {{AdventureTitle}}, {{AdventureDate}}, {{AdventureTime}}, {{Location}}, {{Organizer}}</p>
+          <div class="admin-form-wide actions"><button class="primary" type="submit">Save Communication Settings</button></div>
+        </form>
+      </section>
+
+      <section id="adminTab-categories" class="admin-tab-panel hidden">
+        <div class="panel-heading"><div><div class="eyebrow">Adventures</div><h3>Adventure Categories</h3></div><button class="primary compact" type="button" onclick="openAddAdministrationCategory()">+ Add Category</button></div>
+        <p class="subtle">Enable, disable, or add categories. Volunteer is intentionally not included.</p>
+        <div id="administrationCategoryList" class="administration-list"></div>
+      </section>
+
+      <section id="adminTab-administrators" class="admin-tab-panel hidden">
+        <div class="panel-heading"><div><div class="eyebrow">Security</div><h3>Administrators</h3></div></div>
+        <p class="subtle">Current admin accounts and roles. Adding and changing roles will be completed in the next Administration update.</p>
+        <div id="administrationAdminList" class="administration-list"></div>
+      </section>
+
+      <section id="adminTab-deployment" class="admin-tab-panel hidden">
+        <div class="panel-heading">
+          <div><div class="eyebrow">Production Setup</div><h3>Public & Organizer Links</h3></div>
+          <button class="secondary compact" type="button" onclick="refreshDeploymentAdministration()">Refresh Status</button>
+        </div>
+        <p class="subtle">These addresses control every registration link, QR code, reminder email, thank-you email, and launch-page connection. Both must be Google Apps Script web-app addresses ending in <strong>/exec</strong>.</p>
+
+        <div id="deploymentStatusCard" class="deployment-status-card">
+          <div class="deployment-status-line"><span>Current page</span><strong id="deploymentCurrentStatus">Checking...</strong></div>
+          <div class="deployment-status-line"><span>Public link</span><strong id="deploymentPublicStatus">Checking...</strong></div>
+          <div class="deployment-status-line"><span>Organizer link</span><strong id="deploymentAdminStatus">Checking...</strong></div>
+        </div>
+
+        <form class="admin-settings-form" onsubmit="saveDeploymentAdministration(event)">
+          <label class="admin-form-wide">
+            <span>Public Event Application URL</span>
+            <div class="deployment-url-row">
+              <input id="adminPublicWebAppUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" required />
+              <button class="secondary compact" type="button" onclick="copyDeploymentUrl('adminPublicWebAppUrl')">Copy</button>
+              <button class="secondary compact" type="button" onclick="openDeploymentUrl('adminPublicWebAppUrl')">Open</button>
+            </div>
+            <small>Members use this address to view adventures and register. This deployment should run as you and allow anyone to access it.</small>
+          </label>
+          <label class="admin-form-wide">
+            <span>Organizer / Admin Application URL</span>
+            <div class="deployment-url-row">
+              <input id="adminOrganizerWebAppUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" required />
+              <button class="secondary compact" type="button" onclick="copyDeploymentUrl('adminOrganizerWebAppUrl')">Copy</button>
+              <button class="secondary compact" type="button" onclick="openDeploymentUrl('adminOrganizerWebAppUrl')">Open</button>
+            </div>
+            <small>Organizers use this address for Adventure Builder, registrations, check-in, and Administration.</small>
+          </label>
+          <label class="admin-form-wide">
+            <span>Community Connections Launch Page</span>
+            <div class="deployment-url-row">
+              <input id="adminLaunchPageUrl" type="url" readonly />
+              <button class="secondary compact" type="button" onclick="copyDeploymentUrl('adminLaunchPageUrl')">Copy</button>
+              <button class="secondary compact" type="button" onclick="openDeploymentUrl('adminLaunchPageUrl')">Open</button>
+            </div>
+          </label>
+          <div class="admin-form-wide deployment-help">
+            <strong>Important:</strong> Do not put <code>connections.redlinecreates.com</code> in either Apps Script field. The custom domain belongs only in the Launch Page field above.
+          </div>
+          <div class="admin-form-wide actions">
+            <button class="primary" type="submit">Save & Verify Deployment Links</button>
+            <button class="secondary" type="button" onclick="useCurrentDeploymentForOrganizer()">Use Current Page as Organizer Link</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="adminTab-about" class="admin-tab-panel hidden">
+        <div class="panel-heading"><div><div class="eyebrow">System</div><h3>About Community Connections Manager</h3></div></div>
+        <dl class="about-grid">
+          <div><dt>Application</dt><dd id="aboutAppName">IWP Community Connections</dd></div>
+          <div><dt>Version</dt><dd id="aboutVersion">Loading...</dd></div>
+          <div><dt>Database</dt><dd id="aboutDatabase">Loading...</dd></div>
+          <div><dt>Google Cloud Project</dt><dd id="aboutCloudProject">Loading...</dd></div>
+          <div><dt>Developer</dt><dd id="aboutDeveloper">Shane Hendricks</dd></div>
+          <div><dt>Organization</dt><dd>Invisible Wounds Project</dd></div>
+        </dl>
+        <div class="about-signature">
+          <strong>Designed &amp; Developed by Shane Hendricks</strong>
+          <span>Built for Invisible Wounds Project Community Connections.</span>
+          <em>No one should have to walk alone.</em>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
