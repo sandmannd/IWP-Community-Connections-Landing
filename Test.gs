@@ -223,8 +223,21 @@ function runFullRegressionTest() {
     });
     test.equal('Approved memories have an image URL', approvedWithoutImage.length, 0);
 
-    const featured = memories.filter(function(memory) { return toBoolean_(memory.Featured); });
-    test.truthy('No more than one memory is featured globally', featured.length <= 1);
+    const featuredByEvent = {};
+    memories.forEach(function(memory) {
+      if (!toBoolean_(memory.Featured)) return;
+      const key = String(memory.EventId || '');
+      featuredByEvent[key] = (featuredByEvent[key] || 0) + 1;
+    });
+    const eventsWithMultipleFeatured = Object.keys(featuredByEvent).filter(function(eventId) {
+      return featuredByEvent[eventId] > 1;
+    });
+    test.equal('No adventure has more than one featured memory', eventsWithMultipleFeatured.length, 0);
+
+    const unapprovedFeatured = memories.filter(function(memory) {
+      return toBoolean_(memory.Featured) && !toBoolean_(memory.Approved);
+    });
+    test.equal('Featured memories are always approved', unapprovedFeatured.length, 0);
 
     const unapprovedLeaks = [];
     events.slice(0, 10).forEach(function(event) {

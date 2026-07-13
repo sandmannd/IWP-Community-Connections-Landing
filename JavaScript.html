@@ -1850,6 +1850,13 @@ function ensureMemoryManager() {
 function closeMemoryManager() {
   var modal = document.getElementById('memoryManagerModal');
   if (modal) modal.classList.add('hidden');
+  var input = document.getElementById('memoryUploadFile');
+  if (input) input.value = '';
+  setVal('memoryUploadCaption', '');
+  var preview = document.getElementById('memoryUploadPreview');
+  if (preview) preview.innerHTML = '<span class="memory-upload-icon">' + getDashboardIcon('camera') + '</span><strong>Select a photo</strong>';
+  CURRENT_MEMORY_EVENT_ID = '';
+  CURRENT_MEMORY_EVENT_TITLE = '';
 }
 
 function loadMemoryManager() {
@@ -1982,9 +1989,7 @@ function saveMemoryCaption(memoryId) {
     })
     .withFailureHandler(showError)
     .updateEventMemory(memoryId, {
-      caption: val('memoryCaption-' + memoryId),
-      approved: true,
-      featured: false
+      caption: val('memoryCaption-' + memoryId)
     });
 }
 
@@ -1992,7 +1997,7 @@ function updateMemoryApproval(memoryId, approved) {
   google.script.run
     .withSuccessHandler(loadMemoryManager)
     .withFailureHandler(showError)
-    .updateEventMemory(memoryId, { approved: approved, featured: false });
+    .updateEventMemory(memoryId, { approved: approved });
 }
 
 function updateMemoryFeatured(memoryId, featured) {
@@ -2002,7 +2007,7 @@ function updateMemoryFeatured(memoryId, featured) {
       loadMemoryManager();
     })
     .withFailureHandler(showError)
-    .updateEventMemory(memoryId, { approved: true, featured: featured });
+    .updateEventMemory(memoryId, featured ? { approved: true, featured: true } : { featured: false });
 }
 
 function deleteCommunityMemory(memoryId) {

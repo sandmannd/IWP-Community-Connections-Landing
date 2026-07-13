@@ -91,3 +91,20 @@ Replace manual batched regression testing with a one-click automated regression 
 
 
 V20.6: Browser regression now calls the Apps Script backend summary with a direct google.script.run method invocation. Dynamic property invocation is not supported by the Apps Script client proxy. Landing image checks now allow fallback rendering to settle.
+
+
+## V23 - Community Memories Production Completion (July 13, 2026)
+
+- Community Memories update operations now preserve fields that were not explicitly changed.
+- Featured status is enforced per adventure rather than globally.
+- Unapproved memories cannot remain featured.
+- Server-side upload and caption validation was hardened.
+- Admin memory actions validate the parent adventure before reading, editing, or deleting.
+- The memory manager upload form resets when closed.
+- Regression coverage now checks per-adventure featured limits and featured/approved consistency.
+
+### Deployment validation
+1. Push the V23 source.
+2. Run `runFullRegressionTest()`.
+3. Run the one-click browser regression suite.
+4. Confirm memory upload, caption-only save, approve/unapprove, feature/unfeature, and delete on one test adventure.

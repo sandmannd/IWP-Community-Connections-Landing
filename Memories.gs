@@ -5,6 +5,14 @@ function getMemorySheet_() {
   return createSheetIfMissing_(ss, APP_CONFIG.sheets.memories, getMemoryHeaders_());
 }
 
+function getMemoryRecord_(memoryId) {
+  const memory = getDataObjects_(getMemorySheet_()).find(function(item) {
+    return String(item.MemoryId || '') === String(memoryId || '');
+  });
+  if (!memory) throw new Error('Memory not found.');
+  return memory;
+}
+
 function listApprovedEventMemories_(eventId) {
   const sheet = getMemorySheet_();
   return getDataObjects_(sheet)
@@ -23,12 +31,16 @@ function listApprovedEventMemories_(eventId) {
 
 function listEventMemoriesForAdmin(eventId) {
   requireAdmin_();
+  getEvent(eventId);
 
   return getDataObjects_(getMemorySheet_())
     .filter(function(memory) {
       return String(memory.EventId || '') === String(eventId || '');
     })
     .sort(function(a, b) {
+      if (toBoolean_(a.Featured) !== toBoolean_(b.Featured)) {
+        return toBoolean_(a.Featured) ? -1 : 1;
+      }
       return String(b.CreatedAt || '').localeCompare(String(a.CreatedAt || ''));
     })
     .map(toClientMemory_);
@@ -39,20 +51,26 @@ function uploadEventMemory(eventId, fileData, caption) {
   getEvent(eventId);
 
   fileData = fileData || {};
-  const mimeType = String(fileData.mimeType || 'image/jpeg');
+  const mimeType = String(fileData.mimeType || '').toLowerCase();
   const fileName = String(fileData.fileName || ('memory-' + Date.now() + '.jpg'));
   const base64 = String(fileData.base64 || '').replace(/^data:[^;]+;base64,/, '');
 
   if (!base64) throw new Error('No photo data was received.');
 
-  const bytes = Utilities.base64Decode(base64);
-  if (bytes.length > 8 * 1024 * 1024) {
-    throw new Error('Memory photos must be smaller than 8 MB.');
-  }
-
   const allowed = ['image/jpeg', 'image/png', 'image/webp'];
   if (allowed.indexOf(mimeType) === -1) {
     throw new Error('Use a JPG, PNG, or WebP photo.');
+  }
+
+  let bytes;
+  try {
+    bytes = Utilities.base64Decode(base64);
+  } catch (error) {
+    throw new Error('The photo data could not be read. Please choose the photo again.');
+  }
+
+  if (bytes.length > 8 * 1024 * 1024) {
+    throw new Error('Memory photos must be smaller than 8 MB.');
   }
 
   const folder = getOrCreateMemoryFolder_(eventId);
@@ -65,7 +83,7 @@ function uploadEventMemory(eventId, fileData, caption) {
     EventId: String(eventId),
     ImageUrl: 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1800',
     FileId: file.getId(),
-    Caption: String(caption || '').trim(),
+    Caption: String(caption || '').trim().slice(0, 240),
     Featured: false,
     Approved: true,
     UploadedBy: getCurrentUserEmail_(),
@@ -86,23 +104,40 @@ function updateEventMemory(memoryId, updates) {
   requireAdmin_();
   updates = updates || {};
 
-  const allowed = {
-    Caption: String(updates.Caption || updates.caption || '').trim(),
-    Featured: toBoolean_(updates.Featured !== undefined ? updates.Featured : updates.featured),
-    Approved: toBoolean_(updates.Approved !== undefined ? updates.Approved : updates.approved),
-    UpdatedAt: now_()
-  };
+  const current = getMemoryRecord_(memoryId);
+  getEvent(current.EventId);
 
-  if (allowed.Featured) {
-    clearFeaturedMemories_(memoryId);
+  const allowed = { UpdatedAt: now_() };
+  const hasCaption = Object.prototype.hasOwnProperty.call(updates, 'Caption') ||
+    Object.prototype.hasOwnProperty.call(updates, 'caption');
+  const hasFeatured = Object.prototype.hasOwnProperty.call(updates, 'Featured') ||
+    Object.prototype.hasOwnProperty.call(updates, 'featured');
+  const hasApproved = Object.prototype.hasOwnProperty.call(updates, 'Approved') ||
+    Object.prototype.hasOwnProperty.call(updates, 'approved');
+
+  if (hasCaption) {
+    allowed.Caption = String(updates.Caption !== undefined ? updates.Caption : updates.caption || '')
+      .trim().slice(0, 240);
+  }
+  if (hasApproved) {
+    allowed.Approved = toBoolean_(updates.Approved !== undefined ? updates.Approved : updates.approved);
+  }
+  if (hasFeatured) {
+    allowed.Featured = toBoolean_(updates.Featured !== undefined ? updates.Featured : updates.featured);
   }
 
-  const updated = updateObjectById_(
-    getMemorySheet_(),
-    'MemoryId',
-    memoryId,
-    allowed
-  );
+  const finalApproved = hasApproved ? allowed.Approved : toBoolean_(current.Approved);
+  const finalFeatured = hasFeatured ? allowed.Featured : toBoolean_(current.Featured);
+
+  if (!finalApproved && finalFeatured) {
+    allowed.Featured = false;
+  }
+
+  if (finalApproved && finalFeatured) {
+    clearFeaturedMemories_(current.EventId, memoryId);
+  }
+
+  const updated = updateObjectById_(getMemorySheet_(), 'MemoryId', memoryId, allowed);
 
   return {
     success: true,
@@ -113,6 +148,9 @@ function updateEventMemory(memoryId, updates) {
 
 function deleteEventMemory(memoryId) {
   requireAdmin_();
+
+  const existing = getMemoryRecord_(memoryId);
+  getEvent(existing.EventId);
 
   const sheet = getMemorySheet_();
   const values = sheet.getDataRange().getValues();
@@ -141,26 +179,26 @@ function deleteEventMemory(memoryId) {
   throw new Error('Memory not found.');
 }
 
-function clearFeaturedMemories_(keepMemoryId) {
+function clearFeaturedMemories_(eventId, keepMemoryId) {
   const sheet = getMemorySheet_();
   const values = sheet.getDataRange().getValues();
   if (values.length <= 1) return;
 
   const headers = values[0];
   const idIndex = headers.indexOf('MemoryId');
+  const eventIdIndex = headers.indexOf('EventId');
   const featuredIndex = headers.indexOf('Featured');
   const updatedIndex = headers.indexOf('UpdatedAt');
 
-  if (idIndex < 0 || featuredIndex < 0) return;
+  if (idIndex < 0 || eventIdIndex < 0 || featuredIndex < 0) return;
 
   for (let i = 1; i < values.length; i++) {
+    if (String(values[i][eventIdIndex] || '') !== String(eventId || '')) continue;
     if (String(values[i][idIndex] || '') === String(keepMemoryId || '')) continue;
     if (!toBoolean_(values[i][featuredIndex])) continue;
 
     sheet.getRange(i + 1, featuredIndex + 1).setValue(false);
-    if (updatedIndex >= 0) {
-      sheet.getRange(i + 1, updatedIndex + 1).setValue(now_());
-    }
+    if (updatedIndex >= 0) sheet.getRange(i + 1, updatedIndex + 1).setValue(now_());
   }
 }
 
