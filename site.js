@@ -111,23 +111,64 @@
   function renderLandingCategories(events) {
     var grid = document.getElementById("landingCategoryGrid");
     if (!grid) return;
+
     var seen = {};
     (events || []).forEach(function (event) {
       var type = String(event.type || "").trim();
       if (type) seen[type] = true;
     });
+
     var types = Object.keys(seen).sort();
     if (!types.length) {
-      grid.innerHTML = '<a class="activity-category-card" href="' + escapeAttr(c.appUrl || '#') + '"><span class="activity-category-icon">🤝</span><strong>Browse Adventures</strong><small>View Current Events</small></a>';
+      grid.innerHTML = '<a class="activity-category-card activity-category-card--browse" href="' + escapeAttr(c.appUrl || '#') + '">' +
+        '<span class="activity-category-photo" style="background-image:url(assets/hands-community.jpg)"></span>' +
+        '<span class="activity-category-shade"></span>' +
+        '<span class="activity-category-content"><span class="activity-category-icon">' + categorySvg('browse') + '</span><strong>Browse Adventures</strong></span>' +
+      '</a>';
       return;
     }
+
     grid.innerHTML = types.map(function (type) {
-      return '<a class="activity-category-card" href="' + escapeAttr(c.appUrl || '#') + '">' +
-        '<span class="activity-category-icon">' + categoryIcon(type) + '</span>' +
-        '<strong>' + escapeHtml(type) + '</strong>' +
-        '<small>View Adventures</small>' +
+      var visual = categoryVisual(type);
+      return '<a class="activity-category-card" href="' + escapeAttr(c.appUrl || '#') + '" aria-label="View ' + escapeAttr(type) + ' adventures">' +
+        '<span class="activity-category-photo" style="background-image:url(&quot;' + escapeAttr(visual.image) + '&quot;)"></span>' +
+        '<span class="activity-category-shade"></span>' +
+        '<span class="activity-category-content">' +
+          '<span class="activity-category-icon" aria-hidden="true">' + categorySvg(visual.icon) + '</span>' +
+          '<strong>' + escapeHtml(type) + '</strong>' +
+        '</span>' +
       '</a>';
     }).join('');
+  }
+
+  function categoryVisual(type) {
+    var value = String(type || '').toLowerCase();
+    if (/tub|kayak|canoe|water/.test(value)) return { image: 'assets/kayak.jpg', icon: 'water' };
+    if (/ice\s*fish/.test(value)) return { image: 'assets/ice-fishing.jpg', icon: 'snow' };
+    if (/fish/.test(value)) return { image: 'assets/kayak.jpg', icon: 'fish' };
+    if (/hunt|shoot|archer/.test(value)) return { image: 'assets/hiking.jpg', icon: 'target' };
+    if (/atv|utv|off.?road|ride/.test(value)) return { image: 'assets/hiking.jpg', icon: 'mountain' };
+    if (/camp|bonfire|fire/.test(value)) return { image: 'assets/bonfire.jpg', icon: 'camp' };
+    if (/hik|walk|trail/.test(value)) return { image: 'assets/hiking.jpg', icon: 'hike' };
+    if (/sport|game|bowling|golf|ball/.test(value)) return { image: 'assets/campfire-community.jpg', icon: 'people' };
+    if (/support|social|family|community|wellness/.test(value)) return { image: 'assets/hands-community.jpg', icon: 'people' };
+    return { image: 'assets/campfire-community.jpg', icon: 'people' };
+  }
+
+  function categorySvg(icon) {
+    var common = 'viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"';
+    var icons = {
+      camp: '<svg ' + common + '><path d="M8 53 31 12l25 41H8Z"/><path d="M31 12v41M19 53l12-20 13 20"/></svg>',
+      hike: '<svg ' + common + '><circle cx="39" cy="10" r="5"/><path d="m34 20-9 13 10 8-6 15M35 27l12 8 8-5M25 33l-12 9"/></svg>',
+      fish: '<svg ' + common + '><path d="M10 32c10-13 24-16 37-7l9-7v28l-9-7c-13 9-27 6-37-7Z"/><circle cx="42" cy="28" r="1" fill="currentColor" stroke="none"/></svg>',
+      snow: '<svg ' + common + '><path d="M32 5v54M8 19l48 26M8 45l48-26M20 10l12 10 12-10M20 54l12-10 12 10M9 30l15 2-6 14M55 34l-15-2 6-14"/></svg>',
+      target: '<svg ' + common + '><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="14"/><circle cx="32" cy="32" r="4"/><path d="M32 3v10M32 51v10M3 32h10M51 32h10"/></svg>',
+      water: '<svg ' + common + '><path d="M32 6C20 21 14 29 14 40a18 18 0 0 0 36 0C50 29 44 21 32 6Z"/><path d="M21 43c5 5 14 6 22 0"/></svg>',
+      mountain: '<svg ' + common + '><path d="M5 54 23 22l9 15 8-12 19 29H5Z"/><path d="m17 33 6-11 5 9"/></svg>',
+      people: '<svg ' + common + '><circle cx="32" cy="20" r="8"/><circle cx="14" cy="27" r="6"/><circle cx="50" cy="27" r="6"/><path d="M18 55v-9c0-8 6-14 14-14s14 6 14 14v9M3 55v-6c0-7 5-12 11-12 3 0 5 1 7 3M61 55v-6c0-7-5-12-11-12-3 0-5 1-7 3"/></svg>',
+      browse: '<svg ' + common + '><circle cx="27" cy="27" r="17"/><path d="m40 40 16 16"/></svg>'
+    };
+    return icons[icon] || icons.people;
   }
 
   function renderFeaturedAdventure(event) {
