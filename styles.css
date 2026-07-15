@@ -2055,3 +2055,148 @@ h2, h3 { text-wrap: balance; }
   border-color:#f28c18!important;
   box-shadow:0 0 0 1px rgba(242,140,24,.35),0 22px 48px rgba(0,0,0,.5)!important;
 }
+
+/* Sprint 9C: photo-led story sections replace generic icon cards */
+.visual-stories {
+  padding: 72px 0 82px;
+  border-bottom: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 10% 10%, rgba(33, 88, 155, .16), transparent 34%),
+    radial-gradient(circle at 90% 90%, rgba(224, 95, 37, .12), transparent 32%),
+    linear-gradient(180deg, rgba(6, 16, 28, .98), rgba(3, 10, 18, .98));
+}
+.visual-story-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+.visual-story-card {
+  position: relative;
+  min-height: 340px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 24px;
+  background: #07111d;
+  box-shadow: 0 22px 54px rgba(0,0,0,.34);
+  isolation: isolate;
+  transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+}
+.visual-story-card:hover,
+.visual-story-card:focus-within {
+  transform: translateY(-6px);
+  border-color: rgba(239, 113, 48, .72);
+  box-shadow: 0 28px 66px rgba(0,0,0,.46), 0 0 0 1px rgba(239,113,48,.18);
+}
+.visual-story-media,
+.visual-story-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.visual-story-media img {
+  object-fit: cover;
+  transform: scale(1.01);
+  filter: saturate(.92) contrast(1.04) brightness(.8);
+  transition: transform .75s cubic-bezier(.2,.65,.2,1), filter .35s ease;
+}
+.visual-story-card:hover .visual-story-media img,
+.visual-story-card:focus-within .visual-story-media img {
+  transform: scale(1.065);
+  filter: saturate(1.02) contrast(1.05) brightness(.88);
+}
+.visual-story-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(3,9,16,.06) 8%, rgba(3,9,16,.38) 48%, rgba(3,9,16,.96) 100%),
+    linear-gradient(90deg, rgba(5,13,23,.78), rgba(5,13,23,.06) 72%);
+}
+.visual-story-card--support .visual-story-overlay {
+  background:
+    linear-gradient(180deg, rgba(14,35,65,.08) 5%, rgba(8,23,43,.48) 48%, rgba(4,12,22,.97) 100%),
+    linear-gradient(90deg, rgba(9,31,58,.8), rgba(9,31,58,.04) 72%);
+}
+.visual-story-content {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 2;
+  padding: 34px 34px 30px;
+}
+.visual-story-kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: 999px;
+  background: rgba(5,15,26,.58);
+  color: #f4b085;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+.visual-story-content h2 {
+  margin: 15px 0 8px;
+  max-width: 520px;
+  color: #fff;
+  font-size: clamp(1.8rem, 3.1vw, 3rem);
+  line-height: .98;
+  letter-spacing: -.03em;
+  text-shadow: 0 4px 18px rgba(0,0,0,.55);
+}
+.visual-story-content p {
+  max-width: 540px;
+  margin: 0;
+  color: rgba(255,255,255,.84);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+.visual-story-content a {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 20px;
+  color: #fff;
+  font-weight: 900;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: .055em;
+}
+.visual-story-content a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.visual-story-content a span {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e6672f;
+  transition: transform .22s ease, background .22s ease;
+}
+.visual-story-card:hover .visual-story-content a span,
+.visual-story-card:focus-within .visual-story-content a span {
+  transform: translateX(4px);
+  background: #f07b43;
+}
+@media (max-width: 840px) {
+  .visual-story-grid { grid-template-columns: 1fr; }
+  .visual-story-card { min-height: 320px; }
+}
+@media (max-width: 560px) {
+  .visual-stories { padding: 52px 0 60px; }
+  .visual-story-card { min-height: 300px; border-radius: 18px; }
+  .visual-story-content { padding: 26px 24px 24px; }
+  .visual-story-content h2 { font-size: clamp(1.7rem, 9vw, 2.45rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .visual-story-card,
+  .visual-story-media img,
+  .visual-story-content a span { transition: none !important; }
+}
