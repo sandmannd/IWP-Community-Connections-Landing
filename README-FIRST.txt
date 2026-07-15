@@ -1,13 +1,12 @@
-V24 Sprint 9A PHOTO CATEGORY TILES
+V24 SPRINT 9A - CANONICAL CATEGORY SYSTEM
 
-Copy only these files into the clean landing repository and replace existing files:
-- site.js
-- styles.css
-- assets/kayak.jpg
-- assets/bonfire.jpg
-- assets/hiking.jpg
-- assets/ice-fishing.jpg
-- assets/hands-community.jpg
-- assets/campfire-community.jpg
+Copy the contents of this folder into the clean landing repository and replace matching files.
 
-Do not copy any Apps Script files.
+This increment:
+- keeps only categories that exist in live event data
+- normalizes event-type variations into permanent display categories
+- uses photo tiles with white line icons and no extra buttons
+- establishes a single category artwork registry in site.js
+- leaves all application and API behavior unchanged
+
+Commit only the files that Git reports as changed.

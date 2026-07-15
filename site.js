@@ -112,14 +112,21 @@
     var grid = document.getElementById("landingCategoryGrid");
     if (!grid) return;
 
-    var seen = {};
+    var categories = {};
     (events || []).forEach(function (event) {
-      var type = String(event.type || "").trim();
-      if (type) seen[type] = true;
+      var sourceType = String(event.type || "").trim();
+      if (!sourceType) return;
+      var category = canonicalLandingCategory(sourceType);
+      if (!categories[category.key]) {
+        categories[category.key] = category;
+      }
     });
 
-    var types = Object.keys(seen).sort();
-    if (!types.length) {
+    var items = Object.keys(categories)
+      .map(function (key) { return categories[key]; })
+      .sort(function (a, b) { return a.order - b.order || a.label.localeCompare(b.label); });
+
+    if (!items.length) {
       grid.innerHTML = '<a class="activity-category-card activity-category-card--browse" href="' + escapeAttr(c.appUrl || '#') + '">' +
         '<span class="activity-category-photo" style="background-image:url(assets/hands-community.jpg)"></span>' +
         '<span class="activity-category-shade"></span>' +
@@ -128,31 +135,53 @@
       return;
     }
 
-    grid.innerHTML = types.map(function (type) {
-      var visual = categoryVisual(type);
-      return '<a class="activity-category-card" href="' + escapeAttr(c.appUrl || '#') + '" aria-label="View ' + escapeAttr(type) + ' adventures">' +
+    grid.innerHTML = items.map(function (category) {
+      var visual = categoryVisual(category.key);
+      return '<a class="activity-category-card" href="' + escapeAttr(c.appUrl || '#') + '" aria-label="View ' + escapeAttr(category.label) + ' adventures">' +
         '<span class="activity-category-photo" style="background-image:url(&quot;' + escapeAttr(visual.image) + '&quot;)"></span>' +
         '<span class="activity-category-shade"></span>' +
         '<span class="activity-category-content">' +
           '<span class="activity-category-icon" aria-hidden="true">' + categorySvg(visual.icon) + '</span>' +
-          '<strong>' + escapeHtml(type) + '</strong>' +
+          '<strong>' + escapeHtml(category.label) + '</strong>' +
         '</span>' +
       '</a>';
     }).join('');
   }
 
-  function categoryVisual(type) {
-    var value = String(type || '').toLowerCase();
-    if (/tub|kayak|canoe|water/.test(value)) return { image: 'assets/kayak.jpg', icon: 'water' };
-    if (/ice\s*fish/.test(value)) return { image: 'assets/ice-fishing.jpg', icon: 'snow' };
-    if (/fish/.test(value)) return { image: 'assets/kayak.jpg', icon: 'fish' };
-    if (/hunt|shoot|archer/.test(value)) return { image: 'assets/hiking.jpg', icon: 'target' };
-    if (/atv|utv|off.?road|ride/.test(value)) return { image: 'assets/hiking.jpg', icon: 'mountain' };
-    if (/camp|bonfire|fire/.test(value)) return { image: 'assets/bonfire.jpg', icon: 'camp' };
-    if (/hik|walk|trail/.test(value)) return { image: 'assets/hiking.jpg', icon: 'hike' };
-    if (/sport|game|bowling|golf|ball/.test(value)) return { image: 'assets/campfire-community.jpg', icon: 'people' };
-    if (/support|social|family|community|wellness/.test(value)) return { image: 'assets/hands-community.jpg', icon: 'people' };
-    return { image: 'assets/campfire-community.jpg', icon: 'people' };
+  function canonicalLandingCategory(type) {
+    var value = String(type || '').toLowerCase().replace(/&/g, ' and ');
+    if (/atv|utv|off.?road|four.?wheel|trail ride/.test(value)) return { key: 'atv-utv', label: 'ATV / UTV', order: 10 };
+    if (/camp|camping|bonfire|campfire/.test(value)) return { key: 'camping', label: 'Camping', order: 20 };
+    if (/hik|hiking|walk|walking|trail/.test(value)) return { key: 'hiking', label: 'Hiking', order: 30 };
+    if (/ice\s*fish/.test(value)) return { key: 'ice-fishing', label: 'Ice Fishing', order: 40 };
+    if (/fish/.test(value)) return { key: 'fishing', label: 'Fishing', order: 50 };
+    if (/hunt|hunting|shoot|archer/.test(value)) return { key: 'hunting', label: 'Hunting', order: 60 };
+    if (/tub|tube|kayak|canoe|paddle|water/.test(value)) return { key: 'water-adventures', label: 'Tubing / Kayaking', order: 70 };
+    if (/sport|game|ball|golf|race|rodeo|bowling/.test(value)) return { key: 'sporting-events', label: 'Sporting Events', order: 80 };
+    if (/poker|cribbage|card|board game|game night|bingo/.test(value)) return { key: 'games-social', label: 'Games & Social', order: 90 };
+    if (/family|kid|children/.test(value)) return { key: 'family-activities', label: 'Family Activities', order: 100 };
+    if (/wellness|support|peer|therapy|health/.test(value)) return { key: 'wellness-support', label: 'Wellness & Support', order: 110 };
+    if (/community|meetup|social|connection|gather/.test(value)) return { key: 'community-meetups', label: 'Community Meetups', order: 120 };
+    return { key: 'other-adventures', label: 'Other Adventures', order: 999 };
+  }
+
+  function categoryVisual(key) {
+    var visuals = {
+      'atv-utv': { image: 'assets/hiking.jpg', icon: 'mountain' },
+      'camping': { image: 'assets/bonfire.jpg', icon: 'camp' },
+      'hiking': { image: 'assets/hiking.jpg', icon: 'hike' },
+      'ice-fishing': { image: 'assets/ice-fishing.jpg', icon: 'snow' },
+      'fishing': { image: 'assets/kayak.jpg', icon: 'fish' },
+      'hunting': { image: 'assets/hiking.jpg', icon: 'target' },
+      'water-adventures': { image: 'assets/kayak.jpg', icon: 'water' },
+      'sporting-events': { image: 'assets/campfire-community.jpg', icon: 'people' },
+      'games-social': { image: 'assets/campfire-community.jpg', icon: 'cards' },
+      'family-activities': { image: 'assets/hands-community.jpg', icon: 'family' },
+      'wellness-support': { image: 'assets/hands-community.jpg', icon: 'heart' },
+      'community-meetups': { image: 'assets/campfire-community.jpg', icon: 'people' },
+      'other-adventures': { image: 'assets/campfire-community.jpg', icon: 'browse' }
+    };
+    return visuals[key] || visuals['other-adventures'];
   }
 
   function categorySvg(icon) {
@@ -166,6 +195,9 @@
       water: '<svg ' + common + '><path d="M32 6C20 21 14 29 14 40a18 18 0 0 0 36 0C50 29 44 21 32 6Z"/><path d="M21 43c5 5 14 6 22 0"/></svg>',
       mountain: '<svg ' + common + '><path d="M5 54 23 22l9 15 8-12 19 29H5Z"/><path d="m17 33 6-11 5 9"/></svg>',
       people: '<svg ' + common + '><circle cx="32" cy="20" r="8"/><circle cx="14" cy="27" r="6"/><circle cx="50" cy="27" r="6"/><path d="M18 55v-9c0-8 6-14 14-14s14 6 14 14v9M3 55v-6c0-7 5-12 11-12 3 0 5 1 7 3M61 55v-6c0-7-5-12-11-12-3 0-5 1-7 3"/></svg>',
+      cards: '<svg ' + common + '><rect x="9" y="13" width="30" height="40" rx="4"/><rect x="25" y="7" width="30" height="40" rx="4"/><path d="M40 18l4 6-4 6-4-6 4-6Z"/></svg>',
+      family: '<svg ' + common + '><circle cx="22" cy="20" r="7"/><circle cx="43" cy="20" r="7"/><circle cx="32" cy="35" r="6"/><path d="M8 56v-8c0-9 6-15 14-15 4 0 8 2 10 5M56 56v-8c0-9-6-15-13-15-5 0-8 2-11 5M21 57v-5c0-7 5-12 11-12s11 5 11 12v5"/></svg>',
+      heart: '<svg ' + common + '><path d="M32 55 10 34C-1 23 6 8 19 8c7 0 11 4 13 9 2-5 6-9 13-9 13 0 20 15 9 26L32 55Z"/></svg>',
       browse: '<svg ' + common + '><circle cx="27" cy="27" r="17"/><path d="m40 40 16 16"/></svg>'
     };
     return icons[icon] || icons.people;

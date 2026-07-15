@@ -1973,3 +1973,27 @@ h2, h3 { text-wrap: balance; }
   .activity-button-grid{display:flex!important;overflow-x:auto!important;padding:3px 2px 14px!important;scroll-snap-type:x proximity}
   .activity-category-card{min-width:165px!important;flex:0 0 165px!important;min-height:205px!important;scroll-snap-align:start}
 }
+
+
+/* V24 Sprint 9A canonical category system */
+.activity-button-grid{
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr))!important;
+  max-width:1540px!important;
+  gap:16px!important;
+}
+.activity-category-card{
+  min-height:245px!important;
+  aspect-ratio:4/5;
+}
+.activity-category-content{
+  inset:auto 14px 18px!important;
+  gap:10px!important;
+}
+.activity-category-icon{width:56px!important;height:56px!important}
+.activity-category-card strong{font-size:clamp(1.1rem,1.35vw,1.45rem)!important;max-width:100%}
+@media(min-width:1200px){
+  .activity-button-grid{grid-template-columns:repeat(auto-fit,minmax(185px,1fr))!important}
+}
+@media(max-width:850px){
+  .activity-category-card{min-width:178px!important;flex-basis:178px!important;min-height:225px!important;aspect-ratio:auto}
+}
