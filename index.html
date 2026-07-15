@@ -9,10 +9,11 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css">
+  <link rel="preload" as="image" href="assets/iwp-main-banner.webp" type="image/webp" fetchpriority="high">
 </head>
 <body>
 <header class="site-header image-header" aria-label="IWP Community Connections navigation">
-  <img class="top-of-page-image" src="assets/iwp-top-of-page-clean.png" alt="IWP Community Connections, You Are Not Alone">
+  <picture><source srcset="assets/iwp-top-of-page-clean.webp" type="image/webp"><img class="top-of-page-image" src="assets/iwp-top-of-page-clean.png" alt="IWP Community Connections, You Are Not Alone" decoding="async"></picture>
   <button class="mobile-menu-button image-menu-button" type="button" aria-expanded="false" aria-controls="mainNavigation">Menu</button>
   <nav class="image-header-nav" id="mainNavigation" aria-label="Main navigation">
     <a class="is-active" data-launch-app href="#">⌂&nbsp; Find Adventures</a>
@@ -24,7 +25,7 @@
 </header>
 <main>
   <section class="hero exact-banner-hero reveal is-visible" aria-label="IWP Community Connections banner">
-    <img class="exact-banner-image" src="assets/iwp-main-banner.png" alt="IWP Community Connections. You Are Not Alone. Bringing together Military, First Responders, Front-Line Workers, and families through shared experiences, adventures, and the power of community.">
+    <picture><source srcset="assets/iwp-main-banner.webp" type="image/webp"><img class="exact-banner-image" src="assets/iwp-main-banner.png" alt="IWP Community Connections. You Are Not Alone. Bringing together Military, First Responders, Front-Line Workers, and families through shared experiences, adventures, and the power of community." decoding="async" fetchpriority="high"></picture>
     <div class="sr-only">
       <h1>IWP Community Connections</h1>
       <p>Find your next adventure through member-organized Community Connections activities.</p>

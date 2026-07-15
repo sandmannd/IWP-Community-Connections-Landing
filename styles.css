@@ -1997,3 +1997,26 @@ h2, h3 { text-wrap: balance; }
 @media(max-width:850px){
   .activity-category-card{min-width:178px!important;flex-basis:178px!important;min-height:225px!important;aspect-ratio:auto}
 }
+
+/* Sprint 9B: fast image placeholders and GPU-friendly transitions */
+.activity-category-photo{
+  opacity:0;
+  transform:scale(1.025);
+  transition:opacity .32s ease,transform .55s cubic-bezier(.2,.7,.2,1);
+  will-change:opacity,transform;
+  background-color:#0b1d2d;
+}
+.activity-category-photo.is-loading{
+  opacity:1;
+  background-image:linear-gradient(110deg,#0a1825 20%,#16334b 38%,#0a1825 56%);
+  background-size:220% 100%;
+  animation:iwpCategorySkeleton 1.35s linear infinite;
+}
+.activity-category-photo.is-loaded{opacity:1;transform:scale(1)}
+.activity-category-photo.is-error{opacity:1;background-image:linear-gradient(145deg,#10283c,#050d16)}
+.activity-category-card:hover .activity-category-photo.is-loaded,
+.activity-category-card:focus-visible .activity-category-photo.is-loaded{transform:scale(1.055)}
+@keyframes iwpCategorySkeleton{to{background-position:-220% 0}}
+@media (prefers-reduced-motion:reduce){
+  .activity-category-photo{transition:none!important;animation:none!important}
+}

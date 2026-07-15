@@ -128,7 +128,7 @@
 
     if (!items.length) {
       grid.innerHTML = '<a class="activity-category-card activity-category-card--browse" href="' + escapeAttr(c.appUrl || '#') + '">' +
-        '<span class="activity-category-photo" style="background-image:url(assets/hands-community.jpg)"></span>' +
+        '<span class="activity-category-photo is-loading" data-bg="assets/hands-community.webp"></span>' +
         '<span class="activity-category-shade"></span>' +
         '<span class="activity-category-content"><span class="activity-category-icon">' + categorySvg('browse') + '</span><strong>Browse Adventures</strong></span>' +
       '</a>';
@@ -138,7 +138,7 @@
     grid.innerHTML = items.map(function (category) {
       var visual = categoryVisual(category.key);
       return '<a class="activity-category-card" href="' + escapeAttr(c.appUrl || '#') + '" aria-label="View ' + escapeAttr(category.label) + ' adventures">' +
-        '<span class="activity-category-photo" style="background-image:url(&quot;' + escapeAttr(visual.image) + '&quot;)"></span>' +
+        '<span class="activity-category-photo is-loading" data-bg="' + escapeAttr(visual.image) + '"></span>' +
         '<span class="activity-category-shade"></span>' +
         '<span class="activity-category-content">' +
           '<span class="activity-category-icon" aria-hidden="true">' + categorySvg(visual.icon) + '</span>' +
@@ -146,6 +146,43 @@
         '</span>' +
       '</a>';
     }).join('');
+    activateLazyCategoryImages(grid);
+  }
+
+  function activateLazyCategoryImages(root) {
+    var photos = Array.prototype.slice.call((root || document).querySelectorAll('.activity-category-photo[data-bg]'));
+    if (!photos.length) return;
+
+    function loadPhoto(photo) {
+      if (!photo || photo.dataset.loaded === 'true') return;
+      var src = photo.getAttribute('data-bg');
+      if (!src) return;
+      var img = new Image();
+      img.decoding = 'async';
+      img.onload = function () {
+        photo.style.backgroundImage = 'url(\"' + src.replace(/\"/g, '') + '\")';
+        photo.dataset.loaded = 'true';
+        photo.classList.remove('is-loading');
+        window.requestAnimationFrame(function () { photo.classList.add('is-loaded'); });
+      };
+      img.onerror = function () { photo.classList.remove('is-loading'); photo.classList.add('is-error'); };
+      img.src = src;
+    }
+
+    if (!('IntersectionObserver' in window)) {
+      photos.forEach(loadPhoto);
+      return;
+    }
+
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        loadPhoto(entry.target);
+        observer.unobserve(entry.target);
+      });
+    }, { rootMargin: '260px 0px', threshold: 0.01 });
+
+    photos.forEach(function (photo) { observer.observe(photo); });
   }
 
   function canonicalLandingCategory(type) {
@@ -167,19 +204,19 @@
 
   function categoryVisual(key) {
     var visuals = {
-      'atv-utv': { image: 'assets/hiking.jpg', icon: 'mountain' },
-      'camping': { image: 'assets/bonfire.jpg', icon: 'camp' },
-      'hiking': { image: 'assets/hiking.jpg', icon: 'hike' },
-      'ice-fishing': { image: 'assets/ice-fishing.jpg', icon: 'snow' },
-      'fishing': { image: 'assets/kayak.jpg', icon: 'fish' },
-      'hunting': { image: 'assets/hiking.jpg', icon: 'target' },
-      'water-adventures': { image: 'assets/kayak.jpg', icon: 'water' },
-      'sporting-events': { image: 'assets/campfire-community.jpg', icon: 'people' },
-      'games-social': { image: 'assets/campfire-community.jpg', icon: 'cards' },
-      'family-activities': { image: 'assets/hands-community.jpg', icon: 'family' },
-      'wellness-support': { image: 'assets/hands-community.jpg', icon: 'heart' },
-      'community-meetups': { image: 'assets/campfire-community.jpg', icon: 'people' },
-      'other-adventures': { image: 'assets/campfire-community.jpg', icon: 'browse' }
+      'atv-utv': { image: 'assets/hiking.webp', icon: 'mountain' },
+      'camping': { image: 'assets/bonfire.webp', icon: 'camp' },
+      'hiking': { image: 'assets/hiking.webp', icon: 'hike' },
+      'ice-fishing': { image: 'assets/ice-fishing.webp', icon: 'snow' },
+      'fishing': { image: 'assets/kayak.webp', icon: 'fish' },
+      'hunting': { image: 'assets/hiking.webp', icon: 'target' },
+      'water-adventures': { image: 'assets/kayak.webp', icon: 'water' },
+      'sporting-events': { image: 'assets/campfire-community.webp', icon: 'people' },
+      'games-social': { image: 'assets/campfire-community.webp', icon: 'cards' },
+      'family-activities': { image: 'assets/hands-community.webp', icon: 'family' },
+      'wellness-support': { image: 'assets/hands-community.webp', icon: 'heart' },
+      'community-meetups': { image: 'assets/campfire-community.webp', icon: 'people' },
+      'other-adventures': { image: 'assets/campfire-community.webp', icon: 'browse' }
     };
     return visuals[key] || visuals['other-adventures'];
   }
