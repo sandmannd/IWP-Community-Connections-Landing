@@ -68,45 +68,39 @@
 
   <section class="features visual-stories reveal" id="about">
     <div class="container visual-story-grid">
-      <article class="visual-story-card reveal-item">
+      <article class="visual-story-card visual-story-card--events reveal-item">
         <picture class="visual-story-media">
           <source srcset="assets/campfire-community.webp" type="image/webp">
           <img src="assets/campfire-community.jpg" alt="Community members gathering around a fire" loading="lazy" decoding="async">
         </picture>
         <div class="visual-story-overlay"></div>
         <div class="visual-story-content">
-          <span class="visual-story-kicker">Shared Experiences</span>
-          <h2>Community Events</h2>
-          <p>Find and join events that bring our community together.</p>
-          <a data-launch-app href="#">Explore Events <span aria-hidden="true">→</span></a>
+          <span class="visual-story-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <div><span class="visual-story-kicker">Shared Experiences</span><h2>Community Events</h2><p>Find and join events that bring our community together.</p><a data-launch-app href="#">Explore Events <span aria-hidden="true">→</span></a></div>
         </div>
       </article>
 
-      <article class="visual-story-card reveal-item">
+      <article class="visual-story-card visual-story-card--connections reveal-item">
         <picture class="visual-story-media">
           <source srcset="assets/hands-community.webp" type="image/webp">
           <img src="assets/hands-community.jpg" alt="People connecting and supporting one another" loading="lazy" decoding="async">
         </picture>
         <div class="visual-story-overlay"></div>
         <div class="visual-story-content">
-          <span class="visual-story-kicker">Stronger Together</span>
-          <h2>Build Connections</h2>
-          <p>Meet others who understand and support your journey.</p>
-          <a data-href-config="facebookUrl" target="_blank" rel="noopener">Connect Today <span aria-hidden="true">→</span></a>
+          <span class="visual-story-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7.5 11.5 4 8l-2 2 5.5 5.5c1 1 2.6 1 3.6 0l1.4-1.4"/><path d="m16.5 11.5 3.5-3.5 2 2-5.5 5.5c-1 1-2.6 1-3.6 0L9 11.6"/><path d="m8 8 2.2-2.2a2.5 2.5 0 0 1 3.6 0L16 8"/></svg></span>
+          <div><span class="visual-story-kicker">Stronger Together</span><h2>Build Connections</h2><p>Meet others who understand and support your journey.</p><a data-href-config="facebookUrl" target="_blank" rel="noopener">Connect Today <span aria-hidden="true">→</span></a></div>
         </div>
       </article>
 
-      <article class="visual-story-card reveal-item">
+      <article class="visual-story-card visual-story-card--adventure reveal-item">
         <picture class="visual-story-media">
           <source srcset="assets/hiking.webp" type="image/webp">
           <img src="assets/hiking.jpg" alt="People exploring an outdoor trail together" loading="lazy" decoding="async">
         </picture>
         <div class="visual-story-overlay"></div>
         <div class="visual-story-content">
-          <span class="visual-story-kicker">Your Next Chapter</span>
-          <h2>Adventure Awaits</h2>
-          <p>From outdoor adventures to casual meetups, there is something for everyone.</p>
-          <a data-launch-app href="#">See What's Next <span aria-hidden="true">→</span></a>
+          <span class="visual-story-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 20 6-10 4 6 2-3 6 7H3Z"/><path d="M14 5h4M16 3v4"/></svg></span>
+          <div><span class="visual-story-kicker">Your Next Chapter</span><h2>Adventure Awaits</h2><p>From outdoor adventures to casual meetups, there is something for everyone.</p><a data-launch-app href="#">See What's Next <span aria-hidden="true">→</span></a></div>
         </div>
       </article>
 
@@ -117,89 +111,37 @@
         </picture>
         <div class="visual-story-overlay"></div>
         <div class="visual-story-content">
-          <span class="visual-story-kicker">Invisible Wounds Project</span>
-          <h2>You Are Not Alone</h2>
-          <p>A community that stands together, heals together, and grows together.</p>
-          <a data-href-config="iwpWebsiteUrl" target="_blank" rel="noopener">Learn More <span aria-hidden="true">→</span></a>
+          <span class="visual-story-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg></span>
+          <div><span class="visual-story-kicker">Invisible Wounds Project</span><h2>You Are Not Alone</h2><p>A community that stands together, heals together, and grows together.</p><a data-href-config="iwpWebsiteUrl" target="_blank" rel="noopener">Learn More <span aria-hidden="true">→</span></a></div>
         </div>
       </article>
     </div>
   </section>
 
-
-
   <section class="how-it-works reveal" id="how-it-works">
     <div class="container">
-      <div class="section-heading">
-        <span class="eyebrow">How It Works</span>
-        <h2>Find an adventure. Reserve your spot. Show up and connect.</h2>
-        <p>Community Connections keeps the process simple from the first click through event day.</p>
+      <div class="compact-section-heading"><span class="eyebrow">How It Works</span><h2>Find an adventure. Reserve your spot. Show up and connect.</h2></div>
+      <div class="steps-grid compact-steps">
+        <article class="step-card reveal-item"><span class="step-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></span><span class="step-number">01</span><h3>Find an Event</h3><p>Browse by category, location, or date.</p></article>
+        <article class="step-card reveal-item"><span class="step-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg></span><span class="step-number">02</span><h3>Reserve Your Spot</h3><p>Register in minutes and include family if needed.</p></article>
+        <article class="step-card reveal-item"><span class="step-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><span class="step-number">03</span><h3>Get Updates</h3><p>Receive reminders and important event details.</p></article>
+        <article class="step-card reveal-item"><span class="step-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="step-number">04</span><h3>Show Up & Connect</h3><p>Enjoy the event and build connections that matter.</p></article>
       </div>
-
-      <div class="steps-grid">
-        <article class="step-card reveal-item">
-          <span class="step-number">01</span>
-          <div class="step-icon">🔎</div>
-          <h3>Browse Adventures</h3>
-          <p>See upcoming dates, locations, costs, capacity, and the details you need before registering.</p>
-        </article>
-
-        <article class="step-card reveal-item">
-          <span class="step-number">02</span>
-          <div class="step-icon">✅</div>
-          <h3>Register in Minutes</h3>
-          <p>Reserve your spot, include family members, complete required acknowledgements, or join a waitlist.</p>
-        </article>
-
-        <article class="step-card reveal-item">
-          <span class="step-number">03</span>
-          <div class="step-icon">🤝</div>
-          <h3>Connect With Community</h3>
-          <p>Receive event updates and reminders, then spend time with people who understand and support the journey.</p>
-        </article>
-      </div>
-
-      <div class="how-actions">
-        <a class="button" data-launch-app href="#">Browse Upcoming Adventures →</a>
-        <a class="button secondary" data-href-config="facebookUrl" target="_blank" rel="noopener">Visit the Facebook Group</a>
-      </div>
+      <div class="how-actions"><a class="button" data-launch-app href="#">Browse Upcoming Adventures →</a><a class="button secondary" data-href-config="facebookUrl" target="_blank" rel="noopener">Visit the Facebook Group</a></div>
     </div>
   </section>
-
 
   <section class="community-impact reveal" id="impact">
-    <div class="container">
-      <div class="section-heading impact-heading">
-        <span class="eyebrow">Community Impact</span>
-        <h2>Connection is more than attendance. It changes lives.</h2>
-        <p>Community Connections exists to help people step out of isolation, build meaningful relationships, and keep showing up for one another.</p>
-      </div>
-
-      <div class="impact-grid">
-        <article class="impact-card reveal-item">
-          <span class="impact-icon">🗓</span>
-          <strong>Adventure</strong>
-          <p>Shared activities create natural opportunities to meet, laugh, and reconnect.</p>
-        </article>
-        <article class="impact-card reveal-item">
-          <span class="impact-icon">🤝</span>
-          <strong>Belonging</strong>
-          <p>People find others who understand the experiences they carry every day.</p>
-        </article>
-        <article class="impact-card reveal-item">
-          <span class="impact-icon">👨‍👩‍👧</span>
-          <strong>Family</strong>
-          <p>Spouses, partners, and children are included in building stronger support networks.</p>
-        </article>
-        <article class="impact-card reveal-item">
-          <span class="impact-icon">♥</span>
-          <strong>Hope</strong>
-          <p>One invitation, one conversation, and one connection can change the direction of a life.</p>
-        </article>
+    <div class="container impact-compact-shell">
+      <div class="impact-compact-copy"><span class="eyebrow">Community Impact</span><h2>Connection is more than attendance. It changes lives.</h2><p>Shared experiences help people step out of isolation, build meaningful relationships, and keep showing up for one another.</p></div>
+      <div class="impact-grid impact-grid--compact">
+        <article class="impact-card reveal-item"><span class="impact-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg></span><strong>Adventure</strong><p>Meet, laugh, and reconnect.</p></article>
+        <article class="impact-card reveal-item"><span class="impact-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7.5 11.5 4 8l-2 2 5.5 5.5c1 1 2.6 1 3.6 0l1.4-1.4"/><path d="m16.5 11.5 3.5-3.5 2 2-5.5 5.5c-1 1-2.6 1-3.6 0L9 11.6"/></svg></span><strong>Belonging</strong><p>Find people who understand.</p></article>
+        <article class="impact-card reveal-item"><span class="impact-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="8" r="2"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M15 21v-1a5 5 0 0 1 6-4.9"/></svg></span><strong>Family</strong><p>Include spouses, partners, and children.</p></article>
+        <article class="impact-card reveal-item"><span class="impact-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg></span><strong>Hope</strong><p>One connection can change a life.</p></article>
       </div>
     </div>
   </section>
-
 
   <section class="testimonials reveal" id="stories">
     <div class="container testimonials-shell">

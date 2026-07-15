@@ -2200,3 +2200,43 @@ h2, h3 { text-wrap: balance; }
   .visual-story-media img,
   .visual-story-content a span { transition: none !important; }
 }
+
+/* Sprint 9C compact lower-page refinement. Header, banner, disclaimer and category tiles remain untouched. */
+.visual-stories{padding:42px 0 48px}
+.visual-story-grid{gap:16px}
+.visual-story-card{min-height:238px;border-radius:18px}
+.visual-story-card--events .visual-story-media img{object-position:center 58%}
+.visual-story-card--connections .visual-story-media img{object-position:center 52%}
+.visual-story-card--adventure .visual-story-media img{object-position:center 52%}
+.visual-story-card--support .visual-story-media img{object-position:center 48%}
+.visual-story-content{display:flex;align-items:flex-end;gap:18px;padding:24px}
+.visual-story-icon{display:grid;place-items:center;flex:0 0 58px;width:58px;height:58px;border:1px solid rgba(242,140,24,.78);border-radius:50%;background:rgba(6,16,28,.82);color:#f28c18;box-shadow:0 10px 26px rgba(0,0,0,.32)}
+.visual-story-icon svg,.step-icon-svg svg,.impact-icon-svg svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.visual-story-kicker{min-height:0;padding:0;border:0;background:transparent;color:#ff9d2f;backdrop-filter:none}
+.visual-story-content h2{margin:5px 0 4px;font-size:clamp(1.5rem,2.2vw,2.15rem)}
+.visual-story-content p{font-size:.93rem;line-height:1.4}
+.visual-story-content a{margin-top:10px;font-size:.82rem;color:#ff9d2f}
+.visual-story-content a span{width:auto;height:auto;border-radius:0;background:transparent;color:#ff9d2f}
+.how-it-works{padding:52px 0 48px}
+.compact-section-heading{text-align:center;max-width:980px;margin:0 auto 28px}
+.compact-section-heading h2{margin:8px 0 0;font-size:clamp(2rem,4.2vw,4.25rem);line-height:.98}
+.compact-steps{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.compact-steps .step-card{min-height:0;padding:22px 18px;text-align:center;border-radius:18px}
+.step-icon-svg{display:grid;place-items:center;width:54px;height:54px;margin:0 auto 10px;border:1px solid rgba(242,140,24,.82);border-radius:50%;color:#f28c18;background:rgba(242,140,24,.06)}
+.compact-steps .step-number{position:static;display:block;margin:0 0 5px;color:rgba(255,255,255,.28);font-size:.75rem;font-weight:900;letter-spacing:.18em}
+.compact-steps h3{margin:0 0 7px;font-size:1.02rem;color:#fff}
+.compact-steps p{margin:0;font-size:.86rem;line-height:1.45}
+.how-actions{margin-top:24px}
+.community-impact{padding:48px 0}
+.impact-compact-shell{display:grid;grid-template-columns:minmax(280px,.9fr) minmax(0,1.5fr);gap:28px;align-items:center}
+.impact-compact-copy h2{margin:8px 0 12px;font-size:clamp(2rem,3.7vw,3.8rem);line-height:1}
+.impact-compact-copy p{margin:0;color:var(--muted);line-height:1.6}
+.impact-grid--compact{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.impact-grid--compact .impact-card{min-height:170px;padding:20px 16px;border-radius:18px}
+.impact-icon-svg{display:grid;place-items:center;width:44px;height:44px;margin-bottom:14px;color:#f28c18}
+.impact-icon-svg svg{width:28px;height:28px}
+.impact-grid--compact .impact-card strong{font-size:1.08rem}
+.impact-grid--compact .impact-card p{margin-top:7px;font-size:.86rem;line-height:1.45}
+@media(max-width:1050px){.compact-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.impact-compact-shell{grid-template-columns:1fr}.impact-grid--compact{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:760px){.visual-story-grid{grid-template-columns:1fr}.visual-story-card{min-height:230px}.compact-steps,.impact-grid--compact{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.visual-story-content{gap:12px;padding:20px}.visual-story-icon{flex-basis:48px;width:48px;height:48px}.visual-story-icon svg{width:25px;height:25px}.compact-steps,.impact-grid--compact{grid-template-columns:1fr}.compact-steps .step-card,.impact-grid--compact .impact-card{min-height:0}.impact-compact-copy{text-align:center}}
