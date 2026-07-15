@@ -2096,3 +2096,57 @@ h2, h3 { text-wrap: balance; }
 .lp9d-anchor{height:0;overflow:hidden}
 @media(max-width:900px){.lp9d-story-grid{grid-template-columns:1fr}.lp9d-story-card{height:260px}.lp9d-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.lp9d-impact-panel{grid-template-columns:1fr}}
 @media(max-width:600px){.lp9d-shell{width:min(100% - 24px,1320px)}.lp9d-story-card{height:230px}.lp9d-story-copy{left:20px;right:18px;bottom:20px}.lp9d-card-shade{background:linear-gradient(0deg,rgba(2,10,18,.98),rgba(2,10,18,.22) 85%)}.lp9d-steps{grid-template-columns:1fr}.lp9d-impact-panel{padding:24px}.lp9d-featured-card .featured-loading{padding:22px}}
+
+/* ================================================================
+   V24 Sprint 9E - Premium polish pass
+   ================================================================ */
+:root{--iwp-ease:cubic-bezier(.22,.7,.22,1)}
+.activity-category-card,.lp9d-story-card,.lp9d-steps article,.lp9d-impact-panel,.lp9d-featured-card{
+  transform:translateZ(0);
+  transition:transform .24s var(--iwp-ease),box-shadow .24s var(--iwp-ease),border-color .24s ease,filter .24s ease!important;
+}
+.activity-category-card:hover,.lp9d-story-card:hover,.lp9d-steps article:hover{
+  transform:translateY(-5px)!important;
+  box-shadow:0 22px 48px rgba(0,0,0,.42)!important;
+}
+.activity-category-card:active,.lp9d-story-card:active{transform:translateY(-1px) scale(.992)!important}
+.lp9d-story-card>img,.activity-category-photo{transition:transform .5s var(--iwp-ease),opacity .3s ease!important}
+.lp9d-story-card:hover>img,.activity-category-card:hover .activity-category-photo{transform:scale(1.045)!important}
+.lp9d-actions a,.hero-actions a,.button,.btn,button{
+  position:relative;
+  overflow:hidden;
+  transform:translateZ(0);
+  transition:transform .18s var(--iwp-ease),box-shadow .22s ease,filter .22s ease!important;
+}
+.lp9d-actions a:hover,.hero-actions a:hover,.button:hover,.btn:hover,button:hover{transform:translateY(-2px);filter:brightness(1.06)}
+.lp9d-actions a:active,.hero-actions a:active,.button:active,.btn:active,button:active{transform:translateY(1px) scale(.985)}
+.lp9d-heading h2,.lp9d-story-copy h2,.lp9d-impact-panel h2,.activity-section-title{line-height:1.02!important;letter-spacing:.015em!important}
+.lp9d-story-copy p,.lp9d-steps p,.lp9d-impact-panel p{line-height:1.48!important}
+.lp9d-stories{padding-top:16px!important}
+.lp9d-story-grid{gap:14px!important}
+.lp9d-story-card{height:250px!important}
+.lp9d-story-copy{bottom:22px!important}
+.lp9d-how{padding:28px 0!important}
+.lp9d-steps article{min-height:158px!important;padding:20px!important}
+.lp9d-impact{padding-bottom:34px!important}
+.lp9d-impact-panel{padding:26px 30px!important}
+@media(max-width:900px){
+  .lp9d-story-card{height:230px!important}
+  .lp9d-story-grid{gap:12px!important}
+  .lp9d-how{padding:24px 0!important}
+}
+@media(max-width:600px){
+  .lp9d-shell{width:min(100% - 20px,1320px)!important}
+  .lp9d-story-card{height:210px!important;border-radius:15px!important}
+  .lp9d-story-copy{left:17px!important;right:14px!important;bottom:16px!important}
+  .lp9d-story-copy h2{font-size:1.25rem!important;margin-bottom:6px!important}
+  .lp9d-story-copy p{font-size:.92rem!important;margin-bottom:8px!important}
+  .lp9d-steps{gap:10px!important}
+  .lp9d-steps article{min-height:0!important;padding:18px!important}
+  .lp9d-impact-panel{padding:21px!important;gap:18px!important}
+  .activity-category-card{border-radius:15px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .activity-category-card,.lp9d-story-card,.lp9d-steps article,.lp9d-impact-panel,.lp9d-featured-card,
+  .lp9d-actions a,.hero-actions a,.button,.btn,button,.lp9d-story-card>img,.activity-category-photo{transition:none!important}
+}
