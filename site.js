@@ -75,7 +75,7 @@
     var upcoming = data && data.upcoming ? data.upcoming : [];
     renderFeaturedAdventure(data && data.featured);
     renderUpcomingAdventures(upcoming);
-    renderLandingCategories(upcoming);
+    renderLandingCategories(upcoming, data && data.featured);
   };
 
   function loadLandingData() {
@@ -108,41 +108,64 @@
     return /^https:\/\//i.test(value);
   }
 
-  function renderLandingCategories(events) {
+  function renderLandingCategories(events, featuredEvent) {
     var grid = document.getElementById("landingCategoryGrid");
     if (!grid) return;
 
+    var featuredCategory = featuredEvent ? canonicalLandingCategory(featuredEvent.type) : null;
     var categories = {};
+
     (events || []).forEach(function (event) {
       var sourceType = String(event.type || "").trim();
       if (!sourceType) return;
+
       var category = canonicalLandingCategory(sourceType);
       if (!categories[category.key]) {
-        categories[category.key] = category;
+        categories[category.key] = {
+          key: category.key,
+          label: category.label,
+          order: category.order,
+          count: 0,
+          featured: false
+        };
       }
+      categories[category.key].count += 1;
     });
+
+    if (featuredCategory && categories[featuredCategory.key]) {
+      categories[featuredCategory.key].featured = true;
+    }
 
     var items = Object.keys(categories)
       .map(function (key) { return categories[key]; })
-      .sort(function (a, b) { return a.order - b.order || a.label.localeCompare(b.label); });
+      .sort(function (a, b) {
+        if (a.featured !== b.featured) return a.featured ? -1 : 1;
+        return b.count - a.count || a.order - b.order || a.label.localeCompare(b.label);
+      });
 
     if (!items.length) {
       grid.innerHTML = '<a class="activity-category-card activity-category-card--browse" href="' + escapeAttr(c.appUrl || '#') + '">' +
         '<span class="activity-category-photo is-loading" data-bg="assets/hands-community.webp"></span>' +
         '<span class="activity-category-shade"></span>' +
-        '<span class="activity-category-content"><span class="activity-category-icon">' + categorySvg('browse') + '</span><strong>Browse Adventures</strong></span>' +
+        '<span class="activity-category-content"><span class="activity-category-icon">' + categorySvg('browse') + '</span><strong>Browse Adventures</strong><span class="activity-category-count">New adventures coming soon</span></span>' +
       '</a>';
+      activateLazyCategoryImages(grid);
       return;
     }
 
     grid.innerHTML = items.map(function (category) {
       var visual = categoryVisual(category.key);
-      return '<a class="activity-category-card" href="' + escapeAttr(c.appUrl || '#') + '" aria-label="View ' + escapeAttr(category.label) + ' adventures">' +
+      var countLabel = category.count + ' ' + (category.count === 1 ? 'Adventure' : 'Adventures');
+      var featuredBadge = category.featured ? '<span class="activity-category-featured">★ Featured</span>' : '';
+
+      return '<a class="activity-category-card' + (category.featured ? ' is-featured' : '') + '" href="' + escapeAttr(c.appUrl || '#') + '" aria-label="View ' + escapeAttr(category.label) + ' adventures, ' + category.count + ' available">' +
         '<span class="activity-category-photo is-loading" data-bg="' + escapeAttr(visual.image) + '"></span>' +
         '<span class="activity-category-shade"></span>' +
+        featuredBadge +
         '<span class="activity-category-content">' +
           '<span class="activity-category-icon" aria-hidden="true">' + categorySvg(visual.icon) + '</span>' +
           '<strong>' + escapeHtml(category.label) + '</strong>' +
+          '<span class="activity-category-count">' + escapeHtml(countLabel) + '</span>' +
         '</span>' +
       '</a>';
     }).join('');
@@ -199,7 +222,25 @@
     if (/family|kid|children/.test(value)) return { key: 'family-activities', label: 'Family Activities', order: 100 };
     if (/wellness|support|peer|therapy|health/.test(value)) return { key: 'wellness-support', label: 'Wellness & Support', order: 110 };
     if (/community|meetup|social|connection|gather/.test(value)) return { key: 'community-meetups', label: 'Community Meetups', order: 120 };
-    return { key: 'other-adventures', label: 'Other Adventures', order: 999 };
+    var fallbackLabel = titleCaseCategory(type) || 'Other Adventures';
+    return { key: slugifyCategory(fallbackLabel), label: fallbackLabel, order: 900 };
+  }
+
+  function titleCaseCategory(value) {
+    return String(value || '')
+      .trim()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .replace(/\b\w/g, function (letter) { return letter.toUpperCase(); });
+  }
+
+  function slugifyCategory(value) {
+    var slug = String(value || '')
+      .toLowerCase()
+      .replace(/&/g, ' and ')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return slug || 'other-adventures';
   }
 
   function categoryVisual(key) {
