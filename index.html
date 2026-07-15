@@ -11,67 +11,36 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header class="site-header">
-  <div class="container nav">
-    <a class="brand" href="index.html">
-      <img src="assets/iwp-logo.png" alt="Invisible Wounds Project logo" width="82" height="82" decoding="async">
-      <span>
-        <span class="brand-title">IWP COMMUNITY CONNECTIONS</span>
-        <span class="brand-subtitle">You Are Not Alone.</span>
-      </span>
-    </a>
-    <button class="mobile-menu-button" type="button" aria-expanded="false" aria-controls="mainNavigation">Menu</button>
-    <nav class="nav-links" id="mainNavigation" aria-label="Main navigation">
-      <a href="index.html">Home</a>
-      <a href="index.html#about">About</a>
-      <a href="index.html#impact">Impact</a>
-      <a data-launch-app href="#">Events</a>
-      <a href="index.html#resources">Resources</a>
-      <a class="facebook-nav" data-href-config="facebookUrl" target="_blank" rel="noopener">Facebook Group</a>
-      <a data-mailto-config="supportEmail" href="#">Contact</a>
-    </nav>
-  </div>
+<header class="site-header image-header" aria-label="IWP Community Connections navigation">
+  <img class="top-of-page-image" src="assets/iwp-top-of-page-clean.png" alt="IWP Community Connections, You Are Not Alone">
+  <button class="mobile-menu-button image-menu-button" type="button" aria-expanded="false" aria-controls="mainNavigation">Menu</button>
+  <nav class="image-header-nav" id="mainNavigation" aria-label="Main navigation">
+    <a class="is-active" data-launch-app href="#">⌂&nbsp; Find Adventures</a>
+    <a data-launch-app href="#">Adventure Builder</a>
+    <a href="#featured">Featured Adventure</a>
+    <a href="#resources">Resources</a>
+    <a class="facebook-nav" data-href-config="facebookUrl" target="_blank" rel="noopener">●&nbsp; Facebook Group</a>
+  </nav>
 </header>
 <main>
-  <section class="hero reveal is-visible">
-    <div class="container hero-grid">
-      <div>
-        <span class="eyebrow">Building Connections. Healing Together.</span>
-        <h1>Stronger Together.<br>Better Together.</h1>
-        <p class="hero-copy">IWP Community Connections brings Veterans, First Responders, Front-Line Workers, and families together through adventure, camaraderie, and community.</p>
-        <div class="actions">
-          <a class="button" data-launch-app href="#">🗓 View Upcoming Events</a>
-          <a class="button secondary" data-href-config="facebookUrl" target="_blank" rel="noopener">👥 Join Our Community</a>
-        </div>
-        <aside class="member-event-disclaimer" aria-label="Member-organized event disclaimer">
-          <strong>Member-Organized Events Only</strong>
-          <span>Community Connections activities are member-organized and are not official IWP events. They are not facilitated, monitored, or organized by IWP staff.</span>
-        </aside>
-        <div class="inclusion-row" aria-label="Community inclusion">
-          <div class="inclusion"><span class="inclusion-icon">👥</span>All Genders</div>
-          <div class="inclusion"><span class="inclusion-icon">🛡</span>All Branches</div>
-          <div class="inclusion"><span class="inclusion-icon">♥</span>All Welcome</div>
-          <div class="inclusion"><span class="inclusion-icon">👨‍👩‍👧</span>Families Included</div>
-        </div>
-      </div>
-      <div class="production-collage" aria-label="Community adventure photos">
-        <figure class="photo-card">
-          <img src="assets/kayak.jpg" loading="eager" fetchpriority="high" decoding="async" alt="Men and women kayaking together on a wooded river">
-        </figure>
-        <figure class="photo-card">
-          <img src="assets/bonfire.jpg" loading="lazy" decoding="async" alt="Men and women gathering and laughing around a bonfire">
-        </figure>
-        <figure class="photo-card">
-          <img src="assets/hiking.jpg" loading="lazy" decoding="async" alt="A mixed group hiking together through the woods">
-        </figure>
-        <figure class="photo-card">
-          <img src="assets/ice-fishing.jpg" loading="lazy" decoding="async" alt="A family enjoying ice fishing together">
-        </figure>
-      </div>
+  <section class="hero exact-banner-hero reveal is-visible" aria-label="IWP Community Connections banner">
+    <img class="exact-banner-image" src="assets/iwp-main-banner.png" alt="IWP Community Connections. You Are Not Alone. Bringing together Military, First Responders, Front-Line Workers, and families through shared experiences, adventures, and the power of community.">
+    <div class="sr-only">
+      <h1>IWP Community Connections</h1>
+      <p>Find your next adventure through member-organized Community Connections activities.</p>
     </div>
   </section>
+  <div class="member-organized-banner" role="note">ⓘ&nbsp; Member-Organized Events Only, Not Official IWP Events</div>
 
-
+  <section class="activity-button-showcase reveal" aria-label="Adventure categories">
+    <div class="activity-showcase-heading">
+      <h2>Find Your <span>Next Adventure</span></h2>
+      <p>Explore the member-organized categories currently available.</p>
+    </div>
+    <div id="landingCategoryGrid" class="activity-button-grid" aria-live="polite">
+      <div class="category-loading">Loading adventure categories...</div>
+    </div>
+  </section>
 
   <section class="featured-adventure reveal" id="featured">
     <div class="container featured-adventure-card" id="featuredAdventureContent">

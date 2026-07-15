@@ -1743,3 +1743,145 @@ h1 {
     height: 220px;
   }
 }
+
+
+/* ======================================================================
+   V24 Sprint 9A - IWP cinematic shared theme foundation
+   ====================================================================== */
+:root {
+  --bg: #020914;
+  --panel: #071522;
+  --panel-2: #0d2030;
+  --text: #f7f4ed;
+  --muted: #bdc8d2;
+  --green: #f28c18;
+  --green-dark: #c86108;
+  --redline: #cf292f;
+  --iwp-blue: #245aa8;
+  --iwp-gold: #e7a52a;
+  --border: rgba(150,180,204,.22);
+  --shadow: 0 24px 62px rgba(0,0,0,.46);
+}
+body {
+  background:
+    radial-gradient(circle at 14% 8%, rgba(36,90,168,.16), transparent 30rem),
+    radial-gradient(circle at 90% 18%, rgba(207,41,47,.10), transparent 30rem),
+    linear-gradient(180deg, #020914, #071522 48%, #020914);
+}
+.site-header {
+  background: rgba(2,9,20,.94);
+  border-bottom-color: rgba(242,140,24,.34);
+}
+.brand-title { font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif; letter-spacing: .06em; }
+.brand-subtitle { color: #e8a33c; font-style: italic; }
+.nav-links > a:not(.button)::after { background: linear-gradient(90deg, var(--redline), var(--iwp-blue), var(--green)); }
+.button { background: linear-gradient(135deg, #f39a20, #d66508); color: #07111b; box-shadow: 0 12px 30px rgba(242,140,24,.22); text-transform: uppercase; letter-spacing: .035em; }
+.button.secondary { background: rgba(3,15,27,.72); border-color: rgba(255,255,255,.62); color: #fff; }
+.eyebrow { color: #f2a33a; }
+
+.cinematic-banner-hero { padding: 0; background: #020914; }
+.cinematic-banner-hero::before { display: none; }
+.cinematic-banner-frame { position: relative; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,.18); }
+.cinematic-banner-image { width: 100%; height: auto; display: block; }
+.cinematic-banner-frame::after { content: ""; position: absolute; inset: 55% 0 0; background: linear-gradient(180deg, transparent, rgba(2,9,20,.96)); pointer-events: none; }
+.cinematic-banner-actions { position: absolute; z-index: 2; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; }
+.cinematic-banner-copy { max-width: 660px; padding: 18px 22px; border: 1px solid rgba(255,255,255,.18); border-radius: 16px; background: rgba(2,9,20,.76); backdrop-filter: blur(14px); box-shadow: 0 18px 46px rgba(0,0,0,.38); }
+.cinematic-banner-copy .eyebrow { margin-bottom: 6px; }
+.cinematic-banner-copy h1 { max-width: none; font-size: clamp(2rem, 4vw, 4.35rem); line-height: .95; text-transform: uppercase; letter-spacing: -.02em; }
+.cinematic-banner-copy .hero-copy { margin: 12px 0 0; color: #d7e0e8; }
+.cinematic-banner-actions .actions { flex: 0 0 auto; margin: 0; }
+.banner-value-strip { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid rgba(255,255,255,.14); border-top: 0; background: linear-gradient(180deg, #071522, #030d17); box-shadow: var(--shadow); }
+.banner-value-strip > div { min-height: 82px; display: flex; flex-direction: column; justify-content: center; padding: 15px 20px; border-right: 1px solid rgba(255,255,255,.16); }
+.banner-value-strip > div:last-child { border-right: 0; }
+.banner-value-strip strong { text-transform: uppercase; font-size: .92rem; letter-spacing: .035em; color: #fff; }
+.banner-value-strip span { margin-top: 4px; color: var(--muted); font-size: .82rem; }
+
+.feature, .featured-adventure-card, .what-is-grid, .step-card, .impact-card, .quote-card, .live-event-card, .belong-panel, .faq-layout {
+  background: linear-gradient(145deg, rgba(15,36,53,.98), rgba(4,16,27,.98));
+  border-color: rgba(136,171,201,.22);
+  box-shadow: var(--shadow);
+}
+.feature, .step-card, .impact-card, .quote-card, .live-event-card { position: relative; overflow: hidden; }
+.feature::before, .step-card::before, .impact-card::before, .quote-card::before, .live-event-card::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, var(--redline), var(--iwp-blue), var(--green)); }
+.feature-icon, .step-icon, .impact-icon { color: var(--green); }
+.feature a, .belong-copy strong { color: #f2a33a; }
+h2, h3 { text-wrap: balance; }
+.section-heading h2, .what-is h2, .live-section-heading h2, .belong-copy h2 { font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif; text-transform: uppercase; letter-spacing: .035em; }
+
+@media (max-width: 900px) {
+  .cinematic-banner-actions { position: relative; left: auto; bottom: auto; transform: none; width: min(1180px, calc(100% - 30px)); margin: -44px auto 0; padding-bottom: 18px; align-items: stretch; flex-direction: column; }
+  .cinematic-banner-frame::after { inset: 35% 0 0; }
+  .banner-value-strip { grid-template-columns: repeat(2, 1fr); }
+  .banner-value-strip > div:nth-child(2) { border-right: 0; }
+  .banner-value-strip > div:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,.16); }
+}
+@media (max-width: 560px) {
+  .cinematic-banner-image { min-height: 370px; object-fit: cover; object-position: center top; }
+  .cinematic-banner-copy h1 { font-size: 2rem; }
+  .cinematic-banner-actions .actions { flex-direction: column; }
+  .banner-value-strip { grid-template-columns: 1fr; }
+  .banner-value-strip > div { border-right: 0; border-bottom: 1px solid rgba(255,255,255,.14); }
+}
+
+
+/* V24 Sprint 9A correction: exact three-part approved artwork */
+.site-header.image-header {
+  position: relative;
+  padding: 0;
+  min-height: 0;
+  border: 0;
+  background: #020914;
+  overflow: hidden;
+}
+.top-of-page-image { display:block; width:100%; height:auto; }
+.image-header-nav { position:absolute; inset:0; display:block; }
+.image-header-nav a { position:absolute; top:25%; height:52%; color:transparent !important; font-size:0; border:0 !important; background:transparent !important; }
+.image-header-nav a::after { display:none !important; }
+.image-header-nav .nav-find { left:37.8%; width:13.2%; }
+.image-header-nav .nav-builder { left:51.0%; width:12.7%; }
+.image-header-nav .nav-registrations { left:63.4%; width:12.4%; }
+.image-header-nav .nav-dashboard { left:75.6%; width:9.4%; }
+.image-header-nav .nav-resources { left:84.8%; width:8.6%; }
+.image-menu-button { display:none; }
+.exact-banner-hero { padding:0; background:#020914; }
+.exact-banner-hero::before, .exact-banner-hero::after { display:none !important; }
+.exact-banner-image { display:block; width:100%; height:auto; }
+.sr-only { position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important; }
+.activity-button-showcase { padding:22px 16px 34px; background:#f5f3ee; color:#071522; }
+.activity-showcase-heading { text-align:center; margin:0 auto 16px; }
+.activity-showcase-heading h2 { margin:0; font-family:Impact, Haettenschweiler,"Arial Narrow Bold",sans-serif; font-size:clamp(2rem,4vw,3.4rem); text-transform:uppercase; letter-spacing:.035em; }
+.activity-showcase-heading p { margin:5px 0 0; color:#4f5b66; }
+.activity-button-grid { display:grid; grid-template-columns:repeat(9,minmax(115px,1fr)); gap:9px; max-width:1663px; margin:auto; overflow-x:auto; padding:0 0 6px; }
+.activity-button-grid a { display:block; min-width:115px; border-radius:18px; overflow:hidden; box-shadow:0 12px 26px rgba(2,9,20,.22); transition:transform .18s ease, box-shadow .18s ease; }
+.activity-button-grid a:hover { transform:translateY(-4px); box-shadow:0 18px 34px rgba(2,9,20,.3); }
+.activity-button-grid img { display:block; width:100%; height:auto; }
+@media(max-width:760px){
+  .top-of-page-image { min-height:92px; object-fit:cover; object-position:left top; }
+  .image-header-nav { display:none; }
+  .image-menu-button { display:none !important; }
+  .activity-button-grid { grid-template-columns:repeat(9,145px); justify-content:start; }
+}
+
+
+/* V24 Sprint 9A final visual correction */
+.site-header.image-header{position:relative;padding:0;min-height:0;border:0;background:#020914;overflow:hidden}
+.top-of-page-image{display:block;width:100%;height:auto}
+.image-header-nav{position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;gap:clamp(18px,2.4vw,42px);padding:0 clamp(22px,4vw,72px) 0 34%;z-index:3}
+.image-header-nav a{position:relative!important;top:auto!important;left:auto!important;width:auto!important;height:auto!important;color:#f7f4ed!important;font-size:clamp(12px,1.15vw,18px)!important;font-weight:700!important;text-transform:uppercase;text-decoration:none;padding:17px 0 13px;white-space:nowrap;background:transparent!important;border:0!important}
+.image-header-nav a:hover,.image-header-nav a:focus-visible,.image-header-nav a.is-active{color:#f28c18!important}
+.image-header-nav a.is-active:after{content:"";position:absolute;left:0;right:0;bottom:7px;height:2px;background:#f28c18}
+.image-header-nav .facebook-nav{font-size:clamp(11px,.95vw,15px)!important;color:#dbe8ff!important}
+.exact-banner-hero{padding:0!important;background:#020914!important}
+.exact-banner-hero:before,.exact-banner-hero:after{display:none!important;content:none!important}
+.exact-banner-image{display:block;width:100%;height:auto}
+.member-organized-banner{display:flex;align-items:center;justify-content:center;min-height:52px;padding:12px 18px;border-top:1px solid rgba(255,255,255,.16);border-bottom:1px solid rgba(255,255,255,.16);background:linear-gradient(180deg,#061522,#020a13);color:#f7f4ed;font-weight:800;letter-spacing:.02em;text-align:center}
+.activity-button-showcase{padding:30px 18px 38px!important;background:linear-gradient(180deg,#071725,#020a13)!important;color:#f7f4ed!important;border-bottom:1px solid rgba(242,140,24,.22)}
+.activity-showcase-heading h2{color:#fff!important}.activity-showcase-heading h2 span{color:#f28c18}.activity-showcase-heading p{color:#bdc8d2!important}
+.activity-button-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important;gap:14px!important;max-width:1500px!important;overflow:visible!important}
+.activity-category-card{min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8px;padding:24px 12px 16px;border:1px solid rgba(242,140,24,.62);border-radius:16px;background:radial-gradient(circle at 50% 15%,rgba(36,90,168,.26),transparent 50%),linear-gradient(180deg,#152d40,#030d17);color:#fff;text-decoration:none;box-shadow:0 16px 34px rgba(0,0,0,.4);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.activity-category-card:hover{transform:translateY(-5px);border-color:#f28c18;box-shadow:0 22px 42px rgba(0,0,0,.52)}
+.activity-category-icon{font-size:48px;filter:drop-shadow(0 6px 12px rgba(0,0,0,.4))}
+.activity-category-card strong{font-size:17px;text-transform:uppercase;text-align:center;letter-spacing:.035em}
+.activity-category-card small{padding:7px 11px;border:1px solid rgba(242,140,24,.7);border-radius:7px;color:#f6a23b;font-weight:800;text-transform:uppercase;font-size:11px}
+.category-loading{grid-column:1/-1;padding:30px;color:#bdc8d2;text-align:center}
+@media(max-width:850px){.top-of-page-image{min-height:92px;object-fit:cover;object-position:left top}.image-menu-button{display:block!important;position:absolute;right:14px;top:20px;z-index:5}.image-header-nav{display:none;position:relative;padding:12px 18px;justify-content:flex-start;align-items:flex-start;flex-direction:column;gap:4px;background:#020914}.image-header-nav.is-open{display:flex}.image-header-nav a{font-size:14px!important;padding:10px 0}.activity-button-grid{display:flex!important;overflow-x:auto!important}.activity-category-card{min-width:155px;flex:0 0 155px}}

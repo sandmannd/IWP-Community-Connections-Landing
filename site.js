@@ -72,8 +72,10 @@
 
 
   window.iwpLandingDataCallback = function (data) {
+    var upcoming = data && data.upcoming ? data.upcoming : [];
     renderFeaturedAdventure(data && data.featured);
-    renderUpcomingAdventures(data && data.upcoming ? data.upcoming : []);
+    renderUpcomingAdventures(upcoming);
+    renderLandingCategories(upcoming);
   };
 
   function loadLandingData() {
@@ -104,6 +106,28 @@
     // The landing page uses a reliable category icon instead of attempting them.
     if (/drive\.google\.com|googleusercontent\.com/i.test(value)) return false;
     return /^https:\/\//i.test(value);
+  }
+
+  function renderLandingCategories(events) {
+    var grid = document.getElementById("landingCategoryGrid");
+    if (!grid) return;
+    var seen = {};
+    (events || []).forEach(function (event) {
+      var type = String(event.type || "").trim();
+      if (type) seen[type] = true;
+    });
+    var types = Object.keys(seen).sort();
+    if (!types.length) {
+      grid.innerHTML = '<a class="activity-category-card" href="' + escapeAttr(c.appUrl || '#') + '"><span class="activity-category-icon">🤝</span><strong>Browse Adventures</strong><small>View Current Events</small></a>';
+      return;
+    }
+    grid.innerHTML = types.map(function (type) {
+      return '<a class="activity-category-card" href="' + escapeAttr(c.appUrl || '#') + '">' +
+        '<span class="activity-category-icon">' + categoryIcon(type) + '</span>' +
+        '<strong>' + escapeHtml(type) + '</strong>' +
+        '<small>View Adventures</small>' +
+      '</a>';
+    }).join('');
   }
 
   function renderFeaturedAdventure(event) {
@@ -195,6 +219,7 @@
   }
 
   function renderLandingDataError() {
+    renderLandingCategories([]);
     var featured = document.getElementById("featuredAdventureContent");
     var grid = document.getElementById("upcomingAdventureGrid");
 
