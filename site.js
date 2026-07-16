@@ -324,6 +324,7 @@
         '</div>' +
       '</div>';
     activateAdventureImageFallbacks(container);
+    activatePremiumPolish(container);
   }
 
   function renderUpcomingAdventures(events) {
@@ -356,6 +357,7 @@
       '</article>';
     }).join("");
     activateAdventureImageFallbacks(grid);
+    activatePremiumPolish(grid);
   }
 
   function activateAdventureImageFallbacks(root) {
@@ -435,6 +437,34 @@
     return escapeHtml(value);
   }
 
+
+  // V24 Sprint 9E premium polish: image fade-in and restrained button ripple.
+  function activatePremiumPolish(root) {
+    root = root || document;
+    Array.prototype.forEach.call(root.querySelectorAll('img'), function (img) {
+      if (img.dataset.iwpPolishBound === '1') return;
+      img.dataset.iwpPolishBound = '1';
+      var markLoaded = function () { img.classList.add('is-loaded'); };
+      img.addEventListener('load', markLoaded, { once: true });
+      if (img.complete && img.naturalWidth > 0) markLoaded();
+    });
+
+    Array.prototype.forEach.call(root.querySelectorAll('a.button, .lp9d-actions a, .featured-actions a, .lp9d-primary, .lp9d-secondary'), function (button) {
+      if (button.dataset.iwpRippleBound === '1') return;
+      button.dataset.iwpRippleBound = '1';
+      button.addEventListener('pointerdown', function (event) {
+        var rect = button.getBoundingClientRect();
+        var ripple = document.createElement('span');
+        ripple.className = 'iwp-ripple';
+        ripple.style.left = (event.clientX - rect.left) + 'px';
+        ripple.style.top = (event.clientY - rect.top) + 'px';
+        button.appendChild(ripple);
+        window.setTimeout(function () { ripple.remove(); }, 620);
+      });
+    });
+  }
+
+  activatePremiumPolish(document);
   loadLandingData();
 
   var revealElements = document.querySelectorAll(".reveal");

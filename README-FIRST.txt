@@ -1,16 +1,14 @@
-IWP Community Connections Landing V24 Sprint 9B — Dynamic Categories
+V24 Sprint 9E REAL Landing Premium Polish
 
-This is a landing-page-only overlay.
+This package is a real landing-page update built from the last good Sprint 9D baseline.
 
-Changes:
-- Shows one tile for every category with at least one currently published upcoming adventure.
-- Automatically adds newly created categories without editing the landing page.
-- Unrecognized category names receive their own tile and use the polished default artwork.
-- Shows the live number of adventures in each category.
-- Places the featured adventure's category first.
-- Sorts remaining categories by the number of available adventures.
-- Retains optimized WebP images, lazy loading, skeletons, and caching from Sprint 9B.
+Changed files:
+- index.html
+- styles.css
+- site.js
 
-Copy the contents into the clean landing repository and replace matching files.
-Recommended commit message:
-V24 Sprint 9B dynamic landing categories
+The approved header, banner, disclaimer, dynamic categories, and lower-page structure remain intact.
+This update adds micro-animations, smoother reveals, button ripple feedback, tighter typography, and improved mobile spacing.
+
+Copy the CONTENTS of this folder into the landing repository and choose Replace.
+GitHub Desktop should show index.html, styles.css, and site.js as modified.
