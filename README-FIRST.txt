@@ -1,14 +1,11 @@
-V24 Sprint 9E REAL Landing Premium Polish
+V24 Sprint 9F - Fast Navigation Fix
 
-This package is a real landing-page update built from the last good Sprint 9D baseline.
+Replace index.html, site.js, and styles.css in the LANDING repository.
 
-Changed files:
-- index.html
-- styles.css
-- site.js
-
-The approved header, banner, disclaimer, dynamic categories, and lower-page structure remain intact.
-This update adds micro-animations, smoother reveals, button ripple feedback, tighter typography, and improved mobile spacing.
-
-Copy the CONTENTS of this folder into the landing repository and choose Replace.
-GitHub Desktop should show index.html, styles.css, and site.js as modified.
+Changes:
+- Makes all four story cards fully clickable.
+- Fixes their existing Explore/Build/See/Learn links.
+- Uses the public Apps Script route for faster public loading.
+- Pre-warms the Apps Script web app after the landing page loads and on hover/touch.
+- Shows an immediate loading overlay so clicks never appear dead.
+- Applies the same faster navigation handling to category, Browse, Register, Details, and other app links.

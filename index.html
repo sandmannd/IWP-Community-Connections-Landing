@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="preload" as="image" href="assets/iwp-main-banner.webp" type="image/webp" fetchpriority="high">
 </head>
-<body data-build="V24-Sprint-9E-Real-Premium-Polish">
+<body data-build="V24-Sprint-9F-Fast-Navigation">
 <header class="site-header image-header" aria-label="IWP Community Connections navigation">
   <picture><source srcset="assets/iwp-top-of-page-clean.webp" type="image/webp"><img class="top-of-page-image" src="assets/iwp-top-of-page-clean.png" alt="IWP Community Connections, You Are Not Alone" decoding="async"></picture>
   <button class="mobile-menu-button image-menu-button" type="button" aria-expanded="false" aria-controls="mainNavigation">Menu</button>
@@ -133,6 +133,14 @@
     <em>Building Things That Matter.</em>
   </div>
 </footer>
+<div id="appLaunchOverlay" class="app-launch-overlay" aria-hidden="true">
+  <div class="app-launch-panel" role="status" aria-live="polite">
+    <span class="app-launch-spinner" aria-hidden="true"></span>
+    <strong>Opening Community Connections</strong>
+    <span>Loading the live adventure page...</span>
+  </div>
+</div>
+
 <script src="config.js"></script>
 <script src="site.js"></script>
 </body>

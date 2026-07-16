@@ -11,6 +11,43 @@
   };
   var c = window.IWP_SITE_CONFIG || {};
 
+  function appendQueryParam(url, key, value) {
+    var source = String(url || '').trim();
+    if (!source) return source;
+    try {
+      var parsed = new URL(source, window.location.href);
+      if (!parsed.searchParams.has(key)) parsed.searchParams.set(key, value);
+      return parsed.toString();
+    } catch (error) {
+      var separator = source.indexOf('?') === -1 ? '?' : '&';
+      return source + separator + encodeURIComponent(key) + '=' + encodeURIComponent(value);
+    }
+  }
+
+  function publicAppUrl(url) {
+    var source = String(url || c.appUrl || '').trim();
+    if (!source) return source;
+    return /script\.google\.com\/macros\/s\//i.test(source)
+      ? appendQueryParam(source, 'public', '1')
+      : source;
+  }
+
+  function showAppLaunchOverlay() {
+    var overlay = document.getElementById('appLaunchOverlay');
+    if (!overlay) return;
+    overlay.classList.add('is-visible');
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+
+  function warmCommunityConnections() {
+    var url = publicAppUrl(c.appUrl);
+    if (!url || window.__iwpAppWarmStarted) return;
+    window.__iwpAppWarmStarted = true;
+    try {
+      fetch(url, { mode: 'no-cors', credentials: 'omit', cache: 'no-store', keepalive: true }).catch(function () {});
+    } catch (error) {}
+  }
+
   document.querySelectorAll("[data-config]").forEach(function (el) {
     var key = el.getAttribute("data-config");
     if (c[key]) el.textContent = c[key];
@@ -34,9 +71,12 @@
         alert("The Community Connections application link is being finalized.");
       });
     } else {
-      el.href = c.appUrl;
+      el.href = publicAppUrl(c.appUrl);
       el.removeAttribute("target");
       el.removeAttribute("rel");
+      el.addEventListener('pointerenter', warmCommunityConnections, { once: true });
+      el.addEventListener('touchstart', warmCommunityConnections, { once: true, passive: true });
+      el.addEventListener('click', showAppLaunchOverlay);
     }
   });
 
@@ -76,6 +116,7 @@
     renderFeaturedAdventure(data && data.featured);
     renderUpcomingAdventures(upcoming);
     renderLandingCategories(upcoming, data && data.featured);
+    activateFastNavigation(document);
   };
 
   function loadLandingData() {
@@ -144,7 +185,7 @@
       });
 
     if (!items.length) {
-      grid.innerHTML = '<a class="activity-category-card activity-category-card--browse" href="' + escapeAttr(c.appUrl || '#') + '">' +
+      grid.innerHTML = '<a class="activity-category-card activity-category-card--browse" href="' + escapeAttr(publicAppUrl(c.appUrl) || '#') + '">' +
         '<span class="activity-category-photo is-loading" data-bg="assets/hands-community.webp"></span>' +
         '<span class="activity-category-shade"></span>' +
         '<span class="activity-category-content"><span class="activity-category-icon">' + categorySvg('browse') + '</span><strong>Browse Adventures</strong><span class="activity-category-count">New adventures coming soon</span></span>' +
@@ -158,7 +199,7 @@
       var countLabel = category.count + ' ' + (category.count === 1 ? 'Adventure' : 'Adventures');
       var featuredBadge = category.featured ? '<span class="activity-category-featured">★ Featured</span>' : '';
 
-      return '<a class="activity-category-card' + (category.featured ? ' is-featured' : '') + '" href="' + escapeAttr(c.appUrl || '#') + '" aria-label="View ' + escapeAttr(category.label) + ' adventures, ' + category.count + ' available">' +
+      return '<a class="activity-category-card' + (category.featured ? ' is-featured' : '') + '" href="' + escapeAttr(publicAppUrl(c.appUrl) || '#') + '" aria-label="View ' + escapeAttr(category.label) + ' adventures, ' + category.count + ' available">' +
         '<span class="activity-category-photo is-loading" data-bg="' + escapeAttr(visual.image) + '"></span>' +
         '<span class="activity-category-shade"></span>' +
         featuredBadge +
@@ -292,7 +333,7 @@
           '<h2>New adventures are coming soon.</h2>' +
           '<p>Visit the live adventure list or Facebook group for the newest updates.</p>' +
           '<div class="featured-actions">' +
-            '<a class="button" href="' + escapeAttr(c.appUrl || "#") + '">Browse Adventures</a>' +
+            '<a class="button" href="' + escapeAttr(publicAppUrl(c.appUrl) || "#") + '">Browse Adventures</a>' +
             '<a class="button secondary" target="_blank" rel="noopener" href="' + escapeAttr(c.facebookUrl || "#") + '">Facebook Group</a>' +
           '</div>' +
         '</div>';
@@ -318,8 +359,8 @@
             metaPill("👥", event.availabilityLabel || "Registration open") +
           '</div>' +
           '<div class="featured-actions">' +
-            '<a class="button" href="' + escapeAttr(event.registrationUrl || event.detailsUrl || c.appUrl) + '">Register Now →</a>' +
-            '<a class="button secondary" href="' + escapeAttr(event.detailsUrl || c.appUrl) + '">View Details</a>' +
+            '<a class="button" href="' + escapeAttr(publicAppUrl(event.registrationUrl || event.detailsUrl || c.appUrl)) + '">Register Now →</a>' +
+            '<a class="button secondary" href="' + escapeAttr(publicAppUrl(event.detailsUrl || c.appUrl)) + '">View Details</a>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -352,7 +393,7 @@
           '<h3>' + escapeHtml(event.title || "Community Adventure") + '</h3>' +
           '<p class="live-card-date">' + escapeHtml(formatEventDate(event)) + '</p>' +
           '<p class="live-card-location">📍 ' + escapeHtml(event.location || "Location in details") + '</p>' +
-          '<div class="live-card-footer"><strong>' + escapeHtml(event.costLabel || "See details") + '</strong><a href="' + escapeAttr(event.detailsUrl || c.appUrl) + '">Details →</a></div>' +
+          '<div class="live-card-footer"><strong>' + escapeHtml(event.costLabel || "See details") + '</strong><a href="' + escapeAttr(publicAppUrl(event.detailsUrl || c.appUrl)) + '">Details →</a></div>' +
         '</div>' +
       '</article>';
     }).join("");
@@ -382,7 +423,7 @@
           '<span class="featured-badge">⭐ Featured Adventure</span>' +
           '<h2>Browse the live adventure list.</h2>' +
           '<p>The landing page could not load the schedule right now, but the full Community Connections app is available.</p>' +
-          '<div class="featured-actions"><a class="button" href="' + escapeAttr(c.appUrl || "#") + '">Open Community Connections</a></div>' +
+          '<div class="featured-actions"><a class="button" href="' + escapeAttr(publicAppUrl(c.appUrl) || "#") + '">Open Community Connections</a></div>' +
         '</div>';
     }
 
@@ -464,7 +505,45 @@
     });
   }
 
+  function activateFastNavigation(root) {
+    root = root || document;
+
+    Array.prototype.forEach.call(root.querySelectorAll('a[href*="script.google.com/macros/s/"]'), function (link) {
+      link.href = publicAppUrl(link.href);
+      if (link.dataset.iwpFastNavBound === '1') return;
+      link.dataset.iwpFastNavBound = '1';
+      link.addEventListener('pointerenter', warmCommunityConnections, { once: true });
+      link.addEventListener('touchstart', warmCommunityConnections, { once: true, passive: true });
+      link.addEventListener('click', showAppLaunchOverlay);
+    });
+
+    Array.prototype.forEach.call(root.querySelectorAll('.lp9d-story-card'), function (card) {
+      if (card.dataset.iwpCardLinkBound === '1') return;
+      var link = card.querySelector('a[href]');
+      if (!link) return;
+      card.dataset.iwpCardLinkBound = '1';
+      card.classList.add('is-clickable');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('role', 'link');
+      card.addEventListener('click', function (event) {
+        if (event.target.closest('a')) return;
+        if (link.target === '_blank') window.open(link.href, '_blank', 'noopener');
+        else {
+          if (/script\.google\.com/i.test(link.href)) showAppLaunchOverlay();
+          window.location.href = link.href;
+        }
+      });
+      card.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        card.click();
+      });
+    });
+  }
+
   activatePremiumPolish(document);
+  activateFastNavigation(document);
+  window.setTimeout(warmCommunityConnections, 900);
   loadLandingData();
 
   var revealElements = document.querySelectorAll(".reveal");
