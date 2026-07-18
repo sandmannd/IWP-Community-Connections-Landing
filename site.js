@@ -64,21 +64,31 @@
   });
 
   document.querySelectorAll("[data-launch-app]").forEach(function (el) {
-    if (!c.appUrl || c.appUrl.indexOf("PASTE_") === 0) {
-      el.href = "#launch";
-      el.addEventListener("click", function (event) {
-        event.preventDefault();
-        alert("The Community Connections application link is being finalized.");
-      });
-    } else {
-      el.href = publicAppUrl(c.appUrl);
-      el.removeAttribute("target");
-      el.removeAttribute("rel");
-      el.addEventListener('pointerenter', warmCommunityConnections, { once: true });
-      el.addEventListener('touchstart', warmCommunityConnections, { once: true, passive: true });
-      el.addEventListener('click', showAppLaunchOverlay);
-    }
-  });
+  if (!c.appUrl || c.appUrl.indexOf("PASTE_") === 0) {
+    el.href = "#launch";
+
+    el.addEventListener("click", function (event) {
+      event.preventDefault();
+      alert("The Community Connections application link is being finalized.");
+    });
+  } else {
+    var isAdventureBuilder =
+      el.textContent.trim().toLowerCase().indexOf("adventure builder") !== -1;
+
+    el.href = isAdventureBuilder
+      ? c.appUrl
+      : publicAppUrl(c.appUrl);
+
+    el.removeAttribute("target");
+    el.removeAttribute("rel");
+    el.addEventListener("pointerenter", warmCommunityConnections, { once: true });
+    el.addEventListener("touchstart", warmCommunityConnections, {
+      once: true,
+      passive: true
+    });
+    el.addEventListener("click", showAppLaunchOverlay);
+  }
+});
 
 
   var menuButton = document.querySelector(".mobile-menu-button");
