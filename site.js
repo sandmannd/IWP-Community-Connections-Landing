@@ -536,7 +536,7 @@
       link.href = c.appUrl;
       link.dataset.organizerLaunch = "true";
     } else {
-      if (link.dataset.organizerLink !== "true") {
+      if (link.dataset.organizerLaunch !== "true") {
 		link.href = publicAppUrl(link.href);
 	}
 
