@@ -518,14 +518,29 @@
   function activateFastNavigation(root) {
     root = root || document;
 
-    Array.prototype.forEach.call(root.querySelectorAll('a[href*="script.google.com/macros/s/"]'), function (link) {
+    Array.prototype.forEach.call(
+  root.querySelectorAll('a[href*="script.google.com/macros/s/"]'),
+  function (link) {
+
+    // Leave Organizer/Adventure Builder links alone.
+    if (
+      link.textContent.toLowerCase().indexOf("adventure builder") === -1 &&
+      link.textContent.toLowerCase().indexOf("organizer") === -1
+    ) {
       link.href = publicAppUrl(link.href);
-      if (link.dataset.iwpFastNavBound === '1') return;
-      link.dataset.iwpFastNavBound = '1';
-      link.addEventListener('pointerenter', warmCommunityConnections, { once: true });
-      link.addEventListener('touchstart', warmCommunityConnections, { once: true, passive: true });
-      link.addEventListener('click', showAppLaunchOverlay);
+    }
+
+    if (link.dataset.iwpFastNavBound === '1') return;
+    link.dataset.iwpFastNavBound = '1';
+
+    link.addEventListener('pointerenter', warmCommunityConnections, { once: true });
+    link.addEventListener('touchstart', warmCommunityConnections, {
+      once: true,
+      passive: true
     });
+    link.addEventListener('click', showAppLaunchOverlay);
+  }
+);
 
     Array.prototype.forEach.call(root.querySelectorAll('.lp9d-story-card'), function (card) {
       if (card.dataset.iwpCardLinkBound === '1') return;
