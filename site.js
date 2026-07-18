@@ -536,8 +536,9 @@
       link.href = c.appUrl;
       link.dataset.organizerLaunch = "true";
     } else {
-      link.href = publicAppUrl(link.href);
-    }
+      if (link.dataset.organizerLink !== "true") {
+		link.href = publicAppUrl(link.href);
+	}
 
     if (link.dataset.iwpFastNavBound === '1') return;
     link.dataset.iwpFastNavBound = '1';
