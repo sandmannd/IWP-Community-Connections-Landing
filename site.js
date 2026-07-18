@@ -73,11 +73,15 @@
     });
   } else {
     var isAdventureBuilder =
+      el.dataset.organizerLaunch === "true" ||
       el.textContent.trim().toLowerCase().indexOf("adventure builder") !== -1;
 
-    el.href = isAdventureBuilder
-      ? c.appUrl
-      : publicAppUrl(c.appUrl);
+    if (isAdventureBuilder) {
+      el.href = c.appUrl;
+      el.dataset.organizerLaunch = "true";
+    } else {
+      el.href = publicAppUrl(c.appUrl);
+    }
 
     el.removeAttribute("target");
     el.removeAttribute("rel");
@@ -522,11 +526,16 @@
   root.querySelectorAll('a[href*="script.google.com/macros/s/"]'),
   function (link) {
 
-    // Leave Organizer/Adventure Builder links alone.
-    if (
-      link.textContent.toLowerCase().indexOf("adventure builder") === -1 &&
-      link.textContent.toLowerCase().indexOf("organizer") === -1
-    ) {
+    // Organizer links must never be forced into public-preview mode.
+    var isOrganizerLink =
+      link.dataset.organizerLaunch === "true" ||
+      link.textContent.toLowerCase().indexOf("adventure builder") !== -1 ||
+      link.textContent.toLowerCase().indexOf("organizer") !== -1;
+
+    if (isOrganizerLink) {
+      link.href = c.appUrl;
+      link.dataset.organizerLaunch = "true";
+    } else {
       link.href = publicAppUrl(link.href);
     }
 

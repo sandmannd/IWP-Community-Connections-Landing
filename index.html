@@ -11,13 +11,13 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="preload" as="image" href="assets/iwp-main-banner.webp" type="image/webp" fetchpriority="high">
 </head>
-<body data-build="V24-Sprint-9F-Fast-Navigation">
+<body data-build="V24-Sprint-9G-Organizer-Launch-Fix">
 <header class="site-header image-header" aria-label="IWP Community Connections navigation">
   <picture><source srcset="assets/iwp-top-of-page-clean.webp" type="image/webp"><img class="top-of-page-image" src="assets/iwp-top-of-page-clean.png" alt="IWP Community Connections, You Are Not Alone" decoding="async"></picture>
   <button class="mobile-menu-button image-menu-button" type="button" aria-expanded="false" aria-controls="mainNavigation">Menu</button>
   <nav class="image-header-nav" id="mainNavigation" aria-label="Main navigation">
     <a class="is-active" data-launch-app href="#">⌂&nbsp; Find Adventures</a>
-    <a data-launch-app href="#">Adventure Builder</a>
+    <a data-launch-app data-organizer-launch="true" href="#">Adventure Builder</a>
     <a href="#featured">Featured Adventure</a>
     <a href="#resources">Resources</a>
     <a class="facebook-nav" data-href-config="facebookUrl" target="_blank" rel="noopener">●&nbsp; Facebook Group</a>
@@ -142,6 +142,6 @@
 </div>
 
 <script src="config.js"></script>
-<script src="site.js"></script>
+<script src="site.js?v=24.9g"></script>
 </body>
 </html>
