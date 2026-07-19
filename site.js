@@ -526,7 +526,6 @@
   root.querySelectorAll('a[href*="script.google.com/macros/s/"]'),
   function (link) {
 
-    // Organizer links must never be forced into public-preview mode.
     var isOrganizerLink =
       link.dataset.organizerLaunch === "true" ||
       link.textContent.toLowerCase().indexOf("adventure builder") !== -1 ||
@@ -536,19 +535,18 @@
       link.href = c.appUrl;
       link.dataset.organizerLaunch = "true";
     } else {
-      if (link.dataset.organizerLaunch !== "true") {
-		link.href = publicAppUrl(link.href);
-	}
+      link.href = publicAppUrl(link.href);
+    }
 
-    if (link.dataset.iwpFastNavBound === '1') return;
-    link.dataset.iwpFastNavBound = '1';
+    if (link.dataset.iwpFastNavBound === "1") return;
+    link.dataset.iwpFastNavBound = "1";
 
-    link.addEventListener('pointerenter', warmCommunityConnections, { once: true });
-    link.addEventListener('touchstart', warmCommunityConnections, {
+    link.addEventListener("pointerenter", warmCommunityConnections, { once: true });
+    link.addEventListener("touchstart", warmCommunityConnections, {
       once: true,
       passive: true
     });
-    link.addEventListener('click', showAppLaunchOverlay);
+    link.addEventListener("click", showAppLaunchOverlay);
   }
 );
 
