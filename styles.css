@@ -2251,3 +2251,31 @@ a.button:active,.lp9d-actions a:active,.featured-actions a:active{transform:tran
   .reveal{opacity:1!important;transform:none!important}
 }
 \n\n/* V24 Sprint 9F: fast navigation and fully clickable story cards */\n.lp9d-story-card.is-clickable{cursor:pointer}\n.lp9d-story-card.is-clickable:focus-visible{outline:3px solid #ff8a00;outline-offset:4px}\n.app-launch-overlay{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:24px;background:rgba(1,8,15,.74);backdrop-filter:blur(8px);opacity:0;visibility:hidden;transition:opacity .18s ease,visibility .18s ease}\n.app-launch-overlay.is-visible{opacity:1;visibility:visible}\n.app-launch-panel{display:grid;justify-items:center;gap:10px;min-width:min(360px,calc(100vw - 40px));padding:28px 30px;border:1px solid rgba(255,138,0,.72);border-radius:18px;background:linear-gradient(145deg,#071827,#020a12);box-shadow:0 22px 70px rgba(0,0,0,.5);color:#fff;text-align:center}\n.app-launch-panel strong{font-size:1.15rem;line-height:1.2}\n.app-launch-panel>span:last-child{color:#bdd0df;font-size:.92rem}\n.app-launch-spinner{width:38px;height:38px;border:3px solid rgba(255,255,255,.18);border-top-color:#ff8a00;border-radius:50%;animation:iwpLaunchSpin .7s linear infinite}\n@keyframes iwpLaunchSpin{to{transform:rotate(360deg)}}\n@media(prefers-reduced-motion:reduce){.app-launch-spinner{animation-duration:1.4s}}\n
+
+/* Sprint 8.1: keep a one-adventure landing page balanced instead of allowing
+   the featured block to dominate the entire first screen. */
+.one-live-adventure .lp9d-featured-card {
+  max-width: 1080px;
+  margin-inline: auto;
+}
+.one-live-adventure .featured-event-layout {
+  grid-template-columns: minmax(220px, .68fr) minmax(0, 1.32fr);
+  gap: 24px;
+  margin-top: 16px;
+}
+.one-live-adventure .featured-event-image,
+.one-live-adventure .featured-event-image img {
+  min-height: 230px;
+  max-height: 285px;
+}
+.one-live-adventure .featured-event-copy h2 {
+  font-size: clamp(2rem, 4vw, 3.35rem);
+}
+.one-live-adventure .featured-event-meta {
+  margin: 15px 0;
+}
+@media (max-width: 760px) {
+  .one-live-adventure .featured-event-layout { grid-template-columns: 1fr; gap: 18px; }
+  .one-live-adventure .featured-event-image,
+  .one-live-adventure .featured-event-image img { min-height: 190px; max-height: 220px; }
+}

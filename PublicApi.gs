@@ -9,8 +9,13 @@ function getLandingPageData() {
   const todayKey = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
 
   const upcoming = allEvents.filter(function(event) {
-    return String(event.Status || '') === APP_CONFIG.eventStatuses.published &&
-      String(event.StartDate || '') >= todayKey;
+    if (String(event.Status || '') !== APP_CONFIG.eventStatuses.published) return false;
+
+    // Keep an adventure public for its entire date range. A multi-day trip must
+    // not disappear at midnight after day one. Single-day events fall back to
+    // StartDate when EndDate is blank.
+    const publicThroughDate = String(event.EndDate || event.StartDate || '');
+    return publicThroughDate >= todayKey;
   }).sort(function(a, b) {
     return String(a.StartDate || '').localeCompare(String(b.StartDate || '')) ||
       String(a.StartTime || '').localeCompare(String(b.StartTime || ''));

@@ -8,8 +8,25 @@ var CURRENT_DETAIL_EVENT_ID = '';
 var CURRENT_CHECKIN_DATA = null;
 var CURRENT_CHECKIN_FILTER = 'all';
 var ALL_VISIBLE_EVENTS = [];
+var PAST_VISIBLE_EVENTS = [];
 var REGISTRATION_MANAGER_FILTERS = { search: '', status: '', payment: '' };
 var APP_ENTRY_MODE = ''; // public | organizer
+var EVENT_LIST_CACHE = {
+  public: { data: null, loadedAt: 0 },
+  organizer: { data: null, loadedAt: 0 }
+};
+var EVENT_LIST_CACHE_MS = 90000;
+var EVENT_LIST_REQUEST_IN_FLIGHT = false;
+var EVENT_DETAIL_CACHE = {};
+var EVENT_DETAIL_CACHE_MS = 120000;
+var EVENT_DETAIL_REQUESTS = {};
+var REGISTRATION_PAGE_CACHE = {};
+var REGISTRATION_PAGE_CACHE_MS = 120000;
+var REGISTRATION_PAGE_REQUESTS = {};
+var DETAIL_PREFETCH_LIMIT = 3;
+var ADVENTURE_FILTER_STORAGE_KEY = 'iwpAdventureFiltersV1';
+var FEATURED_COUNTDOWN_TIMER = null;
+var FEATURED_COUNTDOWN_EVENT_ID = '';
 
 function isPublicBrowsingMode() {
   if (APP_ENTRY_MODE === 'public') return true;
@@ -138,7 +155,19 @@ function returnHome() {
   showHome();
 }
 
+
+function markViewTransition_() {
+  if (!document.body) return;
+  document.body.classList.remove('view-transition-active');
+  void document.body.offsetWidth;
+  document.body.classList.add('view-transition-active');
+  window.setTimeout(function() {
+    if (document.body) document.body.classList.remove('view-transition-active');
+  }, 260);
+}
+
 function hideAllViews() {
+  markViewTransition_();
   var ids = ['entryPortalView', 'homeView', 'createView', 'eventDetailView', 'registrationView', 'checkInView', 'administrationView'];
   for (var i = 0; i < ids.length; i++) {
     var el = document.getElementById(ids[i]);
@@ -146,19 +175,61 @@ function hideAllViews() {
   }
 }
 
-function loadEvents() {
+function loadEvents(forceRefresh) {
+  var publicMode = isPublicBrowsingMode();
+  var cacheKey = publicMode ? 'public' : 'organizer';
+  var cache = EVENT_LIST_CACHE[cacheKey];
+  var now = Date.now();
+
+  if (!forceRefresh && cache.data && (now - cache.loadedAt) < EVENT_LIST_CACHE_MS) {
+    drawEventCards(cache.data, { fromCache: true });
+    return;
+  }
+
+  if (EVENT_LIST_REQUEST_IN_FLIGHT) {
+    if (cache.data) drawEventCards(cache.data, { fromCache: true });
+    return;
+  }
+
+  EVENT_LIST_REQUEST_IN_FLIGHT = true;
+
   google.script.run
-    .withSuccessHandler(drawEventCards)
+    .withSuccessHandler(function(events) {
+      EVENT_LIST_REQUEST_IN_FLIGHT = false;
+      EVENT_LIST_CACHE[cacheKey] = {
+        data: events || [],
+        loadedAt: Date.now()
+      };
+      drawEventCards(events || [], { fromCache: false });
+    })
     .withFailureHandler(function (error) {
+      EVENT_LIST_REQUEST_IN_FLIGHT = false;
+
+      if (cache.data) {
+        drawEventCards(cache.data, { fromCache: true });
+        return;
+      }
+
       var cards = document.getElementById('eventCards');
       if (cards) {
         cards.innerHTML = '<div class="empty-state"><h2>Could not load adventures</h2><p>' + escapeHtml(getErrorMessage(error)) + '</p></div>';
       }
     })
-    .listEvents(isPublicBrowsingMode());
+    .listEvents(publicMode);
 }
 
-function drawEventCards(events) {
+function invalidateEventListCache() {
+  EVENT_LIST_CACHE.public = { data: null, loadedAt: 0 };
+  EVENT_LIST_CACHE.organizer = { data: null, loadedAt: 0 };
+}
+
+function isCompletedAdventureStatus(status) {
+  var value = String(status || '').trim().toLowerCase();
+  return value === 'complete' || value === 'completed';
+}
+
+function drawEventCards(events, options) {
+  options = options || {};
   hideLoading();
 
   var container = document.getElementById('eventCards');
@@ -169,31 +240,83 @@ function drawEventCards(events) {
   events = events || [];
 
   var visibleEvents = [];
+  var pastEvents = [];
   var isAdmin = CURRENT_USER && (CURRENT_USER.isAdmin === true || CURRENT_USER.isAdmin === 'true');
+  var publicMode = isPublicBrowsingMode();
 
   for (var i = 0; i < events.length; i++) {
     var status = String(events[i].Status || '').trim().toLowerCase();
 
-    // Organizer mode can see every adventure. Public mode sees published adventures only.
-    if ((!isPublicBrowsingMode() && isAdmin) || status === 'published') {
+    if (!publicMode && isAdmin) {
       visibleEvents.push(events[i]);
+    } else if (status === 'published') {
+      visibleEvents.push(events[i]);
+    } else if (isCompletedAdventureStatus(status)) {
+      pastEvents.push(events[i]);
     }
   }
 
   ALL_VISIBLE_EVENTS = visibleEvents.slice();
+  PAST_VISIBLE_EVENTS = pastEvents.slice().sort(function(a, b) {
+    return String(b.StartDate || '').localeCompare(String(a.StartDate || ''));
+  });
   renderAdventureDiscovery(ALL_VISIBLE_EVENTS);
-  populateAdventureTypeFilter(ALL_VISIBLE_EVENTS);
+  populateAdventureTypeFilter(ALL_VISIBLE_EVENTS.concat(PAST_VISIBLE_EVENTS));
   loadActiveAdventureTypeFilterOptions();
 
   var statusWrap = document.getElementById('eventStatusFilterWrap');
   if (statusWrap) statusWrap.classList.toggle('hidden', !isAdmin);
 
-  refreshCommandCenter();
+  if (!isPublicBrowsingMode() && isOrganizerUser()) {
+    refreshCommandCenter();
+  }
   renderExperienceSwitcher();
+  restoreAdventureFilters_();
   applyAdventureFilters();
+  updateCommunityMemoryCommandBadge_();
+  scheduleAdventureDetailPrefetch_(ALL_VISIBLE_EVENTS);
 }
 
 
+
+
+function scheduleAdventureDetailPrefetch_(events) {
+  events = (events || []).slice(0, DETAIL_PREFETCH_LIMIT);
+  if (!events.length) return;
+
+  var run = function() {
+    events.forEach(function(event, index) {
+      window.setTimeout(function() {
+        prefetchAdventureDetail_(event && event.EventId);
+      }, index * 350);
+    });
+  };
+
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(run, { timeout: 2200 });
+  } else {
+    window.setTimeout(run, 900);
+  }
+}
+
+function prefetchAdventureDetail_(eventId) {
+  eventId = String(eventId || '');
+  if (!eventId || EVENT_DETAIL_CACHE[eventId] || EVENT_DETAIL_REQUESTS[eventId]) return;
+
+  EVENT_DETAIL_REQUESTS[eventId] = true;
+  google.script.run
+    .withSuccessHandler(function(data) {
+      delete EVENT_DETAIL_REQUESTS[eventId];
+      EVENT_DETAIL_CACHE[eventId] = {
+        data: data || {},
+        loadedAt: Date.now()
+      };
+    })
+    .withFailureHandler(function() {
+      delete EVENT_DETAIL_REQUESTS[eventId];
+    })
+    .getEventDetailData(eventId, isPublicBrowsingMode());
+}
 
 function renderExperienceSwitcher() {
   var existing = document.getElementById('experienceSwitcher');
@@ -218,7 +341,41 @@ function renderAdventureDiscovery(events) {
   renderFeaturedAdventureSpotlight(events);
   renderPremiumAdventureRails(events);
   renderAdventureCollections(events);
+  renderRecentCommunityStories(PAST_VISIBLE_EVENTS);
+  applySprint5BHomePolish();
 }
+
+function applySprint5BHomePolish() {
+  var home = document.getElementById('homeView');
+  if (!home) return;
+  home.classList.add('sprint5b-polished-home');
+
+  var filterSection = document.querySelector('.event-filters');
+  if (filterSection) {
+    filterSection.classList.add('sprint5b-sticky-filters');
+  }
+
+  var cards = document.getElementById('eventCards');
+  if (cards) {
+    cards.setAttribute('aria-live', 'polite');
+    cards.setAttribute('aria-busy', 'false');
+  }
+
+  var browseButton = document.getElementById('sprint5bBrowseAdventures');
+  if (!browseButton) {
+    browseButton = document.createElement('button');
+    browseButton.id = 'sprint5bBrowseAdventures';
+    browseButton.type = 'button';
+    browseButton.className = 'sprint5b-mobile-browse';
+    browseButton.innerHTML = '<span>Browse Adventures</span><span aria-hidden="true">↓</span>';
+    browseButton.onclick = function() {
+      var heading = document.querySelector('.adventure-list-heading');
+      if (heading && heading.scrollIntoView) heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    home.appendChild(browseButton);
+  }
+}
+
 
 function renderAdventureStats(events) {
   var container = document.getElementById('adventureStats');
@@ -279,39 +436,177 @@ function applyQuickCategory(type, button) {
 function renderFeaturedAdventureSpotlight(events) {
   var container = document.getElementById('featuredAdventureSpotlight');
   if (!container) return;
-  var featured = null;
-  for (var i = 0; i < events.length; i++) {
-    if (toBool(events[i].Featured)) { featured = events[i]; break; }
+
+  var featuredEvents = (events || []).filter(function(event) {
+    return toBool(event.Featured);
+  });
+
+  var featured = featuredEvents[0] || null;
+
+  if (FEATURED_COUNTDOWN_TIMER) {
+    window.clearInterval(FEATURED_COUNTDOWN_TIMER);
+    FEATURED_COUNTDOWN_TIMER = null;
   }
-  if (!featured && events.length) featured = events[0];
+
   if (!featured) {
-    container.classList.add('hidden');
-    container.innerHTML = '';
+    FEATURED_COUNTDOWN_EVENT_ID = '';
+    container.classList.remove('hidden');
+    container.innerHTML =
+      '<div class="featured-spotlight-empty">' +
+        '<span class="featured-spotlight-label">' + getDashboardIcon('featured') + ' Featured Adventure</span>' +
+        '<div class="featured-empty-copy">' +
+          '<span class="eyebrow">More Adventures Coming Soon</span>' +
+          '<h2>No Featured Adventure Right Now</h2>' +
+          '<p>There is nothing featured at the moment. Check back soon for the next community adventure.</p>' +
+        '</div>' +
+        '<button type="button" class="secondary" onclick="scrollToAdventures()">Browse All Adventures</button>' +
+      '</div>';
     return;
   }
+
+  FEATURED_COUNTDOWN_EVENT_ID = String(featured.EventId || '');
+
+  var capacity = getAdventureCapacitySummary_(featured);
   var imageStyle = featured.ImageUrl
-    ? ' style="background-image:linear-gradient(90deg,rgba(5,15,29,.96) 0%,rgba(5,15,29,.82) 48%,rgba(5,15,29,.18) 100%),url(' + escapeAttr(featured.ImageUrl) + ')"'
+    ? ' style="background-image:linear-gradient(90deg,rgba(5,15,29,.97) 0%,rgba(5,15,29,.84) 48%,rgba(5,15,29,.20) 100%),url(' + escapeAttr(featured.ImageUrl) + ')"'
     : '';
+
   container.classList.remove('hidden');
   container.innerHTML =
-    '<div class="featured-spotlight-media"' + imageStyle + '>' +
+    '<div class="featured-spotlight-media premium-featured-spotlight"' + imageStyle + '>' +
       '<div class="featured-spotlight-content">' +
         '<span class="featured-spotlight-label">' + getDashboardIcon('featured') + ' Featured Adventure</span>' +
         '<span class="eyebrow">' + escapeHtml(featured.EventType || 'Community Adventure') + '</span>' +
         '<h2>' + escapeHtml(featured.Title || 'Upcoming Adventure') + '</h2>' +
         '<p>' + escapeHtml(firstAvailableText(featured.Description, featured.WhatToExpect, 'Come connect with the community and make a new memory.')) + '</p>' +
+        '<div class="featured-live-summary">' +
+          '<div><small>Adventure begins in</small><strong id="featuredAdventureCountdown">' + escapeHtml(getDetailedCountdownLabel_(featured)) + '</strong></div>' +
+          '<div><small>Availability</small><strong>' + escapeHtml(capacity.label) + '</strong></div>' +
+          (featured.OrganizerName ? '<div><small>Organizer</small><strong>' + escapeHtml(featured.OrganizerName) + '</strong></div>' : '') +
+        '</div>' +
+        (capacity.max > 0
+          ? '<div class="featured-capacity"><div><span>' + escapeHtml(capacity.registered + ' of ' + capacity.max + ' registered') + '</span><strong>' + escapeHtml(capacity.label) + '</strong></div><div class="capacity-track"><span style="width:' + capacity.percent + '%"></span></div></div>'
+          : '') +
         '<div class="featured-spotlight-facts">' +
           '<span>' + getMetaIcon('calendar') + escapeHtml(formatDateRange(featured) || 'Date coming soon') + '</span>' +
           '<span>' + getMetaIcon('location') + escapeHtml(featured.LocationName || 'Location coming soon') + '</span>' +
           '<span>' + getMetaIcon('cost') + escapeHtml(getCostLabel(featured) || 'See details') + '</span>' +
         '</div>' +
         '<div class="featured-spotlight-actions">' +
-          (toBool(featured.RegistrationRequired) ? '<button type="button" class="primary" onclick="showRegistration(\'' + escapeJs(featured.EventId) + '\')">Register Now</button>' : '') +
+          (toBool(featured.RegistrationRequired) ? '<button type="button" class="primary featured-register-button" onclick="showRegistration(\'' + escapeJs(featured.EventId) + '\')">Register Now</button>' : '') +
           '<button type="button" class="secondary" onclick="showEventDetail(\'' + escapeJs(featured.EventId) + '\')">Explore Adventure</button>' +
         '</div>' +
       '</div>' +
       (!featured.ImageUrl ? '<div class="featured-spotlight-fallback featured-text-fallback"><span>COMMUNITY</span><strong>CONNECTIONS</strong></div>' : '') +
     '</div>';
+
+  FEATURED_COUNTDOWN_TIMER = window.setInterval(function() {
+    if (FEATURED_COUNTDOWN_EVENT_ID !== String(featured.EventId || '')) return;
+    var countdown = document.getElementById('featuredAdventureCountdown');
+    if (countdown) countdown.textContent = getDetailedCountdownLabel_(featured);
+  }, 60000);
+}
+
+function getAdventureCapacitySummary_(event) {
+  var registered = Number(event.PeopleCount || event.RegisteredCount || 0);
+  var max = Number(event.MaxParticipants || 0);
+  var percent = max > 0 ? Math.max(0, Math.min(100, Math.round((registered / max) * 100))) : 0;
+  var remaining = max > 0 ? Math.max(0, max - registered) : null;
+  var label = max > 0
+    ? (remaining > 0 ? remaining + ' spot' + (remaining === 1 ? '' : 's') + ' remaining' : 'Adventure full')
+    : (registered > 0 ? registered + ' registered' : 'Open registration');
+
+  return {
+    registered: registered,
+    max: max,
+    remaining: remaining,
+    percent: percent,
+    label: label
+  };
+}
+
+function getDetailedCountdownLabel_(event) {
+  var date = parseAdventureDate(event.StartDate || event.EventDate || event.Date);
+  if (!date) return 'Date coming soon';
+
+  var timeText = String(event.StartTime || '').trim();
+  if (timeText) {
+    var match = timeText.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (match) {
+      var hour = Number(match[1]);
+      var minute = Number(match[2]);
+      var suffix = String(match[3] || '').toUpperCase();
+      if (suffix === 'PM' && hour < 12) hour += 12;
+      if (suffix === 'AM' && hour === 12) hour = 0;
+      date.setHours(hour, minute, 0, 0);
+    }
+  }
+
+  var diff = date.getTime() - Date.now();
+  if (diff <= 0) return 'Happening now';
+
+  var totalMinutes = Math.floor(diff / 60000);
+  var days = Math.floor(totalMinutes / 1440);
+  var hours = Math.floor((totalMinutes % 1440) / 60);
+  var minutes = totalMinutes % 60;
+
+  if (days > 0) return days + 'd ' + hours + 'h';
+  if (hours > 0) return hours + 'h ' + minutes + 'm';
+  return Math.max(1, minutes) + ' minutes';
+}
+
+
+function filterRecentCompletedAdventuresForHome(events, days) {
+  var now = new Date();
+  var cutoff = new Date(now.getTime() - ((Number(days) || 30) * 24 * 60 * 60 * 1000));
+  return (events || []).filter(function(event) {
+    if (!isCompletedAdventureStatus(event.Status)) return false;
+    var value = event.EndDate || event.StartDate;
+    var normalized = String(value || '');
+    var date = parseAdventureDate(normalized.length === 10 ? normalized + 'T12:00:00' : normalized);
+    return date && date >= cutoff && date <= now;
+  }).sort(function(a, b) {
+    return String(b.EndDate || b.StartDate || '').localeCompare(String(a.EndDate || a.StartDate || ''));
+  });
+}
+
+function renderRecentCommunityStories(events) {
+  var section = document.getElementById('recentCommunityStories');
+  var container = document.getElementById('recentCommunityStoryCards');
+  if (!section || !container) return;
+
+  var recent = filterRecentCompletedAdventuresForHome(events, 30);
+  section.classList.toggle('hidden', !recent.length);
+  if (!recent.length) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = recent.map(function(event) {
+    var images = Array.isArray(event.MemoryPreviewImages) ? event.MemoryPreviewImages.filter(Boolean).slice(0, 4) : [];
+    var cover = event.ImageUrl || images[0] || '';
+    var reflection = firstAvailableText(event.OrganizerReflection, event.Description, 'Photos and reflections from this adventure are ready to revisit.');
+    var people = Number(event.PeopleCount || event.TotalPeople || event.RegisteredCount || 0);
+    var memoryCount = Number(event.ApprovedMemoryCount || 0);
+    var preview = cover
+      ? '<div class="recent-story-cover" style="background-image:linear-gradient(180deg,rgba(3,10,18,.06),rgba(3,10,18,.74)),url(' + escapeAttr(cover) + ')">' +
+          (images.length > 1 ? '<div class="recent-story-memory-stack">' + images.slice(1,4).map(function(url) { return '<img src="' + escapeAttr(url) + '" alt="" loading="lazy">'; }).join('') + '</div>' : '') +
+        '</div>'
+      : '<div class="recent-story-cover recent-story-fallback"><span>' + getDashboardIcon('camera') + '</span><strong>Community Memories</strong></div>';
+
+    return '<article class="recent-community-story">' +
+      preview +
+      '<div class="recent-story-body">' +
+        '<div class="recent-story-heading"><div><span class="eyebrow">Recent Adventure</span><h3>' + escapeHtml(event.Title || 'Community Adventure') + '</h3></div><span class="recent-story-date">' + escapeHtml(formatDateRange(event) || 'Recently completed') + '</span></div>' +
+        '<div class="recent-story-stats">' +
+          '<span>' + getDashboardIcon('community') + '<strong>' + (people || 'Community') + '</strong> ' + (people ? 'attended' : 'connections made') + '</span>' +
+          '<span>' + getDashboardIcon('camera') + '<strong>' + memoryCount + '</strong> memor' + (memoryCount === 1 ? 'y' : 'ies') + '</span>' +
+        '</div>' +
+        '<blockquote><span>Organizer Reflection</span><p>“' + escapeHtml(reflection) + '”</p></blockquote>' +
+        '<div class="recent-story-actions"><button type="button" class="primary" onclick="showEventDetail(\'' + escapeJs(event.EventId) + '\')">View Memories</button></div>' +
+      '</div>' +
+    '</article>';
+  }).join('');
 }
 
 
@@ -489,29 +784,108 @@ function applyAdventureFilters() {
   var search = String(val('eventSearchInput') || '').trim().toLowerCase();
   var type = String(val('eventTypeFilter') || '').trim().toLowerCase();
   var status = String(val('eventStatusFilter') || '').trim().toLowerCase();
-  var filtered = (ALL_VISIBLE_EVENTS || []).filter(function(event) {
+
+  saveAdventureFilters_({
+    search: search,
+    type: type,
+    status: status
+  });
+
+  function matchesFilters(event) {
     var eventType = String(event.EventType || '').trim().toLowerCase();
     var eventStatus = String(event.Status || '').trim().toLowerCase();
     var haystack = [event.Title, event.LocationName, event.Address, event.Description, event.WhatToExpect, event.EventType]
       .map(function(value) { return String(value || '').toLowerCase(); })
       .join(' ');
+
     return (!search || haystack.indexOf(search) !== -1) &&
       (!type || eventType === type) &&
       (!status || eventStatus === status);
-  });
+  }
+
+  var filtered = (ALL_VISIBLE_EVENTS || []).filter(matchesFilters);
+  var filteredPast = isPublicBrowsingMode()
+    ? (PAST_VISIBLE_EVENTS || []).filter(matchesFilters)
+    : [];
 
   container.innerHTML = '';
   if (!filtered.length) {
-    container.innerHTML = buildEmptyState('search', 'No Matching Adventures', 'Try changing or clearing the search filters.', true);
+    container.innerHTML = buildEmptyState('search', 'No Matching Upcoming Adventures', 'Try changing or clearing the search filters.', true);
   } else {
     filtered.forEach(function(event) { container.appendChild(buildAdventureCard(event)); });
   }
 
+  var archiveSection = document.getElementById('pastAdventuresSection');
+  var archiveContainer = document.getElementById('pastAdventureCards');
+  if (archiveSection && archiveContainer) {
+    archiveSection.classList.toggle('hidden', !isPublicBrowsingMode() || !filteredPast.length);
+    archiveContainer.innerHTML = '';
+    filteredPast.forEach(function(event) { archiveContainer.appendChild(buildAdventureCard(event)); });
+  }
+
+  var totalEvents = (ALL_VISIBLE_EVENTS || []).length + (isPublicBrowsingMode() ? (PAST_VISIBLE_EVENTS || []).length : 0);
+  var shownEvents = filtered.length + filteredPast.length;
   var count = document.getElementById('eventFilterCount');
-  if (count) count.textContent = filtered.length + ' of ' + (ALL_VISIBLE_EVENTS || []).length + ' adventure' + ((ALL_VISIBLE_EVENTS || []).length === 1 ? '' : 's');
+  if (count) count.textContent = shownEvents + ' of ' + totalEvents + ' adventure' + (totalEvents === 1 ? '' : 's');
+
   var clear = document.getElementById('clearEventFiltersBtn');
   if (clear) clear.classList.toggle('hidden', !(search || type || status));
+
+  renderActiveAdventureFilterChips_(search, type, status);
   syncQuickCategoryChips(type);
+}
+
+function saveAdventureFilters_(filters) {
+  try {
+    window.localStorage.setItem(ADVENTURE_FILTER_STORAGE_KEY, JSON.stringify(filters || {}));
+  } catch (error) {
+    // Storage is optional.
+  }
+}
+
+function restoreAdventureFilters_() {
+  if (!isPublicBrowsingMode()) return;
+  try {
+    var raw = window.localStorage.getItem(ADVENTURE_FILTER_STORAGE_KEY);
+    if (!raw) return;
+    var saved = JSON.parse(raw) || {};
+
+    if (!val('eventSearchInput') && saved.search) setVal('eventSearchInput', saved.search);
+    if (!val('eventTypeFilter') && saved.type) setVal('eventTypeFilter', saved.type);
+  } catch (error) {
+    // Ignore unavailable or invalid storage.
+  }
+}
+
+function renderActiveAdventureFilterChips_(search, type, status) {
+  var container = document.getElementById('activeAdventureFilters');
+  if (!container) return;
+
+  var chips = [];
+  if (search) chips.push('<button type="button" onclick="removeAdventureFilter_(\\'search\\')"><span>Search</span>' + escapeHtml(search) + '<strong>×</strong></button>');
+  if (type) chips.push('<button type="button" onclick="removeAdventureFilter_(\\'type\\')"><span>Type</span>' + escapeHtml(getAdventureTypeLabel_(type)) + '<strong>×</strong></button>');
+  if (status) chips.push('<button type="button" onclick="removeAdventureFilter_(\\'status\\')"><span>Status</span>' + escapeHtml(status) + '<strong>×</strong></button>');
+
+  container.classList.toggle('hidden', !chips.length);
+  container.innerHTML = chips.join('');
+}
+
+function getAdventureTypeLabel_(type) {
+  var select = document.getElementById('eventTypeFilter');
+  if (!select) return type;
+  for (var i = 0; i < select.options.length; i++) {
+    if (String(select.options[i].value || '').toLowerCase() === String(type || '').toLowerCase()) {
+      return select.options[i].textContent || type;
+    }
+  }
+  return type;
+}
+
+function removeAdventureFilter_(name) {
+  if (name === 'search') setVal('eventSearchInput', '');
+  if (name === 'type') setVal('eventTypeFilter', '');
+  if (name === 'status') setVal('eventStatusFilter', '');
+  applyAdventureFilters();
 }
 
 function syncQuickCategoryChips(type) {
@@ -527,7 +901,17 @@ function clearAdventureFilters() {
   setVal('eventSearchInput', '');
   setVal('eventTypeFilter', '');
   setVal('eventStatusFilter', '');
+  try {
+    window.localStorage.removeItem(ADVENTURE_FILTER_STORAGE_KEY);
+  } catch (error) {
+    // Storage is optional.
+  }
   applyAdventureFilters();
+}
+
+function getMemoryButtonLabel(event) {
+  var pending = Number(event && event.PendingMemoryCount || 0);
+  return pending > 0 ? 'Memories (' + pending + ' pending)' : 'Memories';
 }
 
 function buildAdventureCard(event) {
@@ -553,14 +937,18 @@ function buildAdventureCard(event) {
       adminActions += '<button class="primary" type="button" onclick="publishEventFromCard(\'' + escapeJs(event.EventId) + '\')">Publish</button>';
     }
     adminActions += '<button class="secondary" type="button" onclick="viewRegistrations(\'' + escapeJs(event.EventId) + '\')">Registrations</button>';
+    adminActions += '<button class="secondary" type="button" onclick="openMemoryManager(\'' + escapeJs(event.EventId) + '\',\'' + escapeJs(event.Title || 'Adventure') + '\')">' + escapeHtml(getMemoryButtonLabel(event)) + '</button>';
     adminActions += '<button class="secondary" type="button" onclick="editEvent(\'' + escapeJs(event.EventId) + '\')">Edit</button>';
+    adminActions += '<button class="secondary" type="button" onclick="duplicateEventFromCard(\'' + escapeJs(event.EventId) + '\')">Duplicate</button>';
     adminActions += '<button class="danger" type="button" onclick="deleteEventFromCard(\'' + escapeJs(event.EventId) + '\')">Delete</button>';
   }
 
   var capacityHtml = buildCardCapacity(event);
+  var ribbonHtml = buildAdventureCardRibbons_(event);
 
   card.innerHTML =
     '<div class="adventure-image"' + (event.ImageUrl ? ' style="background-image:linear-gradient(180deg,rgba(2,6,23,.02),rgba(2,6,23,.78)),url(' + escapeAttr(event.ImageUrl) + ')"' : '') + '>' +
+      ribbonHtml +
       '<div class="image-shade"></div>' +
       '<div class="adventure-image-icon">' + getAdventureDetailIcon(event.EventType) + '</div>' +
       '<div class="adventure-image-label">' + escapeHtml(event.EventType || 'Adventure') + '</div>' +
@@ -587,6 +975,38 @@ function buildAdventureCard(event) {
   return card;
 }
 
+
+function buildAdventureCardRibbons_(event) {
+  var ribbons = [];
+  var capacity = getAdventureCapacitySummary_(event);
+  var date = parseAdventureDate(event.StartDate || event.EventDate || event.Date);
+  var created = parseAdventureDate(event.CreatedAt || event.CreatedDate || event.Timestamp);
+  var now = new Date();
+
+  if (toBool(event.Featured)) {
+    ribbons.push('<span class="adventure-ribbon ribbon-featured">' + getDashboardIcon('featured') + ' Featured</span>');
+  }
+
+  if (capacity.max > 0 && capacity.remaining === 0) {
+    ribbons.push('<span class="adventure-ribbon ribbon-full">Full</span>');
+  } else if (capacity.max > 0 && capacity.remaining !== null && capacity.remaining <= Math.max(2, Math.ceil(capacity.max * .2))) {
+    ribbons.push('<span class="adventure-ribbon ribbon-almost-full">Almost Full</span>');
+  }
+
+  if (created && ((now.getTime() - created.getTime()) / 86400000) <= 14) {
+    ribbons.push('<span class="adventure-ribbon ribbon-new">New</span>');
+  }
+
+  if (date) {
+    var hoursAway = (date.getTime() - now.getTime()) / 3600000;
+    if (hoursAway > 0 && hoursAway <= 72) {
+      ribbons.push('<span class="adventure-ribbon ribbon-soon">Coming Soon</span>');
+    }
+  }
+
+  if (!ribbons.length) return '';
+  return '<div class="adventure-ribbon-stack">' + ribbons.slice(0, 2).join('') + '</div>';
+}
 
 function buildCardCapacity(event) {
   if (!toBool(event.RegistrationRequired)) return '';
@@ -732,6 +1152,7 @@ function collectEventFormData() {
     organizerName: val('organizerName'),
     organizerPhone: val('organizerPhone'),
     description: val('description'),
+    organizerReflection: val('organizerReflection'),
     whatToExpect: val('whatToExpect'),
     whatToBring: val('whatToBring'),
     provided: val('provided'),
@@ -886,6 +1307,7 @@ function fillEventForm(event) {
   setVal('organizerName', event.OrganizerName);
   setVal('organizerPhone', event.OrganizerPhone);
   setVal('description', event.Description);
+  setVal('organizerReflection', event.OrganizerReflection);
   setVal('whatToExpect', event.WhatToExpect);
   setVal('whatToBring', event.WhatToBring);
   setVal('provided', event.Provided);
@@ -1414,7 +1836,7 @@ function deleteEventFromCard(eventId) {
   );
 }
 
-function showEventDetail(eventId) {
+function showEventDetail(eventId, forceRefresh) {
   CURRENT_DETAIL_EVENT_ID = eventId;
   hideAllViews();
   hideLoading();
@@ -1423,19 +1845,84 @@ function showEventDetail(eventId) {
   if (view) view.classList.remove('hidden');
 
   var content = document.getElementById('eventDetailContent');
-  if (content) content.innerHTML = '<div class="notice">Loading adventure details...</div>';
+  var cached = EVENT_DETAIL_CACHE[eventId];
+  var now = Date.now();
+
+  if (!forceRefresh && cached && (now - cached.loadedAt) < EVENT_DETAIL_CACHE_MS) {
+    drawEventDetail(cached.data);
+    return;
+  }
+
+  var previewEvent = findCachedAdventureById_(eventId);
+  if (content) {
+    content.innerHTML = previewEvent
+      ? buildInstantAdventureDetailPreview_(previewEvent)
+      : '<div class="detail-loading-shell"><div class="detail-loading-image"></div><div class="detail-loading-lines"><div></div><div></div><div></div></div></div>';
+  }
+
+  if (EVENT_DETAIL_REQUESTS[eventId]) return;
+  EVENT_DETAIL_REQUESTS[eventId] = true;
 
   google.script.run
     .withSuccessHandler(function(data) {
-      drawEventDetail(data);
+      delete EVENT_DETAIL_REQUESTS[eventId];
+      EVENT_DETAIL_CACHE[eventId] = {
+        data: data || {},
+        loadedAt: Date.now()
+      };
+
+      if (CURRENT_DETAIL_EVENT_ID === eventId) drawEventDetail(data);
     })
     .withFailureHandler(function(error) {
+      delete EVENT_DETAIL_REQUESTS[eventId];
       var message = getErrorMessage(error);
-      if (content) {
+      if (content && CURRENT_DETAIL_EVENT_ID === eventId) {
         content.innerHTML = '<div class="notice"><strong>Could not load adventure details.</strong><br>' + escapeHtml(message) + '</div>';
       }
     })
     .getEventDetailData(eventId, isPublicBrowsingMode());
+}
+
+function findCachedAdventureById_(eventId) {
+  var events = []
+    .concat(ALL_VISIBLE_EVENTS || [])
+    .concat(PAST_VISIBLE_EVENTS || []);
+
+  for (var i = 0; i < events.length; i++) {
+    if (String(events[i].EventId || '') === String(eventId || '')) return events[i];
+  }
+
+  return null;
+}
+
+function buildInstantAdventureDetailPreview_(event) {
+  event = event || {};
+  var image = event.ImageUrl
+    ? '<div class="instant-detail-image"><img src="' + escapeAttr(event.ImageUrl) + '" alt=""></div>'
+    : '<div class="instant-detail-image instant-detail-fallback">' + getAdventureDetailIcon(event.EventType) + '</div>';
+
+  return '<section class="instant-detail-preview" aria-busy="true">' +
+    image +
+    '<div class="instant-detail-copy">' +
+      '<span class="eyebrow">' + escapeHtml(event.EventType || 'Community Adventure') + '</span>' +
+      '<h1>' + escapeHtml(event.Title || 'Adventure') + '</h1>' +
+      '<div class="instant-detail-facts">' +
+        '<span>' + getMetaIcon('calendar') + escapeHtml(formatDateRange(event) || 'Date coming soon') + '</span>' +
+        '<span>' + getMetaIcon('time') + escapeHtml(formatTimeRange(event) || 'Time coming soon') + '</span>' +
+        '<span>' + getMetaIcon('location') + escapeHtml(event.LocationName || event.Address || 'Location coming soon') + '</span>' +
+      '</div>' +
+      '<p>' + escapeHtml(firstAvailableText(event.Description, event.WhatToExpect, 'Loading the full adventure details...')) + '</p>' +
+      '<div class="instant-detail-loading"><span></span> Loading full details...</div>' +
+    '</div>' +
+  '</section>';
+}
+
+function invalidateEventDetailCache(eventId) {
+  if (eventId) {
+    delete EVENT_DETAIL_CACHE[eventId];
+    return;
+  }
+  EVENT_DETAIL_CACHE = {};
 }
 
 function drawEventDetail(data) {
@@ -1443,6 +1930,7 @@ function drawEventDetail(data) {
   var event = data.event || {};
   window.CURRENT_DETAIL_EVENT = event;
   var registrations = data.registrations || [];
+  window.CURRENT_PUBLIC_MEMORIES = data.memories || [];
   var published = event.Status === 'Published';
   var canRegister = published && toBool(event.RegistrationRequired);
   var content = document.getElementById('eventDetailContent');
@@ -1460,8 +1948,8 @@ function drawEventDetail(data) {
   if (!content) return;
 
   var peopleCount = registrations.reduce(function(total, registration) {
-    if (String(registration.Status || '').toLowerCase() === 'cancelled') return total;
-    return total + Number(registration.AdultCount || 0) + Number(registration.ChildCount || 0);
+    if (!registrationConsumesCapacity(registration)) return total;
+    return total + getRegistrationPartySize(registration);
   }, 0);
 
   var maxParticipants = Number(event.MaxParticipants || 0);
@@ -1478,8 +1966,11 @@ function drawEventDetail(data) {
       '</button>';
   }
 
+  var imageCredit = String(event.ImageCredit || '').trim();
   var image = event.ImageUrl
-    ? '<div class="adventure-detail-image"><img src="' + escapeAttr(event.ImageUrl) + '" alt=""></div>'
+    ? '<div class="adventure-detail-image"><img src="' + escapeAttr(event.ImageUrl) + '" alt="Cover photo for ' + escapeAttr(event.Title || 'this adventure') + '">' +
+        (imageCredit ? '<span class="adventure-cover-credit">Photo shared by ' + escapeHtml(imageCredit) + '</span>' : '') +
+      '</div>'
     : '<div class="adventure-detail-image adventure-detail-image-fallback"><span>' + getAdventureDetailIcon(event.EventType) + '</span></div>';
 
   var mapLink = event.Address
@@ -1514,6 +2005,11 @@ function drawEventDetail(data) {
         '</div>' +
         '<h2>' + escapeHtml(event.Title || 'Untitled Adventure') + '</h2>' +
         '<p>' + formatDateRangeHtml(event) + '</p>' +
+        '<div class="adventure-hero-facts">' +
+          buildHeroFact(getMetaIcon('time'), formatTime(event.StartTime) || 'Time TBD') +
+          buildHeroFact(getMetaIcon('location'), event.LocationName || 'Location coming soon') +
+          buildHeroFact(getMetaIcon('cost'), getCostLabel(event) || 'Cost not listed') +
+        '</div>' +
       '</div>' +
     '</section>' +
 
@@ -1524,6 +2020,8 @@ function drawEventDetail(data) {
           '<h3>Adventure Details</h3>' +
           '<div class="adventure-rich-copy">' + formatAdventureCopy(event.Description || 'No description has been added yet.') + '</div>' +
         '</section>' +
+
+        buildAdventureJourney(event) +
 
         '<div class="adventure-info-grid">' +
           buildAdventureInfoCard(getMetaIcon('expect'), 'What To Expect', event.WhatToExpect || 'Details coming soon.') +
@@ -1566,8 +2064,9 @@ function drawEventDetail(data) {
             '<button class="secondary" type="button" onclick="copyAdventureLink(\'' + escapeJs(event.EventId) + '\')">Share</button>' +
             '<button class="secondary" type="button" onclick="downloadAdventureCalendar(\'' + escapeJs(event.EventId) + '\')">Calendar</button>' +
           '</div>' +
-          (event.OrganizerName ? '<div class="detail-organizer-card">' + buildOrganizerAvatar(event, 'detail-organizer-avatar') + '<div><small>Organized By</small><strong>' + escapeHtml(event.OrganizerName) + '</strong></div></div>' : '') +
         '</section>' +
+
+        buildOrganizerSpotlight(event) +
 
         '<section class="detail-community-card">' +
           '<span class="detail-community-icon">' + getUiIcon('community') + '</span>' +
@@ -1774,6 +2273,71 @@ function buildQuickInfoRow(icon, label, value) {
   '</div>';
 }
 
+function buildHeroFact(icon, value) {
+  return '<span class="adventure-hero-fact"><span>' + icon + '</span><strong>' + escapeHtml(value || '') + '</strong></span>';
+}
+
+function buildAdventureJourney(event) {
+  event = event || {};
+  var steps = [
+    { icon: getMetaIcon('calendar'), label: 'Plan', title: 'Save the date', copy: formatDateRange(event) || 'Date coming soon' },
+    { icon: getMetaIcon('bring'), label: 'Prepare', title: 'Get ready', copy: event.WhatToBring || 'Bring what you need to feel comfortable.' },
+    { icon: getUiIcon('community'), label: 'Connect', title: 'Join the adventure', copy: event.WhatToExpect || 'Come as you are and connect with the community.' }
+  ];
+
+  return '<section class="adventure-journey-section">' +
+    '<div class="adventure-section-heading"><div><span class="eyebrow">Your Adventure Journey</span><h3>Know What Comes Next</h3></div><p>A simple path from planning to connection.</p></div>' +
+    '<div class="adventure-journey-grid">' + steps.map(function(step, index) {
+      return '<article class="adventure-journey-step">' +
+        '<span class="adventure-journey-number">' + (index + 1) + '</span>' +
+        '<span class="adventure-journey-icon">' + step.icon + '</span>' +
+        '<small>' + escapeHtml(step.label) + '</small>' +
+        '<strong>' + escapeHtml(step.title) + '</strong>' +
+        '<p>' + formatAdventureCopy(step.copy) + '</p>' +
+      '</article>';
+    }).join('') + '</div>' +
+  '</section>';
+}
+
+function buildOrganizerSpotlight(event) {
+  event = event || {};
+  if (!event.OrganizerName) return '';
+
+  var contact = '';
+  if (CURRENT_USER && CURRENT_USER.isAdmin) {
+    if (event.OrganizerEmail) contact += '<a href="mailto:' + escapeAttr(event.OrganizerEmail) + '">Email Organizer</a>';
+    if (event.OrganizerPhone) contact += '<a href="tel:' + escapeAttr(event.OrganizerPhone) + '">Call Organizer</a>';
+  }
+
+  return '<section class="detail-organizer-spotlight">' +
+    '<span class="eyebrow">Your Adventure Host</span>' +
+    '<div class="detail-organizer-profile">' +
+      buildOrganizerAvatar(event, 'detail-organizer-avatar detail-organizer-avatar-large') +
+      '<div><small>Organized By</small><h3>' + escapeHtml(event.OrganizerName) + '</h3><p>A Community Connections member helping make this adventure possible.</p></div>' +
+    '</div>' +
+    (contact ? '<div class="detail-organizer-contact">' + contact + '</div>' : '') +
+  '</section>';
+}
+
+
+
+function getCommunityMemoryCaption(memory) {
+  memory = memory || {};
+  var candidates = [
+    memory.Caption,
+    memory.caption,
+    memory.MemoryCaption,
+    memory.PhotoCaption,
+    memory.Description
+  ];
+
+  for (var i = 0; i < candidates.length; i++) {
+    var value = String(candidates[i] === undefined || candidates[i] === null ? '' : candidates[i]).trim();
+    if (value) return value;
+  }
+
+  return '';
+}
 
 function buildCommunityMemoriesSection(event, memories) {
   memories = memories || [];
@@ -1783,34 +2347,542 @@ function buildCommunityMemoriesSection(event, memories) {
       escapeJs(event.EventId) + '\',\'' + escapeJs(event.Title || 'Adventure') + '\')">Manage Memories</button>'
     : '';
 
-  if (!memories.length && !adminButton) return '';
+  var isCompleted = String(event.Status || '').toLowerCase() === 'complete';
+  var shareButton = isCompleted
+    ? '<button class="primary" type="button" onclick="openPublicMemorySubmission(\'' +
+      escapeJs(event.EventId) + '\',\'' + escapeJs(event.Title || 'Adventure') + '\')">Share Your Memories</button>'
+    : '';
+  var actions = adminButton || shareButton
+    ? '<div class="community-memory-actions">' + shareButton + adminButton + '</div>'
+    : '';
 
+  if (!memories.length && !actions && !isCompleted) return '';
+
+  var initialVisibleMemoryCount = 12;
   var gallery = memories.length
-    ? '<div class="community-memory-grid">' + memories.map(function(memory) {
-        return '<figure class="community-memory-card' + (toBool(memory.Featured) ? ' is-featured' : '') + '">' +
-          '<img loading="lazy" src="' + escapeAttr(memory.ImageUrl) + '" alt="' + escapeAttr(memory.Caption || 'Community adventure memory') + '">' +
+    ? '<div id="communityMemoryGrid" class="community-memory-grid" role="list" aria-label="Community memory photos">' + memories.map(function(memory, index) {
+        var caption = getCommunityMemoryCaption(memory) || 'Community adventure memory';
+        var deferredClass = index >= initialVisibleMemoryCount ? ' is-deferred' : '';
+        return '<figure role="listitem" class="community-memory-card' + (toBool(memory.Featured) ? ' is-featured' : '') + deferredClass + '" data-memory-index="' + index + '">' +
+          '<button class="community-memory-open" type="button" onclick="openCommunityMemoryLightbox(' + index + ')" aria-label="Open memory photo ' + (index + 1) + ' of ' + memories.length + '">' +
+            '<img loading="lazy" ' + (index >= initialVisibleMemoryCount ? 'data-src="' : 'src="') + escapeAttr(memory.ImageUrl) + '" alt="' + escapeAttr(caption) + '" onload="handleMemoryImageLoaded(this)" onerror="handleMemoryImageError(this)">' +
+            '<span class="community-memory-zoom" aria-hidden="true">View Photo</span>' +
+          '</button>' +
           (toBool(memory.Featured) ? '<span class="memory-featured-badge">' + getDashboardIcon('featured') + '<span>Featured Memory</span></span>' : '') +
-          (memory.Caption ? '<figcaption>' + escapeHtml(memory.Caption) + '</figcaption>' : '') +
+          (getCommunityMemoryCaption(memory) ? '<figcaption class="community-memory-caption">' + escapeHtml(getCommunityMemoryCaption(memory)) + '</figcaption>' : '') +
         '</figure>';
-      }).join('') + '</div>'
-    : '<div class="dashboard-empty">No memory photos have been added yet.</div>';
+      }).join('') + '</div>' +
+      (memories.length > initialVisibleMemoryCount
+        ? '<div class="community-memory-load-more-wrap"><button id="communityMemoryLoadMore" class="secondary" type="button" onclick="revealMoreCommunityMemories()">Show More Memories</button></div>'
+        : '')
+    : '<div class="community-memory-empty" role="status" aria-live="polite">' +
+        '<span class="community-memory-empty-icon">' + getDashboardIcon('camera') + '</span>' +
+        '<div><strong>No memories have been shared yet.</strong>' +
+        '<p>Photos from this completed adventure will appear here after they are added.</p></div>' +
+      '</div>';
 
   return '<section class="community-memories-section">' +
     '<div class="community-memories-heading">' +
       '<div><span class="eyebrow">Community Memories</span><h3>Moments From This Adventure</h3>' +
       '<p>Photos help tell the story of the connections made along the way.</p></div>' +
-      adminButton +
+      actions +
     '</div>' +
     gallery +
   '</section>';
 }
 
+
+function revealMoreCommunityMemories() {
+  var deferred = Array.prototype.slice.call(document.querySelectorAll('#communityMemoryGrid .community-memory-card.is-deferred'));
+  deferred.slice(0, 12).forEach(function(card) {
+    card.classList.remove('is-deferred');
+    var image = card.querySelector('img[data-src]');
+    if (image) {
+      image.src = image.getAttribute('data-src');
+      image.removeAttribute('data-src');
+    }
+  });
+  var remaining = document.querySelectorAll('#communityMemoryGrid .community-memory-card.is-deferred').length;
+  var button = document.getElementById('communityMemoryLoadMore');
+  if (button) {
+    button.textContent = remaining ? 'Show More Memories (' + remaining + ' remaining)' : 'All Memories Shown';
+    button.disabled = !remaining;
+    if (!remaining) button.classList.add('is-complete');
+  }
+}
+
+
+function handleMemoryImageLoaded(image) {
+  if (!image) return;
+  image.classList.add('is-loaded');
+  var card = image.closest ? image.closest('.community-memory-card') : null;
+  if (card) card.classList.add('is-image-loaded');
+}
+
+
+function handleMemoryImageError(image) {
+  if (!image || image.dataset.memoryFallbackApplied === 'true') return;
+  image.dataset.memoryFallbackApplied = 'true';
+  image.removeAttribute('src');
+  image.alt = 'Memory photo unavailable';
+  image.classList.add('memory-image-unavailable');
+  var parent = image.parentElement;
+  if (parent && !parent.querySelector('.memory-image-fallback-label')) {
+    var label = document.createElement('span');
+    label.className = 'memory-image-fallback-label';
+    label.textContent = 'Photo unavailable';
+    parent.appendChild(label);
+  }
+}
+
+var CURRENT_MEMORY_LIGHTBOX_INDEX = 0;
+
+function ensureCommunityMemoryLightbox() {
+  if (document.getElementById('communityMemoryLightbox')) return;
+
+  var wrapper = document.createElement('div');
+  wrapper.id = 'communityMemoryLightbox';
+  wrapper.className = 'modal-backdrop community-memory-lightbox hidden';
+  wrapper.setAttribute('role', 'dialog');
+  wrapper.setAttribute('aria-modal', 'true');
+  wrapper.setAttribute('aria-label', 'Community memory photo viewer');
+  wrapper.innerHTML =
+    '<div class="community-memory-lightbox-panel">' +
+      '<button class="community-memory-lightbox-close" type="button" onclick="closeCommunityMemoryLightbox()" aria-label="Close photo viewer">×</button>' +
+      '<button class="community-memory-lightbox-nav previous" type="button" onclick="moveCommunityMemoryLightbox(-1)" aria-label="Previous photo">‹</button>' +
+      '<figure>' +
+        '<img id="communityMemoryLightboxImage" src="" alt="">' +
+        '<figcaption id="communityMemoryLightboxCaption"></figcaption>' +
+        '<div id="communityMemoryLightboxMeta" class="community-memory-lightbox-meta"></div>' +
+      '</figure>' +
+      '<button class="community-memory-lightbox-nav next" type="button" onclick="moveCommunityMemoryLightbox(1)" aria-label="Next photo">›</button>' +
+      '<div id="communityMemoryLightboxCount" class="community-memory-lightbox-count"></div>' +
+    '</div>';
+  document.body.appendChild(wrapper);
+
+  var touchStartX = null;
+  wrapper.addEventListener('touchstart', function(event) {
+    if (!event.touches || event.touches.length !== 1) return;
+    touchStartX = event.touches[0].clientX;
+  }, { passive: true });
+  wrapper.addEventListener('touchend', function(event) {
+    if (touchStartX === null || !event.changedTouches || !event.changedTouches.length) return;
+    var distance = event.changedTouches[0].clientX - touchStartX;
+    touchStartX = null;
+    if (Math.abs(distance) < 55) return;
+    moveCommunityMemoryLightbox(distance > 0 ? -1 : 1);
+  }, { passive: true });
+}
+
+function openCommunityMemoryLightbox(index) {
+  var memories = window.CURRENT_PUBLIC_MEMORIES || [];
+  if (!memories.length) return;
+
+  CURRENT_MEMORY_LIGHTBOX_INDEX = Math.max(0, Math.min(Number(index) || 0, memories.length - 1));
+  ensureCommunityMemoryLightbox();
+  renderCommunityMemoryLightbox();
+
+  var modal = document.getElementById('communityMemoryLightbox');
+  if (modal) {
+    modal.classList.remove('hidden');
+    var closeButton = modal.querySelector('.community-memory-lightbox-close');
+    if (closeButton) closeButton.focus();
+  }
+  document.body.classList.add('modal-open');
+}
+
+function renderCommunityMemoryLightbox() {
+  var memories = window.CURRENT_PUBLIC_MEMORIES || [];
+  if (!memories.length) return;
+
+  var memory = memories[CURRENT_MEMORY_LIGHTBOX_INDEX] || memories[0];
+  var image = document.getElementById('communityMemoryLightboxImage');
+  var caption = document.getElementById('communityMemoryLightboxCaption');
+  var count = document.getElementById('communityMemoryLightboxCount');
+  var meta = document.getElementById('communityMemoryLightboxMeta');
+  var modal = document.getElementById('communityMemoryLightbox');
+  var navigation = modal ? modal.querySelectorAll('.community-memory-lightbox-nav') : [];
+
+  if (image) {
+    image.src = memory.ImageUrl || '';
+    image.alt = getCommunityMemoryCaption(memory) || 'Community adventure memory';
+  }
+  if (caption) {
+    caption.textContent = getCommunityMemoryCaption(memory) || (toBool(memory.Featured) ? 'Featured community memory' : 'Community memory');
+  }
+  if (count) count.textContent = (CURRENT_MEMORY_LIGHTBOX_INDEX + 1) + ' of ' + memories.length;
+  if (meta) {
+    var contributor = String(memory.UploadedBy || '').trim();
+    var submitted = formatDate(memory.CreatedAt) || '';
+    var parts = [];
+    if (contributor) parts.push('Shared by ' + contributor);
+    if (submitted) parts.push(submitted);
+    meta.textContent = parts.join(' • ');
+    meta.classList.toggle('hidden', !parts.length);
+  }
+
+  if (memories.length > 1) {
+    [-1, 1].forEach(function(offset) {
+      var adjacent = memories[(CURRENT_MEMORY_LIGHTBOX_INDEX + offset + memories.length) % memories.length];
+      if (adjacent && adjacent.ImageUrl) {
+        var preload = new Image();
+        preload.src = adjacent.ImageUrl;
+      }
+    });
+  }
+
+  Array.prototype.forEach.call(navigation, function(button) {
+    button.classList.toggle('hidden', memories.length < 2);
+  });
+}
+
+function moveCommunityMemoryLightbox(direction) {
+  var memories = window.CURRENT_PUBLIC_MEMORIES || [];
+  if (memories.length < 2) return;
+
+  CURRENT_MEMORY_LIGHTBOX_INDEX = (CURRENT_MEMORY_LIGHTBOX_INDEX + direction + memories.length) % memories.length;
+  renderCommunityMemoryLightbox();
+}
+
+function closeCommunityMemoryLightbox() {
+  var modal = document.getElementById('communityMemoryLightbox');
+  if (modal) modal.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+
+document.addEventListener('keydown', function(event) {
+  var modal = document.getElementById('communityMemoryLightbox');
+  if (!modal || modal.classList.contains('hidden')) return;
+  if (event.key === 'ArrowLeft') moveCommunityMemoryLightbox(-1);
+  if (event.key === 'ArrowRight') moveCommunityMemoryLightbox(1);
+  if (event.key === 'Escape') closeCommunityMemoryLightbox();
+});
+
+
+var CURRENT_PUBLIC_MEMORY_EVENT_ID = '';
+var CURRENT_PUBLIC_MEMORY_EVENT_TITLE = '';
+
+// V24 compatibility helper used by the Community Memories submission flow.
+function setText(id, value) {
+  var element = document.getElementById(id);
+  if (element) element.textContent = value == null ? '' : String(value);
+}
+
+function openPublicMemorySubmission(eventId, eventTitle) {
+  CURRENT_PUBLIC_MEMORY_EVENT_ID = eventId || '';
+  CURRENT_PUBLIC_MEMORY_EVENT_TITLE = eventTitle || 'Adventure';
+  ensurePublicMemorySubmission();
+  setTextValue('publicMemorySubmissionTitle', 'Share Memories From ' + CURRENT_PUBLIC_MEMORY_EVENT_TITLE);
+  resetPublicMemorySubmission();
+  var modal = document.getElementById('publicMemorySubmissionModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    var nameInput = document.getElementById('publicMemoryName');
+    if (nameInput) nameInput.focus();
+  }
+  document.body.classList.add('modal-open');
+}
+
+function ensurePublicMemorySubmission() {
+  if (document.getElementById('publicMemorySubmissionModal')) return;
+  var wrapper = document.createElement('div');
+  wrapper.id = 'publicMemorySubmissionModal';
+  wrapper.className = 'modal-backdrop hidden';
+  wrapper.innerHTML =
+    '<div class="modal-panel public-memory-submission-modal" role="dialog" aria-modal="true" aria-labelledby="publicMemorySubmissionTitle">' +
+      '<div class="modal-header">' +
+        '<div><span class="eyebrow">Community Memories</span><h2 id="publicMemorySubmissionTitle">Share Your Memories</h2></div>' +
+        '<button class="secondary" type="button" onclick="closePublicMemorySubmission()">Close</button>' +
+      '</div>' +
+      '<div class="public-memory-intro"><strong>Help tell the story of this adventure.</strong><p>Submitted photos stay hidden until an organizer approves them.</p></div>' +
+      '<label for="publicMemoryName">Your Name</label>' +
+      '<input id="publicMemoryName" maxlength="80" placeholder="Name shown to the organizer">' +
+      '<label for="publicMemoryFiles">Choose Photos</label>' +
+      '<input id="publicMemoryFiles" class="memory-file-input" type="file" multiple accept="image/jpeg,image/png,image/webp" onchange="previewPublicMemorySubmission()">' +
+      '<div id="publicMemoryDropZone" class="memory-drop-zone" tabindex="0" role="button" aria-label="Choose or drop memory photos" onclick="document.getElementById(\'publicMemoryFiles\').click()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();document.getElementById(\'publicMemoryFiles\').click();}">' +
+        '<div id="publicMemoryPreview" class="memory-upload-preview"><span class="memory-upload-icon">' + getDashboardIcon('camera') + '</span><strong>Drag photos here or click to browse</strong><small>Up to 10 JPG, PNG, or WebP photos, 8 MB each</small></div>' +
+      '</div>' +
+      '<label for="publicMemoryCaption">Caption</label>' +
+      '<input id="publicMemoryCaption" maxlength="240" placeholder="What was happening in this moment?">' +
+      '<div id="publicMemoryProgress" class="memory-upload-progress hidden"><div id="publicMemoryProgressBar"></div><span id="publicMemoryProgressText">Preparing upload...</span></div>' +
+      '<button id="publicMemorySubmitButton" class="primary" type="button" onclick="submitPublicMemories()">Submit Memories</button>' +
+    '</div>';
+  document.body.appendChild(wrapper);
+  wireAllMemoryDropZones();
+}
+
+function closePublicMemorySubmission() {
+  var modal = document.getElementById('publicMemorySubmissionModal');
+  if (modal) modal.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+
+function resetPublicMemorySubmission() {
+  var files = document.getElementById('publicMemoryFiles');
+  if (files) files.value = '';
+  setVal('publicMemoryCaption', '');
+  var preview = document.getElementById('publicMemoryPreview');
+  if (preview) preview.innerHTML = '<span class="memory-upload-icon">' + getDashboardIcon('camera') + '</span><strong>Drag photos here or click to browse</strong><small>Up to 10 photos, 8 MB each</small>';
+  setPublicMemoryProgress(0, 0, '');
+}
+
+function previewPublicMemorySubmission() {
+  var input = document.getElementById('publicMemoryFiles');
+  var preview = document.getElementById('publicMemoryPreview');
+  if (!input || !preview || !input.files || !input.files.length) return;
+  var files = Array.prototype.slice.call(input.files);
+  if (files.length > 10) {
+    showAppMessage('Too Many Photos', 'Choose up to 10 photos at a time.');
+    input.value = '';
+    preview.innerHTML = '<span class="memory-upload-icon">' + getDashboardIcon('camera') + '</span><strong>Drag photos here or click to browse</strong><small>Up to 10 photos, 8 MB each</small>';
+    return;
+  }
+  var invalid = files.find(function(file) {
+    return file.size > 8 * 1024 * 1024 || ['image/jpeg', 'image/png', 'image/webp'].indexOf(file.type) === -1;
+  });
+  if (invalid) {
+    showAppMessage('Photo Not Supported', 'Each photo must be a JPG, PNG, or WebP smaller than 8 MB.');
+    input.value = '';
+    return;
+  }
+  preview.innerHTML = '<div class="memory-preview-grid">' + files.map(function(file) {
+    return '<img src="' + escapeAttr(URL.createObjectURL(file)) + '" alt="Selected memory photo">';
+  }).join('') + '</div>';
+}
+
+function setPublicMemoryProgress(done, total, text) {
+  var wrap = document.getElementById('publicMemoryProgress');
+  var bar = document.getElementById('publicMemoryProgressBar');
+  var label = document.getElementById('publicMemoryProgressText');
+  if (!wrap || !bar || !label) return;
+  if (!total) {
+    wrap.classList.add('hidden');
+    bar.style.width = '0%';
+    label.textContent = '';
+    return;
+  }
+  wrap.classList.remove('hidden');
+  bar.style.width = Math.round((done / total) * 100) + '%';
+  label.textContent = text || (done + ' of ' + total);
+}
+
+
+function setFilesOnMemoryInput(inputId, files) {
+  var input = document.getElementById(inputId);
+  if (!input || !files || !files.length) return;
+  var transfer = new DataTransfer();
+  Array.prototype.slice.call(files).forEach(function(file) { transfer.items.add(file); });
+  input.files = transfer.files;
+  if (inputId === 'publicMemoryFiles') previewPublicMemorySubmission();
+  else previewMemoryUpload();
+}
+
+function wireMemoryDropZone(zoneId, inputId) {
+  var zone = document.getElementById(zoneId);
+  if (!zone || zone.dataset.dropReady === 'true') return;
+  zone.dataset.dropReady = 'true';
+  ['dragenter', 'dragover'].forEach(function(type) {
+    zone.addEventListener(type, function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      zone.classList.add('is-dragging');
+    });
+  });
+  ['dragleave', 'drop'].forEach(function(type) {
+    zone.addEventListener(type, function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      zone.classList.remove('is-dragging');
+    });
+  });
+  zone.addEventListener('drop', function(event) {
+    if (event.dataTransfer && event.dataTransfer.files) {
+      setFilesOnMemoryInput(inputId, event.dataTransfer.files);
+    }
+  });
+}
+
+function wireAllMemoryDropZones() {
+  wireMemoryDropZone('publicMemoryDropZone', 'publicMemoryFiles');
+  wireMemoryDropZone('memoryUploadDropZone', 'memoryUploadFile');
+}
+
+function submitPublicMemories() {
+  var input = document.getElementById('publicMemoryFiles');
+  var button = document.getElementById('publicMemorySubmitButton');
+  var name = val('publicMemoryName');
+  var caption = val('publicMemoryCaption');
+  if (!name) {
+    showAppMessage('Name Required', 'Enter your name before submitting memories.');
+    return;
+  }
+  if (!input || !input.files || !input.files.length) {
+    showAppMessage('Choose Photos', 'Select at least one photo to submit.');
+    return;
+  }
+  var files = Array.prototype.slice.call(input.files);
+  var processed = 0;
+  var failures = 0;
+  if (button) { button.disabled = true; button.textContent = 'Submitting 0 of ' + files.length + '...'; }
+  setPublicMemoryProgress(0, files.length, 'Preparing photos...');
+
+  function finish() {
+    if (button) { button.disabled = false; button.textContent = 'Submit Memories'; }
+    if (failures) {
+      showAppMessage('Submission Finished', (files.length - failures) + ' photo(s) submitted. ' + failures + ' could not be uploaded.');
+    } else {
+      closePublicMemorySubmission();
+      showAppMessage('Memories Submitted', 'Thank you. Your photos were sent to the organizer for approval.');
+    }
+    resetPublicMemorySubmission();
+  }
+
+  function next(index) {
+    if (index >= files.length) { finish(); return; }
+    var file = files[index];
+    var reader = new FileReader();
+    if (button) button.textContent = 'Submitting ' + (index + 1) + ' of ' + files.length + '...';
+    setPublicMemoryProgress(processed, files.length, 'Uploading ' + file.name + '...');
+    reader.onload = function() {
+      google.script.run
+        .withSuccessHandler(function() {
+          processed++;
+          setPublicMemoryProgress(processed, files.length, processed + ' of ' + files.length + ' submitted');
+          next(index + 1);
+        })
+        .withFailureHandler(function() {
+          failures++;
+          processed++;
+          setPublicMemoryProgress(processed, files.length, processed + ' of ' + files.length + ' processed');
+          next(index + 1);
+        })
+        .submitEventMemory(CURRENT_PUBLIC_MEMORY_EVENT_ID, {
+          fileName: file.name,
+          mimeType: file.type,
+          base64: reader.result
+        }, caption, name);
+    };
+    reader.onerror = function() { failures++; processed++; next(index + 1); };
+    reader.readAsDataURL(file);
+  }
+  next(0);
+}
+
 var CURRENT_MEMORY_EVENT_ID = '';
 var CURRENT_MEMORY_EVENT_TITLE = '';
+var CURRENT_MEMORY_MANAGER_ROWS = [];
+var CURRENT_MEMORY_MANAGER_FILTER = 'all';
+var CURRENT_MEMORY_MANAGER_SELECTION = {};
+
+
+function openCommunityMemoriesDashboard() {
+  var events = getCommunityMemoryEligibleEvents_();
+
+  if (!events.length) {
+    showAppMessage(
+      'Community Memories',
+      'No completed adventures are available yet. Mark an adventure complete before reviewing or publishing its Community Memories.'
+    );
+    return;
+  }
+
+  if (events.length === 1) {
+    openMemoryManager(events[0].EventId, events[0].Title || 'Adventure');
+    return;
+  }
+
+  ensureCommunityMemoryAdventurePicker_();
+  var list = document.getElementById('communityMemoryAdventurePickerList');
+  if (!list) return;
+
+  list.innerHTML = events.map(function(event) {
+    var title = escapeHtml(event.Title || 'Adventure');
+    var date = escapeHtml(formatDateRange(event) || formatDate(event.StartDate) || 'Completed adventure');
+    var pending = Number(event.PendingMemoryCount || event.PendingMemories || 0);
+    var badge = pending > 0
+      ? '<span class="memory-picker-pending">' + pending + ' pending</span>'
+      : '<span class="memory-picker-ready">Open review</span>';
+
+    return '<button type="button" class="memory-adventure-picker-row" onclick="chooseCommunityMemoryAdventure_(\'' +
+      escapeJs(event.EventId) + '\',\'' + escapeJs(event.Title || 'Adventure') + '\')">' +
+      '<span><strong>' + title + '</strong><small>' + date + '</small></span>' +
+      badge +
+    '</button>';
+  }).join('');
+
+  document.getElementById('communityMemoryAdventurePicker').classList.remove('hidden');
+}
+
+function getCommunityMemoryEligibleEvents_() {
+  var combined = []
+    .concat(PAST_VISIBLE_EVENTS || [])
+    .concat(ALL_VISIBLE_EVENTS || []);
+  var seen = {};
+  var eligible = [];
+
+  combined.forEach(function(event) {
+    var id = String(event && event.EventId || '');
+    if (!id || seen[id]) return;
+    seen[id] = true;
+
+    var status = String(event.Status || '').trim().toLowerCase();
+    if (status === 'complete' || status === 'completed') eligible.push(event);
+  });
+
+  return eligible.sort(function(a, b) {
+    return String(b.StartDate || '').localeCompare(String(a.StartDate || ''));
+  });
+}
+
+function ensureCommunityMemoryAdventurePicker_() {
+  if (document.getElementById('communityMemoryAdventurePicker')) return;
+
+  var wrapper = document.createElement('div');
+  wrapper.id = 'communityMemoryAdventurePicker';
+  wrapper.className = 'modal-backdrop hidden';
+  wrapper.innerHTML =
+    '<div class="modal-panel community-memory-picker-modal">' +
+      '<div class="modal-header">' +
+        '<div><span class="eyebrow">Organizer Review</span><h2>Community Memories</h2>' +
+        '<p class="meta">Choose a completed adventure to review submitted photos, edit captions, approve, feature, or reject.</p></div>' +
+        '<button class="secondary" type="button" onclick="closeCommunityMemoryAdventurePicker_()">Close</button>' +
+      '</div>' +
+      '<div id="communityMemoryAdventurePickerList" class="memory-adventure-picker-list"></div>' +
+    '</div>';
+
+  document.body.appendChild(wrapper);
+  wrapper.addEventListener('click', function(event) {
+    if (event.target === wrapper) closeCommunityMemoryAdventurePicker_();
+  });
+}
+
+function chooseCommunityMemoryAdventure_(eventId, eventTitle) {
+  closeCommunityMemoryAdventurePicker_();
+  openMemoryManager(eventId, eventTitle);
+}
+
+function closeCommunityMemoryAdventurePicker_() {
+  var picker = document.getElementById('communityMemoryAdventurePicker');
+  if (picker) picker.classList.add('hidden');
+}
+
+function updateCommunityMemoryCommandBadge_() {
+  var badge = document.getElementById('commandCenterMemoryBadge');
+  if (!badge) return;
+
+  var total = getCommunityMemoryEligibleEvents_().reduce(function(sum, event) {
+    return sum + Number(event.PendingMemoryCount || event.PendingMemories || 0);
+  }, 0);
+
+  badge.textContent = total;
+  badge.classList.toggle('hidden', total < 1);
+}
 
 function openMemoryManager(eventId, eventTitle) {
   CURRENT_MEMORY_EVENT_ID = eventId;
   CURRENT_MEMORY_EVENT_TITLE = eventTitle || 'Adventure';
+  CURRENT_MEMORY_MANAGER_FILTER = 'all';
+  CURRENT_MEMORY_MANAGER_SELECTION = {};
   ensureMemoryManager();
   var modal = document.getElementById('memoryManagerModal');
   if (modal) modal.classList.remove('hidden');
@@ -1818,7 +2890,17 @@ function openMemoryManager(eventId, eventTitle) {
 }
 
 function ensureMemoryManager() {
-  if (document.getElementById('memoryManagerModal')) return;
+  var existing = document.getElementById('memoryManagerModal');
+  if (existing) {
+    var hasCurrentBulkControls =
+      document.getElementById('memorySelectAllVisible') &&
+      document.getElementById('bulkApproveMemoriesButton') &&
+      document.getElementById('bulkFeatureMemoriesButton') &&
+      document.getElementById('bulkRejectMemoriesButton') &&
+      document.getElementById('bulkDeleteMemoriesButton');
+    if (hasCurrentBulkControls) return;
+    existing.remove();
+  }
 
   var wrapper = document.createElement('div');
   wrapper.id = 'memoryManagerModal';
@@ -1831,11 +2913,33 @@ function ensureMemoryManager() {
       '</div>' +
       '<div class="memory-upload-panel">' +
         '<div><label for="memoryUploadFile">Add a Photo</label><p class="meta">JPG, PNG, or WebP up to 8 MB.</p></div>' +
-        '<input id="memoryUploadFile" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewMemoryUpload()">' +
-        '<div id="memoryUploadPreview" class="memory-upload-preview"><span class="memory-upload-icon">' + getDashboardIcon('camera') + '</span><strong>Select a photo</strong></div>' +
+        '<input id="memoryUploadFile" class="memory-file-input" type="file" multiple accept="image/jpeg,image/png,image/webp" onchange="previewMemoryUpload()">' +
+        '<div id="memoryUploadDropZone" class="memory-drop-zone" tabindex="0" role="button" aria-label="Choose or drop memory photos" onclick="document.getElementById(\'memoryUploadFile\').click()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();document.getElementById(\'memoryUploadFile\').click();}">' +
+          '<div id="memoryUploadPreview" class="memory-upload-preview"><span class="memory-upload-icon">' + getDashboardIcon('camera') + '</span><strong>Drag photos here or click to browse</strong><small>Up to 10 JPG, PNG, or WebP photos, 8 MB each</small></div>' +
+        '</div>' +
+        '<div id="memoryUploadProgress" class="memory-upload-progress hidden"><div id="memoryUploadProgressBar"></div><span id="memoryUploadProgressText">Preparing upload...</span></div>' +
         '<label for="memoryUploadCaption">Caption</label>' +
         '<input id="memoryUploadCaption" maxlength="240" placeholder="What was happening in this moment?">' +
-        '<button id="memoryUploadButton" class="primary" type="button" onclick="uploadCommunityMemory()">Add Memory Photo</button>' +
+        '<button id="memoryUploadButton" class="primary" type="button" onclick="uploadCommunityMemory()">Add Memory Photos</button>' +
+      '</div>' +
+      '<div class="memory-manager-toolbar">' +
+        '<div id="memoryManagerSummary" class="memory-manager-summary">Loading memory status...</div>' +
+        '<div class="memory-manager-toolbar-actions">' +
+          '<button id="memoryFilterAll" class="secondary is-active" type="button" onclick="setMemoryManagerFilter(\'all\')">All</button>' +
+          '<button id="memoryFilterPending" class="secondary" type="button" onclick="setMemoryManagerFilter(\'pending\')">Pending</button>' +
+          '<button id="memoryFilterApproved" class="secondary" type="button" onclick="setMemoryManagerFilter(\'approved\')">Approved</button>' +
+          '<button id="approveAllPendingMemoriesButton" class="primary hidden" type="button" onclick="approveAllPendingMemories()">Approve All Pending</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="memoryBulkToolbar" class="memory-bulk-toolbar">' +
+        '<label class="memory-select-all"><input id="memorySelectAllVisible" type="checkbox" onchange="toggleSelectAllVisibleMemories(this.checked)"> Select all visible</label>' +
+        '<span id="memorySelectedCount" class="memory-selected-count">0 selected</span>' +
+        '<div class="memory-bulk-actions">' +
+          '<button id="bulkApproveMemoriesButton" class="secondary" type="button" onclick="runBulkMemoryAction(&quot;approve&quot;)" disabled>Approve Selected</button>' +
+          '<button id="bulkFeatureMemoriesButton" class="secondary" type="button" onclick="runBulkMemoryAction(&quot;feature&quot;)" disabled>Feature Selected</button>' +
+          '<button id="bulkRejectMemoriesButton" class="secondary" type="button" onclick="runBulkMemoryAction(&quot;reject&quot;)" disabled>Reject Selected</button>' +
+          '<button id="bulkDeleteMemoriesButton" class="danger-button" type="button" onclick="runBulkMemoryAction(&quot;delete&quot;)" disabled>Delete Selected</button>' +
+        '</div>' +
       '</div>' +
       '<div id="memoryManagerList" class="memory-manager-grid"><div class="notice">Loading memories...</div></div>' +
     '</div>';
@@ -1845,18 +2949,12 @@ function ensureMemoryManager() {
   });
 
   document.body.appendChild(wrapper);
+  wireAllMemoryDropZones();
 }
 
 function closeMemoryManager() {
   var modal = document.getElementById('memoryManagerModal');
   if (modal) modal.classList.add('hidden');
-  var input = document.getElementById('memoryUploadFile');
-  if (input) input.value = '';
-  setVal('memoryUploadCaption', '');
-  var preview = document.getElementById('memoryUploadPreview');
-  if (preview) preview.innerHTML = '<span class="memory-upload-icon">' + getDashboardIcon('camera') + '</span><strong>Select a photo</strong>';
-  CURRENT_MEMORY_EVENT_ID = '';
-  CURRENT_MEMORY_EVENT_TITLE = '';
 }
 
 function loadMemoryManager() {
@@ -1875,18 +2973,44 @@ function previewMemoryUpload() {
   var preview = document.getElementById('memoryUploadPreview');
   if (!input || !preview || !input.files || !input.files.length) return;
 
-  var file = input.files[0];
-  if (file.size > 8 * 1024 * 1024) {
-    showAppMessage('Photo Too Large', 'Choose a photo smaller than 8 MB.');
+  var files = Array.prototype.slice.call(input.files);
+  if (files.length > 10) {
+    showAppMessage('Too Many Photos', 'Choose up to 10 photos at a time.');
+    input.value = '';
+    preview.innerHTML = '<span class="memory-upload-icon">' + getDashboardIcon('camera') + '</span><strong>Drag photos here or click to browse</strong><small>Up to 10 photos, 8 MB each</small>';
+    return;
+  }
+  var invalid = files.find(function(file) {
+    return file.size > 8 * 1024 * 1024 || ['image/jpeg', 'image/png', 'image/webp'].indexOf(file.type) === -1;
+  });
+
+  if (invalid) {
+    showAppMessage('Photo Not Supported', 'Each photo must be a JPG, PNG, or WebP smaller than 8 MB.');
     input.value = '';
     return;
   }
 
-  var reader = new FileReader();
-  reader.onload = function() {
-    preview.innerHTML = '<img src="' + escapeAttr(reader.result) + '" alt="Memory preview">';
-  };
-  reader.readAsDataURL(file);
+  preview.innerHTML = '<div class="memory-preview-grid"></div><strong>' + files.length + ' photo' + (files.length === 1 ? '' : 's') + ' selected</strong>';
+  var grid = preview.querySelector('.memory-preview-grid');
+  files.slice(0, 8).forEach(function(file) {
+    var reader = new FileReader();
+    reader.onload = function() {
+      var img = document.createElement('img');
+      img.src = reader.result;
+      img.alt = 'Memory upload preview';
+      grid.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function setMemoryUploadProgress(done, total, label) {
+  var wrap = document.getElementById('memoryUploadProgress');
+  var bar = document.getElementById('memoryUploadProgressBar');
+  var text = document.getElementById('memoryUploadProgressText');
+  if (wrap) wrap.classList.toggle('hidden', !total);
+  if (bar) bar.style.width = total ? Math.round((done / total) * 100) + '%' : '0%';
+  if (text) text.textContent = label || (done + ' of ' + total + ' uploaded');
 }
 
 function uploadCommunityMemory() {
@@ -1894,77 +3018,285 @@ function uploadCommunityMemory() {
   var button = document.getElementById('memoryUploadButton');
 
   if (!input || !input.files || !input.files.length) {
-    showAppMessage('Photo Required', 'Choose a photo to add to this adventure.');
+    showAppMessage('Photo Required', 'Choose at least one photo to add to this adventure.');
     return;
   }
 
-  var file = input.files[0];
-  var reader = new FileReader();
+  var files = Array.prototype.slice.call(input.files);
+  var caption = val('memoryUploadCaption');
+  var completed = 0;
+  var failed = [];
 
   if (button) {
     button.disabled = true;
-    button.textContent = 'Uploading...';
+    button.textContent = 'Uploading 0 of ' + files.length + '...';
   }
+  setMemoryUploadProgress(0, files.length, 'Preparing ' + files.length + ' photo' + (files.length === 1 ? '' : 's') + '...');
 
-  reader.onload = function() {
-    google.script.run
-      .withSuccessHandler(function(response) {
-        if (button) {
-          button.disabled = false;
-          button.textContent = 'Add Memory Photo';
-        }
-
-        input.value = '';
-        setVal('memoryUploadCaption', '');
-        var preview = document.getElementById('memoryUploadPreview');
-        if (preview) preview.innerHTML = '<span class="memory-upload-icon">' + getDashboardIcon('camera') + '</span><strong>Select a photo</strong>';
-
-        showToastMessage(response && response.message ? response.message : 'Memory photo added.');
-        loadMemoryManager();
-      })
-      .withFailureHandler(function(error) {
-        if (button) {
-          button.disabled = false;
-          button.textContent = 'Add Memory Photo';
-        }
-        showError(error);
-      })
-      .uploadEventMemory(
-        CURRENT_MEMORY_EVENT_ID,
-        {
-          fileName: file.name,
-          mimeType: file.type,
-          base64: reader.result
-        },
-        val('memoryUploadCaption')
-      );
-  };
-
-  reader.onerror = function() {
+  function finish() {
     if (button) {
       button.disabled = false;
-      button.textContent = 'Add Memory Photo';
+      button.textContent = 'Add Memory Photos';
     }
-    showError(new Error('The photo could not be read.'));
-  };
+    input.value = '';
+    setVal('memoryUploadCaption', '');
+    var preview = document.getElementById('memoryUploadPreview');
+    if (preview) preview.innerHTML = '<span class="memory-upload-icon">' + getDashboardIcon('camera') + '</span><strong>Drag photos here or click to browse</strong><small>Up to 10 photos, 8 MB each</small>';
+    setMemoryUploadProgress(0, 0, '');
 
-  reader.readAsDataURL(file);
+    if (failed.length) {
+      showAppMessage('Upload Finished With Errors', (files.length - failed.length) + ' photo(s) uploaded. ' + failed.length + ' failed.');
+    } else {
+      showToastMessage(files.length + ' memory photo' + (files.length === 1 ? '' : 's') + ' added.');
+    }
+    loadMemoryManager();
+  }
+
+  function uploadNext(index) {
+    if (index >= files.length) {
+      finish();
+      return;
+    }
+
+    var file = files[index];
+    var reader = new FileReader();
+    if (button) button.textContent = 'Uploading ' + (index + 1) + ' of ' + files.length + '...';
+    setMemoryUploadProgress(index, files.length, 'Uploading ' + file.name + '...');
+
+    reader.onload = function() {
+      google.script.run
+        .withSuccessHandler(function() {
+          completed++;
+          setMemoryUploadProgress(completed, files.length, completed + ' of ' + files.length + ' uploaded');
+          uploadNext(index + 1);
+        })
+        .withFailureHandler(function(error) {
+          failed.push({ file: file.name, error: error });
+          completed++;
+          setMemoryUploadProgress(completed, files.length, completed + ' of ' + files.length + ' processed');
+          uploadNext(index + 1);
+        })
+        .uploadEventMemory(
+          CURRENT_MEMORY_EVENT_ID,
+          { fileName: file.name, mimeType: file.type, base64: reader.result },
+          caption
+        );
+    };
+
+    reader.onerror = function() {
+      failed.push({ file: file.name, error: new Error('The photo could not be read.') });
+      completed++;
+      uploadNext(index + 1);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  uploadNext(0);
 }
 
 function renderMemoryManager(memories) {
+  CURRENT_MEMORY_MANAGER_ROWS = memories || [];
+  renderFilteredMemoryManager();
+}
+
+function setMemoryManagerFilter(filter) {
+  CURRENT_MEMORY_MANAGER_FILTER = ['all', 'pending', 'approved'].indexOf(filter) >= 0 ? filter : 'all';
+  renderFilteredMemoryManager();
+}
+
+function getVisibleMemoryManagerRows() {
+  return (CURRENT_MEMORY_MANAGER_ROWS || []).filter(function(memory) {
+    if (CURRENT_MEMORY_MANAGER_FILTER === 'pending') return !toBool(memory.Approved);
+    if (CURRENT_MEMORY_MANAGER_FILTER === 'approved') return toBool(memory.Approved);
+    return true;
+  });
+}
+
+function toggleMemoryManagerSelection(memoryId, selected) {
+  if (selected) CURRENT_MEMORY_MANAGER_SELECTION[memoryId] = true;
+  else delete CURRENT_MEMORY_MANAGER_SELECTION[memoryId];
+  updateMemoryBulkToolbar();
+}
+
+function toggleSelectAllVisibleMemories(selected) {
+  getVisibleMemoryManagerRows().forEach(function(memory) {
+    if (selected) CURRENT_MEMORY_MANAGER_SELECTION[memory.MemoryId] = true;
+    else delete CURRENT_MEMORY_MANAGER_SELECTION[memory.MemoryId];
+  });
+  renderFilteredMemoryManager();
+}
+
+function updateMemoryBulkToolbar() {
+  var selectedIds = Object.keys(CURRENT_MEMORY_MANAGER_SELECTION || {}).filter(function(memoryId) {
+    return CURRENT_MEMORY_MANAGER_SELECTION[memoryId];
+  });
+  var visibleRows = getVisibleMemoryManagerRows();
+  var selectedVisible = visibleRows.filter(function(memory) {
+    return !!CURRENT_MEMORY_MANAGER_SELECTION[memory.MemoryId];
+  }).length;
+  var count = document.getElementById('memorySelectedCount');
+  if (count) count.textContent = selectedIds.length + ' selected';
+  ['bulkApproveMemoriesButton', 'bulkRejectMemoriesButton', 'bulkDeleteMemoriesButton'].forEach(function(id) {
+    var button = document.getElementById(id);
+    if (button) button.disabled = selectedIds.length === 0;
+  });
+  var featureButton = document.getElementById('bulkFeatureMemoriesButton');
+  if (featureButton) {
+    featureButton.disabled = selectedIds.length !== 1;
+    featureButton.title = selectedIds.length > 1 ? 'Select exactly one memory to feature.' : '';
+  }
+  var selectAll = document.getElementById('memorySelectAllVisible');
+  if (selectAll) {
+    selectAll.checked = visibleRows.length > 0 && selectedVisible === visibleRows.length;
+    selectAll.indeterminate = selectedVisible > 0 && selectedVisible < visibleRows.length;
+  }
+}
+
+
+function getSelectedMemoryIds() {
+  return Object.keys(CURRENT_MEMORY_MANAGER_SELECTION || {}).filter(function(memoryId) {
+    return !!CURRENT_MEMORY_MANAGER_SELECTION[memoryId];
+  });
+}
+
+function runBulkMemoryAction(action) {
+  var selectedIds = getSelectedMemoryIds();
+
+  if (!selectedIds.length) {
+    showToastMessage('Select at least one memory first.');
+    return false;
+  }
+
+  if (action === 'feature' && selectedIds.length !== 1) {
+    showToastMessage('Select exactly one memory to feature.');
+    return false;
+  }
+
+  var labels = {
+    approve: {
+      title: 'Approve Selected Memories?',
+      body: 'This will make ' + selectedIds.length + ' selected photo' + (selectedIds.length === 1 ? '' : 's') + ' visible in the public gallery.',
+      confirm: 'Approve Selected',
+      success: 'Selected memories approved.'
+    },
+    feature: {
+      title: 'Feature This Memory?',
+      body: 'This memory will be approved and become the featured memory for this adventure.',
+      confirm: 'Feature Memory',
+      success: 'Featured memory updated.'
+    },
+    reject: {
+      title: 'Reject Selected Memories?',
+      body: 'This removes ' + selectedIds.length + ' selected photo' + (selectedIds.length === 1 ? '' : 's') + ' from the moderation queue and moves the files into the adventure Archive folder.',
+      confirm: 'Reject Selected',
+      success: 'Selected memories rejected.'
+    },
+    delete: {
+      title: 'Delete Selected Memories?',
+      body: 'This permanently removes ' + selectedIds.length + ' selected photo' + (selectedIds.length === 1 ? '' : 's') + ' and cannot be undone.',
+      confirm: 'Delete Selected',
+      success: 'Selected memories deleted.',
+      danger: true
+    }
+  };
+  var copy = labels[action];
+  if (!copy) {
+    showAppMessage('Action Not Available', 'That bulk moderation action is not supported.');
+    return;
+  }
+
+  showAppMessage(copy.title, copy.body, {
+    confirmText: copy.confirm,
+    cancelText: 'Cancel',
+    danger: !!copy.danger,
+    onConfirm: function() {
+      var buttonId = action === 'approve'
+        ? 'bulkApproveMemoriesButton'
+        : action === 'feature'
+          ? 'bulkFeatureMemoriesButton'
+          : action === 'reject'
+            ? 'bulkRejectMemoriesButton'
+            : 'bulkDeleteMemoriesButton';
+      var button = document.getElementById(buttonId);
+      if (button) {
+        button.disabled = true;
+        button.dataset.originalText = button.textContent;
+        button.textContent = 'Working...';
+      }
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          CURRENT_MEMORY_MANAGER_SELECTION = {};
+          showToastMessage(response && response.message ? response.message : copy.success);
+          loadMemoryManager();
+        })
+        .withFailureHandler(function(error) {
+          if (button) {
+            button.disabled = false;
+            button.textContent = button.dataset.originalText || copy.confirm;
+          }
+          showError(error);
+        })
+        .bulkModerateEventMemories(CURRENT_MEMORY_EVENT_ID, selectedIds, action);
+    }
+  });
+}
+
+
+// ======================================================================
+// Legacy compatibility API for regression tests
+// Export the real functions so source-contract tests inspect the actual
+// validation and protected API call instead of a thin wrapper.
+// ======================================================================
+window.getSelectedMemoryIds = getSelectedMemoryIds;
+window.runBulkMemoryAction = runBulkMemoryAction;
+window.updateMemoryBulkToolbar = updateMemoryBulkToolbar;
+
+function renderFilteredMemoryManager() {
   var list = document.getElementById('memoryManagerList');
   if (!list) return;
 
-  memories = memories || [];
+  var memories = CURRENT_MEMORY_MANAGER_ROWS || [];
+  var pendingCount = memories.filter(function(memory) { return !toBool(memory.Approved); }).length;
+  var approvedCount = memories.length - pendingCount;
+  var summary = document.getElementById('memoryManagerSummary');
+  var approveAllButton = document.getElementById('approveAllPendingMemoriesButton');
+
+  if (summary) {
+    summary.innerHTML = '<strong>' + memories.length + '</strong> total &nbsp; <strong>' + pendingCount + '</strong> pending &nbsp; <strong>' + approvedCount + '</strong> approved';
+  }
+  if (approveAllButton) approveAllButton.classList.toggle('hidden', pendingCount === 0);
+
+  ['all', 'pending', 'approved'].forEach(function(filter) {
+    var button = document.getElementById('memoryFilter' + filter.charAt(0).toUpperCase() + filter.slice(1));
+    if (button) button.classList.toggle('is-active', CURRENT_MEMORY_MANAGER_FILTER === filter);
+  });
+
+  var filtered = getVisibleMemoryManagerRows();
+
   if (!memories.length) {
     list.innerHTML = '<div class="dashboard-empty">No memories have been added yet.</div>';
     return;
   }
+  if (!filtered.length) {
+    list.innerHTML = '<div class="dashboard-empty">No ' + escapeHtml(CURRENT_MEMORY_MANAGER_FILTER) + ' memories found.</div>';
+    return;
+  }
 
-  list.innerHTML = memories.map(function(memory) {
-    return '<article class="memory-manager-card">' +
-      '<img src="' + escapeAttr(memory.ImageUrl) + '" alt="Community memory">' +
+  list.innerHTML = filtered.map(function(memory) {
+    var statusClass = toBool(memory.Approved) ? 'is-approved' : 'is-pending';
+    var statusText = toBool(memory.Approved) ? 'Approved' : 'Pending Approval';
+    return '<article class="memory-manager-card ' + statusClass + (CURRENT_MEMORY_MANAGER_SELECTION[memory.MemoryId] ? ' is-selected' : '') + '">' +
+      '<label class="memory-card-selector"><input type="checkbox" ' + (CURRENT_MEMORY_MANAGER_SELECTION[memory.MemoryId] ? 'checked ' : '') + 'onchange="toggleMemoryManagerSelection(\'' + escapeJs(memory.MemoryId) + '\', this.checked)"><span>Select</span></label>' +
+      '<button class="memory-manager-image-button" type="button" onclick="openMemoryReview(\'' + escapeJs(memory.MemoryId) + '\')">' +
+        '<img src="' + escapeAttr(memory.ImageUrl) + '" alt="Community memory" onload="handleMemoryImageLoaded(this)" onerror="handleMemoryImageError(this)">' +
+        '<span>Preview</span>' +
+      '</button>' +
       '<div class="memory-manager-card-body">' +
+        '<div class="memory-manager-status-row"><span class="memory-status-badge ' + statusClass + '">' + statusText + '</span>' +
+          (toBool(memory.Featured) ? '<span class="memory-status-badge is-featured">Featured</span>' : '') +
+          '<small>' + escapeHtml(formatDate(memory.CreatedAt) || '') + '</small></div>' +
+        '<div class="memory-manager-contributor">Shared by <strong>' + escapeHtml(memory.UploadedBy || 'Unknown contributor') + '</strong></div>' +
         '<input id="memoryCaption-' + escapeAttr(memory.MemoryId) + '" maxlength="240" value="' + escapeAttr(memory.Caption || '') + '" placeholder="Add a caption">' +
         '<div class="memory-manager-options">' +
           '<label class="check-item"><input type="checkbox" ' + (toBool(memory.Approved) ? 'checked ' : '') +
@@ -1974,12 +3306,175 @@ function renderMemoryManager(memories) {
         '</div>' +
         '<div class="actions">' +
           '<button class="secondary" type="button" onclick="saveMemoryCaption(\'' + escapeJs(memory.MemoryId) + '\')">Save Caption</button>' +
+          '<button class="secondary" type="button" onclick="openMemoryReview(\'' + escapeJs(memory.MemoryId) + '\')">Review</button>' +
+          (toBool(memory.Approved) ? '<button class="secondary" type="button" onclick="setMemoryAsAdventureCover(\'' + escapeJs(memory.MemoryId) + '\')">Set Cover</button>' : '') +
+          (!toBool(memory.Approved) ? '<button class="secondary" type="button" onclick="rejectCommunityMemory(\'' + escapeJs(memory.MemoryId) + '\')">Reject</button>' : '') +
           '<button class="danger-button" type="button" onclick="deleteCommunityMemory(\'' + escapeJs(memory.MemoryId) + '\')">Delete</button>' +
         '</div>' +
       '</div>' +
     '</article>';
   }).join('');
+  updateMemoryBulkToolbar();
 }
+
+
+function approveAllPendingMemories() {
+  var pendingCount = (CURRENT_MEMORY_MANAGER_ROWS || []).filter(function(memory) {
+    return !toBool(memory.Approved);
+  }).length;
+  if (!pendingCount) {
+    showToastMessage('There are no pending memories to approve.');
+    return;
+  }
+
+  showAppMessage(
+    'Approve All Pending Memories?',
+    'This will make ' + pendingCount + ' pending photo' + (pendingCount === 1 ? '' : 's') + ' visible in the public Community Memories gallery.',
+    {
+      confirmText: 'Approve All',
+      cancelText: 'Cancel',
+      onConfirm: function() {
+        var button = document.getElementById('approveAllPendingMemoriesButton');
+        if (button) {
+          button.disabled = true;
+          button.textContent = 'Approving...';
+        }
+        google.script.run
+          .withSuccessHandler(function(response) {
+            showToastMessage(response && response.message ? response.message : 'Pending memories approved.');
+            loadMemoryManager();
+          })
+          .withFailureHandler(function(error) {
+            if (button) {
+              button.disabled = false;
+              button.textContent = 'Approve All Pending';
+            }
+            showError(error);
+          })
+          .approvePendingEventMemories(CURRENT_MEMORY_EVENT_ID);
+      }
+    }
+  );
+}
+
+var CURRENT_MEMORY_REVIEW_ID = '';
+
+function getMemoryManagerRowById(memoryId) {
+  return (CURRENT_MEMORY_MANAGER_ROWS || []).find(function(memory) {
+    return String(memory.MemoryId) === String(memoryId);
+  }) || null;
+}
+
+function getMemoryReviewRows() {
+  var visible = getVisibleMemoryManagerRows();
+  return visible && visible.length ? visible : (CURRENT_MEMORY_MANAGER_ROWS || []);
+}
+
+function getMemoryReviewPosition(memoryId) {
+  var rows = getMemoryReviewRows();
+  var index = rows.findIndex(function(memory) {
+    return String(memory.MemoryId) === String(memoryId);
+  });
+  return { rows: rows, index: index };
+}
+
+function navigateMemoryReview(direction) {
+  var position = getMemoryReviewPosition(CURRENT_MEMORY_REVIEW_ID);
+  if (!position.rows.length || position.index < 0) return;
+  var nextIndex = position.index + direction;
+  if (nextIndex < 0) nextIndex = position.rows.length - 1;
+  if (nextIndex >= position.rows.length) nextIndex = 0;
+  openMemoryReview(position.rows[nextIndex].MemoryId);
+}
+
+function openMemoryReview(memoryId) {
+  var memory = getMemoryManagerRowById(memoryId);
+  if (!memory) return;
+  CURRENT_MEMORY_REVIEW_ID = memory.MemoryId;
+  var position = getMemoryReviewPosition(memory.MemoryId);
+  var reviewNumber = position.index >= 0 ? position.index + 1 : 1;
+  var reviewTotal = position.rows.length || 1;
+  var existing = document.getElementById('memoryPreviewOverlay');
+  if (existing) existing.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'memoryPreviewOverlay';
+  overlay.className = 'memory-preview-overlay';
+  overlay.innerHTML = '<div class="memory-preview-dialog memory-review-dialog" role="dialog" aria-modal="true" aria-label="Review community memory">' +
+    '<button class="memory-preview-close" type="button" aria-label="Close preview" onclick="closeMemoryPreview()">&times;</button>' +
+    '<button class="memory-review-nav memory-review-prev" type="button" aria-label="Previous memory" onclick="navigateMemoryReview(-1)">&#10094;</button>' +
+    '<button class="memory-review-nav memory-review-next" type="button" aria-label="Next memory" onclick="navigateMemoryReview(1)">&#10095;</button>' +
+    '<div class="memory-review-photo"><img src="' + escapeAttr(memory.ImageUrl) + '" alt="' + escapeAttr(memory.Caption || 'Community memory') + '"></div>' +
+    '<aside class="memory-review-details">' +
+      '<div class="memory-review-heading"><span class="eyebrow">Organizer Review</span><span class="memory-review-count">' + reviewNumber + ' of ' + reviewTotal + '</span></div>' +
+      '<h3>' + escapeHtml(memory.Caption || 'Community Memory') + '</h3>' +
+      '<dl><div><dt>Shared by</dt><dd>' + escapeHtml(memory.UploadedBy || 'Unknown contributor') + '</dd></div>' +
+      '<div><dt>Submitted</dt><dd>' + escapeHtml(formatDate(memory.CreatedAt) || 'Date unavailable') + '</dd></div>' +
+      '<div><dt>Status</dt><dd>' + (toBool(memory.Approved) ? 'Approved' : 'Pending approval') + (toBool(memory.Featured) ? ' · Featured' : '') + '</dd></div></dl>' +
+      '<p class="memory-review-shortcuts">Keyboard: <kbd>&larr;</kbd>/<kbd>&rarr;</kbd> navigate, <kbd>A</kbd> approve, <kbd>R</kbd> reject, <kbd>F</kbd> feature, <kbd>Esc</kbd> close</p>' +
+      '<div class="memory-review-actions">' +
+        (!toBool(memory.Approved) ? '<button class="primary" type="button" onclick="reviewMemoryApprove()">Approve</button>' : '') +
+        '<button class="secondary" type="button" onclick="reviewMemoryFeature()">' + (toBool(memory.Featured) ? 'Remove Featured' : 'Set Featured') + '</button>' +
+        (toBool(memory.Approved) ? '<button class="secondary memory-cover-button" type="button" onclick="reviewMemorySetCover()">Set Adventure Cover</button>' : '') +
+        (!toBool(memory.Approved) ? '<button class="secondary" type="button" onclick="reviewMemoryReject()">Reject</button>' : '') +
+      '</div>' +
+    '</aside>' +
+  '</div>';
+  overlay.addEventListener('click', function(event) { if (event.target === overlay) closeMemoryPreview(); });
+  document.body.appendChild(overlay);
+  var closeButton = overlay.querySelector('.memory-preview-close');
+  if (closeButton) closeButton.focus();
+}
+
+function openMemoryPreview(imageUrl, caption) {
+  var memory = (CURRENT_MEMORY_MANAGER_ROWS || []).find(function(row) { return row.ImageUrl === imageUrl; });
+  if (memory) return openMemoryReview(memory.MemoryId);
+  var existing = document.getElementById('memoryPreviewOverlay');
+  if (existing) existing.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'memoryPreviewOverlay';
+  overlay.className = 'memory-preview-overlay';
+  overlay.innerHTML = '<div class="memory-preview-dialog" role="dialog" aria-modal="true"><button class="memory-preview-close" type="button" aria-label="Close preview" onclick="closeMemoryPreview()">&times;</button><img src="' + escapeAttr(imageUrl) + '" alt="' + escapeAttr(caption || 'Community memory') + '">' + (caption ? '<p>' + escapeHtml(caption) + '</p>' : '') + '</div>';
+  overlay.addEventListener('click', function(event) { if (event.target === overlay) closeMemoryPreview(); });
+  document.body.appendChild(overlay);
+}
+
+function reviewMemoryApprove() {
+  if (!CURRENT_MEMORY_REVIEW_ID) return;
+  updateMemoryApproval(CURRENT_MEMORY_REVIEW_ID, true);
+  closeMemoryPreview();
+}
+function reviewMemoryFeature() {
+  var memory = getMemoryManagerRowById(CURRENT_MEMORY_REVIEW_ID);
+  if (!memory) return;
+  updateMemoryFeatured(memory.MemoryId, !toBool(memory.Featured));
+  closeMemoryPreview();
+}
+function reviewMemoryReject() {
+  if (!CURRENT_MEMORY_REVIEW_ID) return;
+  var id = CURRENT_MEMORY_REVIEW_ID;
+  closeMemoryPreview();
+  rejectCommunityMemory(id);
+}
+
+function closeMemoryPreview() {
+  var overlay = document.getElementById('memoryPreviewOverlay');
+  if (overlay) overlay.remove();
+  CURRENT_MEMORY_REVIEW_ID = '';
+}
+
+
+document.addEventListener('keydown', function(event) {
+  var overlay = document.getElementById('memoryPreviewOverlay');
+  if (!overlay || !CURRENT_MEMORY_REVIEW_ID) return;
+  var tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (event.key === 'Escape') { event.preventDefault(); closeMemoryPreview(); }
+  if (event.key === 'ArrowLeft') { event.preventDefault(); navigateMemoryReview(-1); }
+  if (event.key === 'ArrowRight') { event.preventDefault(); navigateMemoryReview(1); }
+  if (event.key.toLowerCase() === 'a') { event.preventDefault(); reviewMemoryApprove(); }
+  if (event.key.toLowerCase() === 'r') { event.preventDefault(); reviewMemoryReject(); }
+  if (event.key.toLowerCase() === 'f') { event.preventDefault(); reviewMemoryFeature(); }
+});
 
 function saveMemoryCaption(memoryId) {
   google.script.run
@@ -2000,6 +3495,28 @@ function updateMemoryApproval(memoryId, approved) {
     .updateEventMemory(memoryId, { approved: approved });
 }
 
+function reviewMemorySetCover() {
+  var memory = getActiveMemoryReviewRow();
+  if (!memory) return;
+  setMemoryAsAdventureCover(memory.MemoryId);
+}
+
+function setMemoryAsAdventureCover(memoryId) {
+  setBusy(true);
+  google.script.run
+    .withSuccessHandler(function(response) {
+      setBusy(false);
+      showToastMessage(response && response.message ? response.message : 'Adventure cover photo updated.');
+      if (response && response.event && CURRENT_EVENT && String(CURRENT_EVENT.EventId || '') === String(response.event.EventId || '')) {
+        CURRENT_EVENT.ImageUrl = response.event.ImageUrl || CURRENT_EVENT.ImageUrl;
+      }
+      closeMemoryPreview();
+      loadMemoryManager();
+    })
+    .withFailureHandler(handleServerError)
+    .setAdventureCoverFromMemory(memoryId);
+}
+
 function updateMemoryFeatured(memoryId, featured) {
   google.script.run
     .withSuccessHandler(function() {
@@ -2007,7 +3524,27 @@ function updateMemoryFeatured(memoryId, featured) {
       loadMemoryManager();
     })
     .withFailureHandler(showError)
-    .updateEventMemory(memoryId, featured ? { approved: true, featured: true } : { featured: false });
+    .updateEventMemory(memoryId, { featured: featured });
+}
+
+function rejectCommunityMemory(memoryId) {
+  showAppMessage(
+    'Reject Memory Photo?',
+    'This removes the submission from the moderation queue and moves the photo into the adventure Archive folder.',
+    {
+      confirmText: 'Reject Photo',
+      cancelText: 'Cancel',
+      onConfirm: function() {
+        google.script.run
+          .withSuccessHandler(function(response) {
+            showToastMessage(response && response.message ? response.message : 'Memory rejected.');
+            loadMemoryManager();
+          })
+          .withFailureHandler(showError)
+          .rejectEventMemory(memoryId);
+      }
+    }
+  );
 }
 
 function deleteCommunityMemory(memoryId) {
@@ -2033,12 +3570,13 @@ function deleteCommunityMemory(memoryId) {
 
 function buildOrganizerPanel(event, data) {
   var registrations = data.registrations || [];
+  var activeRegistrations = registrations.filter(registrationConsumesCapacity);
   var totalPeople = 0;
   var paid = 0;
   var unpaid = 0;
   var checkedIn = 0;
-  registrations.forEach(function(r) {
-    totalPeople += Number(r.AdultCount || 0) + Number(r.ChildCount || 0);
+  activeRegistrations.forEach(function(r) {
+    totalPeople += getRegistrationPartySize(r);
     if (String(r.PaymentStatus || '').toLowerCase() === 'paid') paid++;
     else if (toBool(event.PaidEvent) && String(r.PaymentStatus || '').toLowerCase() === 'pending') unpaid++;
     if (String(r.Status || '').toLowerCase() === 'checked in') checkedIn++;
@@ -2052,7 +3590,7 @@ function buildOrganizerPanel(event, data) {
       '<span class="organizer-live-badge">Organizer View</span>' +
     '</div>' +
     '<div class="organizer-summary organizer-summary-premium">' +
-      '<div><span class="organizer-summary-icon">' + getDashboardIcon('registration') + '</span><strong>' + registrations.length + '</strong><span>Registrations</span></div>' +
+      '<div><span class="organizer-summary-icon">' + getDashboardIcon('registration') + '</span><strong>' + activeRegistrations.length + '</strong><span>Registrations</span></div>' +
       '<div><span class="organizer-summary-icon">' + getDashboardIcon('people') + '</span><strong>' + totalPeople + '</strong><span>People</span></div>' +
       '<div><span class="organizer-summary-icon">' + getDashboardIcon('paid') + '</span><strong>' + paid + '</strong><span>Paid</span></div>' +
       '<div><span class="organizer-summary-icon">' + getDashboardIcon('pending') + '</span><strong>' + unpaid + '</strong><span>Pending</span></div>' +
@@ -2203,7 +3741,7 @@ function fallbackCopyText(text, successMessage) {
   document.body.removeChild(area);
 }
 
-function showRegistration(eventId) {
+function showRegistration(eventId, forceRefresh) {
   window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   setRegistrationRouteMode(true);
   hideAllViews();
@@ -2217,31 +3755,84 @@ function showRegistration(eventId) {
   setVal('registrationEventId', eventId);
 
   var header = document.getElementById('registrationHeader');
-  if (header) {
-    header.innerHTML = buildRegistrationLoadingState();
+  var cached = REGISTRATION_PAGE_CACHE[eventId];
+  var now = Date.now();
+
+  if (!forceRefresh && cached && (now - cached.loadedAt) < REGISTRATION_PAGE_CACHE_MS) {
+    drawRegistrationForm(cached.data);
+    return;
   }
 
-  // First try the full registration data. If that fails, fall back to the event record
-  // so the form does not sit locked on Loading Registration.
+  var previewEvent = findCachedAdventureById_(eventId);
+  if (header) {
+    header.innerHTML = previewEvent
+      ? buildInstantRegistrationHeader_(previewEvent)
+      : buildRegistrationLoadingState();
+  }
+
+  if (REGISTRATION_PAGE_REQUESTS[eventId]) return;
+  REGISTRATION_PAGE_REQUESTS[eventId] = true;
+
   google.script.run
     .withSuccessHandler(function(data) {
+      delete REGISTRATION_PAGE_REQUESTS[eventId];
+      REGISTRATION_PAGE_CACHE[eventId] = {
+        data: data || {},
+        loadedAt: Date.now()
+      };
       drawRegistrationForm(data);
     })
     .withFailureHandler(function(error) {
+      delete REGISTRATION_PAGE_REQUESTS[eventId];
+
       google.script.run
         .withSuccessHandler(function(event) {
-          drawRegistrationForm({ event: event, registrations: [], spotsTaken: 0, spotsRemaining: null });
+          var fallbackData = {
+            event: event,
+            registrations: [],
+            spotsTaken: 0,
+            spotsRemaining: null
+          };
+          REGISTRATION_PAGE_CACHE[eventId] = {
+            data: fallbackData,
+            loadedAt: Date.now()
+          };
+          drawRegistrationForm(fallbackData);
           showInlineRegistrationError('Registration loaded with limited details. You can still complete the form.');
         })
         .withFailureHandler(function(secondError) {
           if (header) {
-            header.innerHTML = '<div class="notice"><strong>Could not load registration.</strong><br>' + escapeHtml(getErrorMessage(error)) + '</div>';
+            header.innerHTML = '<div class="notice"><strong>Could not load registration.</strong><br>' +
+              escapeHtml(getErrorMessage(error)) + '</div>';
           }
           showInlineRegistrationError(getErrorMessage(secondError || error));
         })
         .getEvent(eventId, true);
     })
     .getRegistrationPageData(eventId);
+}
+
+function buildInstantRegistrationHeader_(event) {
+  event = event || {};
+  return '<div class="instant-registration-header" aria-busy="true">' +
+    '<div>' +
+      '<span class="eyebrow">Registration</span>' +
+      '<h2>' + escapeHtml(event.Title || 'Adventure') + '</h2>' +
+      '<div class="instant-registration-facts">' +
+        '<span>' + getMetaIcon('calendar') + escapeHtml(formatDateRange(event) || 'Date coming soon') + '</span>' +
+        '<span>' + getMetaIcon('location') + escapeHtml(event.LocationName || event.Address || 'Location coming soon') + '</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="instant-registration-loading"><span></span>Loading current availability...</div>' +
+  '</div>';
+}
+
+function invalidateRegistrationPageCache(eventId) {
+  if (eventId) {
+    delete REGISTRATION_PAGE_CACHE[eventId];
+    return;
+  }
+  REGISTRATION_PAGE_CACHE = {};
 }
 
 function showRegistrationFormPanel() {
@@ -2297,6 +3888,7 @@ function drawRegistrationForm(data) {
   data = data || {};
   var event = data.event || data || {};
   window.CURRENT_REGISTRATION_EVENT = event;
+  window.CURRENT_REGISTRATION_DATA = data;
 
   showRegistrationFormPanel();
   resetRegistrationForm();
@@ -2330,6 +3922,9 @@ function drawRegistrationForm(data) {
       '</div>';
   }
 
+  renderRegistrationCapacityNotice(data, event);
+  configureRegistrationPaymentOptions(event);
+
   var children = document.getElementById('childrenSection');
   if (children) children.classList.toggle('hidden', !toBool(event.ChildrenAllowed));
   updateGuestNameSections();
@@ -2344,6 +3939,80 @@ function drawRegistrationForm(data) {
 
   setupRegistrationValidation();
   updateRegistrationButtonState();
+}
+
+function renderRegistrationCapacityNotice(data, event) {
+  var notice = document.getElementById('registrationCapacityNotice');
+  if (!notice) return;
+
+  var remaining = data && data.spotsRemaining;
+  var max = Number(event.MaxParticipants || 0);
+  var waitlist = toBool(event.WaitlistEnabled);
+  notice.className = 'registration-capacity-notice';
+
+  if (!max || remaining === null || typeof remaining === 'undefined') {
+    notice.classList.add('is-open');
+    notice.innerHTML = '<strong>Registration is open.</strong><span>The organizer will contact you with any updates.</span>';
+    return;
+  }
+
+  remaining = Math.max(0, Number(remaining || 0));
+  if (remaining === 0) {
+    notice.classList.add(waitlist ? 'is-waitlist' : 'is-full');
+    notice.innerHTML = waitlist
+      ? '<strong>This adventure is currently full.</strong><span>You can still submit the form to join the waitlist.</span>'
+      : '<strong>This adventure is full.</strong><span>Registration is no longer accepting additional participants.</span>';
+    return;
+  }
+
+  notice.classList.add(remaining <= 5 ? 'is-limited' : 'is-open');
+  notice.innerHTML = '<strong>' + remaining + ' spot' + (remaining === 1 ? '' : 's') + ' remaining.</strong>' +
+    '<span>Your group uses ' + getRegistrationPartySize() + ' spot' + (getRegistrationPartySize() === 1 ? '' : 's') + '.</span>';
+}
+
+function configureRegistrationPaymentOptions(event) {
+  var select = document.getElementById('paymentMethod');
+  if (!select) return;
+  var availability = {
+    'Venmo': toBool(event.VenmoEnabled),
+    'Cash App': toBool(event.CashAppEnabled),
+    'Cash': toBool(event.CashEnabled),
+    'Pay at Event': toBool(event.PayAtEventEnabled),
+    'Buy Own Ticket': toBool(event.BuyOwnTicketsEnabled)
+  };
+  var enabled = 0;
+  Array.prototype.forEach.call(select.options, function(option) {
+    if (!option.value) return;
+    var allowed = Boolean(availability[option.value]);
+    option.hidden = !allowed;
+    option.disabled = !allowed;
+    if (allowed) enabled += 1;
+  });
+  if (select.value && !availability[select.value]) select.value = '';
+  select.disabled = enabled === 0;
+}
+
+function getRegistrationPartySize() {
+  return Math.max(1, Number(val('adultCount') || 0) + Number(val('childCount') || 0));
+}
+
+function renderRegistrationReview() {
+  var review = document.getElementById('registrationReview');
+  if (!review) return;
+  var event = window.CURRENT_REGISTRATION_EVENT || {};
+  var adults = Math.max(0, Number(val('adultCount') || 0));
+  var children = Math.max(0, Number(val('childCount') || 0));
+  var contact = val('regEmail') || val('regPhone') || 'Add an email or phone';
+  var payment = toBool(event.PaidEvent) ? (val('paymentMethod') || 'Choose a payment method') : 'No payment required';
+  var emergency = val('emergencyContactName') && val('emergencyContactPhone')
+    ? val('emergencyContactName') + ' · ' + val('emergencyContactPhone')
+    : 'Not provided';
+
+  review.innerHTML =
+    '<div><span>Primary contact</span><strong>' + escapeHtml(val('regName') || 'Add your name') + '</strong><small>' + escapeHtml(contact) + '</small></div>' +
+    '<div><span>Party size</span><strong>' + getRegistrationPartySize() + ' participant' + (getRegistrationPartySize() === 1 ? '' : 's') + '</strong><small>' + adults + ' adult' + (adults === 1 ? '' : 's') + (children ? ' · ' + children + ' child' + (children === 1 ? '' : 'ren') : '') + '</small></div>' +
+    '<div><span>Payment</span><strong>' + escapeHtml(payment) + '</strong><small>' + (toBool(event.PaidEvent) ? 'Follow the organizer payment instructions.' : 'This adventure is listed as free.') + '</small></div>' +
+    '<div><span>Emergency contact</span><strong>' + escapeHtml(emergency) + '</strong><small>Optional, but recommended.</small></div>';
 }
 
 function resetRegistrationForm() {
@@ -2372,9 +4041,13 @@ function updateGuestNameSections() {
   var childHelp = document.getElementById('childNamesHelp');
   if (childHelp) {
     childHelp.textContent = childCount > 0
-      ? 'Enter each child name, one per line.'
+      ? 'Enter exactly ' + childCount + ' child name' + (childCount === 1 ? '' : 's') + ', one per line.'
       : '';
   }
+
+  var currentData = window.CURRENT_REGISTRATION_DATA || {};
+  renderRegistrationCapacityNotice(currentData, event);
+  renderRegistrationReview();
 }
 
 function countNonBlankLines(text) {
@@ -2432,11 +4105,17 @@ function getRegistrationValidationErrors() {
   var childCount = Number(val('childCount') || 0);
 
   if (adultCount < 1) errors.push('At least one adult is required.');
-  if (adultCount > 1 && countNonBlankLines(val('adultGuestNames')) < adultCount - 1) {
-    errors.push('Please enter the name of each additional adult.');
+  if (adultCount > 1 && countNonBlankLines(val('adultGuestNames')) !== adultCount - 1) {
+    errors.push('Enter exactly one name for each additional adult.');
   }
-  if (toBool(event.ChildrenAllowed) && childCount > 0 && countNonBlankLines(val('childNames')) < childCount) {
-    errors.push('Please enter the name of each child attending.');
+  if (toBool(event.ChildrenAllowed) && countNonBlankLines(val('childNames')) !== childCount) {
+    errors.push('Enter exactly one name for each child attending.');
+  }
+  if (Boolean(val('emergencyContactName')) !== Boolean(val('emergencyContactPhone'))) {
+    errors.push('Enter both an emergency contact name and phone number, or leave both blank.');
+  }
+  if (val('emergencyContactPhone') && String(val('emergencyContactPhone')).replace(/\D/g, '').length < 7) {
+    errors.push('Enter a valid emergency contact phone number.');
   }
 
   var paymentSection = document.getElementById('paymentSection');
@@ -2483,6 +4162,47 @@ function updateRegistrationButtonState() {
       ? errors[0]
       : 'Everything is complete. Submit your registration when ready.';
   }
+
+  renderRegistrationReview();
+  renderRegistrationCapacityNotice(window.CURRENT_REGISTRATION_DATA || {}, window.CURRENT_REGISTRATION_EVENT || {});
+  markRegistrationFieldStates();
+
+  var errorBox = document.getElementById('registrationError');
+  if (errorBox && errors.length === 0) errorBox.classList.add('hidden');
+}
+
+function markRegistrationFieldStates() {
+  var required = ['regName', 'adultCount'];
+  required.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('is-invalid', !String(el.value || '').trim());
+  });
+
+  var email = document.getElementById('regEmail');
+  var phone = document.getElementById('regPhone');
+  var contactMissing = !val('regEmail') && !val('regPhone');
+  if (email) email.classList.toggle('is-invalid', contactMissing || (Boolean(val('regEmail')) && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('regEmail'))));
+  if (phone) phone.classList.toggle('is-invalid', contactMissing || (Boolean(val('regPhone')) && String(val('regPhone')).replace(/\D/g, '').length < 7));
+}
+
+function focusFirstRegistrationProblem() {
+  var event = window.CURRENT_REGISTRATION_EVENT || {};
+  var candidates = [];
+  if (!val('regName')) candidates.push('regName');
+  if (!val('regEmail') && !val('regPhone')) candidates.push('regEmail');
+  if (Number(val('adultCount') || 0) < 1) candidates.push('adultCount');
+  if (Number(val('adultCount') || 0) > 1 && countNonBlankLines(val('adultGuestNames')) !== Number(val('adultCount') || 0) - 1) candidates.push('adultGuestNames');
+  if (toBool(event.ChildrenAllowed) && countNonBlankLines(val('childNames')) !== Number(val('childCount') || 0)) candidates.push('childNames');
+  if (Boolean(val('emergencyContactName')) !== Boolean(val('emergencyContactPhone'))) candidates.push(val('emergencyContactName') ? 'emergencyContactPhone' : 'emergencyContactName');
+  if (toBool(event.PaidEvent) && !val('paymentMethod')) candidates.push('paymentMethod');
+  if (!chk('ackMemberOrganized')) candidates.push('ackMemberOrganized');
+  if (!chk('ackVoluntary')) candidates.push('ackVoluntary');
+  if (!chk('ackRespect')) candidates.push('ackRespect');
+  if (toBool(event.PaidEvent) && !chk('ackPayment')) candidates.push('ackPayment');
+  if (toBool(event.PaidEvent) && !chk('ackRefund')) candidates.push('ackRefund');
+  var target = candidates.length ? document.getElementById(candidates[0]) : null;
+  if (target) { target.focus(); target.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 }
 
 function setRegistrationProgressStep(id, complete) {
@@ -2499,6 +4219,7 @@ function submitRegistration() {
   if (errors.length > 0) {
     showInlineRegistrationError(errors[0]);
     updateRegistrationButtonState();
+    focusFirstRegistrationProblem();
     return;
   }
 
@@ -2534,6 +4255,7 @@ function submitRegistration() {
         button.disabled = false;
         button.textContent = 'Complete Registration';
       }
+      invalidateRegistrationPageCache(event.EventId || getVal('registrationEventId'));
       showRegistrationSuccess(event, response);
     })
     .withFailureHandler(function(error) {
@@ -2849,6 +4571,16 @@ function renderRegistrationManagerRows(registrations) {
   body.innerHTML = html;
 }
 
+
+function getRegistrationPartySize(registration) {
+  registration = registration || {};
+  return Number(registration.AdultCount || 0) + Number(registration.ChildCount || 0);
+}
+
+function registrationConsumesCapacity(registration) {
+  var status = String((registration || {}).Status || '').trim().toLowerCase();
+  return ['cancelled', 'canceled', 'waitlist', 'waitlisted', 'declined'].indexOf(status) === -1;
+}
 
 function getRegistrationStatusBadgeClass(status) {
   var value = String(status || '').toLowerCase();
@@ -3888,8 +5620,134 @@ function refreshCommandCenter() {
     .getCommandCenterData();
 }
 
+function getPendingCommunityMemorySummary_() {
+  var events = getCommunityMemoryEligibleEvents_();
+  var pendingCount = 0;
+  var eventCount = 0;
+
+  events.forEach(function(event) {
+    var count = Number(event.PendingMemoryCount || event.PendingMemories || 0);
+    if (count > 0) {
+      pendingCount += count;
+      eventCount++;
+    }
+  });
+
+  return {
+    pendingCount: pendingCount,
+    eventCount: eventCount
+  };
+}
+
+function buildPrioritizedOrganizerAlerts_(data) {
+  data = data || {};
+  var alerts = (data.alerts || []).slice();
+  var seen = {};
+
+  function addAlert(alert) {
+    var key = [alert.type, alert.eventId, alert.title].join('|');
+    if (seen[key]) return;
+    seen[key] = true;
+    alerts.push(alert);
+  }
+
+  alerts.forEach(function(alert) {
+    seen[[alert.type, alert.eventId, alert.title].join('|')] = true;
+  });
+
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  (ALL_VISIBLE_EVENTS || []).forEach(function(event) {
+    var eventId = String(event.EventId || '');
+    var title = event.Title || 'Adventure';
+    var date = parseAdventureDate(event.StartDate || event.EventDate || event.Date);
+
+    if (date) {
+      var eventDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      if (eventDay.getTime() === today.getTime()) {
+        addAlert({
+          type: 'today',
+          priority: 100,
+          severity: 'urgent',
+          eventId: eventId,
+          title: title + ' starts today',
+          message: 'Open the adventure tools, registrations, and check-in information.',
+          actionLabel: 'Open Adventure',
+          action: "showEventDetail('" + escapeJs(eventId) + "')"
+        });
+      }
+    }
+
+    if (!String(event.ImageUrl || '').trim()) {
+      addAlert({
+        type: 'image',
+        priority: 45,
+        severity: 'info',
+        eventId: eventId,
+        title: title + ' needs an image',
+        message: 'Add an image so the adventure stands out on the public page.',
+        actionLabel: 'Add Image',
+        action: "editEventById('" + escapeJs(eventId) + "')"
+      });
+    }
+  });
+
+  var memorySummary = getPendingCommunityMemorySummary_();
+  if (memorySummary.pendingCount > 0) {
+    addAlert({
+      type: 'memory',
+      priority: 80,
+      severity: 'review',
+      title: memorySummary.pendingCount + ' Community ' + (memorySummary.pendingCount === 1 ? 'Memory' : 'Memories') + ' awaiting review',
+      message: 'Approve, feature, edit, or reject submitted community photos.',
+      actionLabel: 'Review Memories',
+      action: 'openCommunityMemoriesDashboard()'
+    });
+  }
+
+  (data.waitlists || []).forEach(function(item) {
+    if (Number(item.count || 0) <= 0) return;
+    addAlert({
+      type: 'waitlist',
+      priority: 70,
+      severity: 'warning',
+      eventId: item.eventId,
+      title: (item.title || 'Adventure') + ' has a waitlist',
+      message: item.count + (Number(item.count) === 1 ? ' person is' : ' people are') + ' waiting for an opening.',
+      actionLabel: 'Manage Waitlist',
+      action: "viewRegistrations('" + escapeJs(item.eventId) + "')"
+    });
+  });
+
+  alerts = alerts.map(function(alert) {
+    if (typeof alert.priority === 'number') return alert;
+    var priorities = { today: 100, payment: 90, memory: 80, waitlist: 70, full: 60, image: 45 };
+    alert.priority = priorities[alert.type] || 50;
+    alert.severity = alert.severity || (
+      alert.type === 'payment' ? 'urgent' :
+      alert.type === 'waitlist' ? 'warning' :
+      alert.type === 'memory' ? 'review' : 'info'
+    );
+    return alert;
+  });
+
+  alerts.sort(function(a, b) {
+    return Number(b.priority || 0) - Number(a.priority || 0);
+  });
+
+  data.attentionCount = alerts.length;
+  return alerts;
+}
+
 function renderCommandCenter(data) {
   data = data || {};
+  data.alerts = buildPrioritizedOrganizerAlerts_(data);
+
+  var memorySummary = getPendingCommunityMemorySummary_();
+  if (memorySummary.pendingCount > 0) {
+    data.attentionCount = Math.max(Number(data.attentionCount || 0), (data.alerts || []).length);
+  }
 
   setDashboardText('commandCenterGreeting', getDashboardGreeting(data.greetingName || 'Shane'));
   setDashboardText('statUpcoming', data.upcomingEvents || 0);
@@ -3915,6 +5773,32 @@ function renderCommandCenter(data) {
   renderDashboardNextBestActions(data);
   renderOrganizerBriefing(data);
   renderLaunchReport(data.launchReport || {});
+  renderOrganizerAnalytics(data.analytics || {});
+  renderCommunityMemoryDashboardMetric_(data);
+}
+
+function renderCommunityMemoryDashboardMetric_(data) {
+  var stats = document.querySelector('.dashboard-stats-v2');
+  if (!stats) return;
+
+  var existing = document.getElementById('communityMemoryDashboardStat');
+  var summary = getPendingCommunityMemorySummary_();
+  var approved = Number(data && data.analytics && data.analytics.approvedMemories || 0);
+
+  if (!existing) {
+    existing = document.createElement('button');
+    existing.id = 'communityMemoryDashboardStat';
+    existing.className = 'dashboard-stat dashboard-stat-memory';
+    existing.type = 'button';
+    existing.onclick = openCommunityMemoriesDashboard;
+    stats.appendChild(existing);
+  }
+
+  existing.innerHTML =
+    '<span class="dashboard-stat-icon">' + getDashboardIcon('featured') + '</span>' +
+    '<strong>' + summary.pendingCount + '</strong>' +
+    '<span>Memories Pending</span>' +
+    '<small>' + approved + ' approved memories</small>';
 }
 
 function renderDashboardNextBestActions(data) {
@@ -3931,6 +5815,8 @@ function renderDashboardNextBestActions(data) {
     if (!(event.LocationName || event.Address)) actions.push({ title: 'Confirm the meeting point', detail: 'Add a clear location before people begin registering.', label: 'Add Location', onclick: "editEventById('" + escapeJs(event.EventId) + "')" });
     if (Number(data.pendingPayments || 0) > 0) actions.push({ title: 'Review pending payments', detail: data.pendingPayments + ' payment' + (Number(data.pendingPayments) === 1 ? ' needs' : 's need') + ' attention.', label: 'Open Attention', onclick: 'showDashboardAttention()' });
     if (Number(data.waitlistedPeople || 0) > 0) actions.push({ title: 'Review the waitlist', detail: data.waitlistedPeople + ' people are waiting for an opening.', label: 'Open Waitlists', onclick: 'showDashboardWaitlists()' });
+    var memorySummary = getPendingCommunityMemorySummary_();
+    if (memorySummary.pendingCount > 0) actions.push({ title: 'Review Community Memories', detail: memorySummary.pendingCount + ' submitted photo' + (memorySummary.pendingCount === 1 ? ' is' : 's are') + ' waiting for approval.', label: 'Review Memories', onclick: 'openCommunityMemoriesDashboard()', tone: 'primary' });
     if ((data.todayTasks || []).length > 0) actions.push({ title: 'Finish today’s organizer tasks', detail: (data.todayTasks || []).length + ' task' + ((data.todayTasks || []).length === 1 ? ' is' : 's are') + ' ready for you.', label: 'View Tasks', onclick: "document.getElementById('dashboardTodayTasks').scrollIntoView({behavior:'smooth',block:'center'})" });
     if (!actions.length) actions.push({ title: 'Your next adventure is in good shape', detail: 'Open Event Day tools or review registrations when you are ready.', label: 'Open Adventure', onclick: "showEventDetail('" + escapeJs(event.EventId) + "')", tone: 'success' });
   }
@@ -4000,6 +5886,7 @@ function renderFeaturedDashboardEvent(event) {
     actions.innerHTML =
       '<button class="primary" type="button" onclick="showEventDetail(\'' + escapeJs(event.EventId) + '\')">View Adventure</button>' +
       '<button class="secondary" type="button" onclick="viewRegistrations(\'' + escapeJs(event.EventId) + '\')">Registrations</button>' +
+      '<button class="secondary" type="button" onclick="openMemoryManager(\'' + escapeJs(event.EventId) + '\',\'' + escapeJs(event.Title || 'Adventure') + '\')">' + escapeHtml(getMemoryButtonLabel(event)) + '</button>' +
       '<button class="secondary" type="button" onclick="clearFeaturedAdventureFromCard(\'' + escapeJs(event.EventId) + '\')">Remove Feature</button>';
     actions.classList.remove('hidden');
   }
@@ -4095,6 +5982,90 @@ function renderDashboardTodayTasks(tasks) {
   }).join('');
 }
 
+function renderOrganizerAnalytics(analytics) {
+  analytics = analytics || {};
+  window.organizerAnalyticsSnapshot = analytics;
+  setDashboardText('analyticsRegistrations30', analytics.registrationsLast30Days || 0);
+  setDashboardText('analyticsPeople30', analytics.peopleLast30Days || 0);
+  setDashboardText('analyticsAverageGroup', analytics.averageGroupSize || 0);
+  setDashboardText('analyticsCheckInRate', (analytics.checkInRate || 0) + '%');
+  setDashboardText('analyticsApprovedMemories', analytics.approvedMemories || 0);
+  setDashboardText('analyticsPendingMemories', analytics.pendingMemories || 0);
+  setDashboardText('analyticsReturningRate', (analytics.returningParticipantRate || 0) + '%');
+  setDashboardText('analyticsMemoryEngagement', analytics.memoryEngagementRate || 0);
+
+  var topAdventure = analytics.topAdventure || null;
+  setDashboardText(
+    'analyticsTopAdventure',
+    topAdventure ? (topAdventure.title || 'Adventure') : 'No registration data yet'
+  );
+  setDashboardText(
+    'analyticsTopAdventurePeople',
+    topAdventure ? ((topAdventure.people || 0) + ((topAdventure.people || 0) === 1 ? ' person registered' : ' people registered')) : ''
+  );
+
+  var trend = document.getElementById('analyticsTrend');
+  if (!trend) return;
+  var months = analytics.monthlyTrend || [];
+  if (!months.length) {
+    trend.innerHTML = '<div class="dashboard-empty">No participation trend is available yet.</div>';
+    return;
+  }
+
+  var maxPeople = months.reduce(function(maximum, month) {
+    return Math.max(maximum, Number(month.people || 0));
+  }, 0) || 1;
+
+  trend.innerHTML = months.map(function(month) {
+    var people = Number(month.people || 0);
+    var height = Math.max(8, Math.round((people / maxPeople) * 100));
+    return '<div class="analytics-trend-column" title="' + escapeAttr((month.label || '') + ': ' + people + ' people') + '">' +
+      '<div class="analytics-trend-value">' + escapeHtml(people) + '</div>' +
+      '<div class="analytics-trend-track"><span style="height:' + height + '%"></span></div>' +
+      '<small>' + escapeHtml(month.label || '') + '</small>' +
+    '</div>';
+  }).join('');
+
+
+  var ranking = document.getElementById('analyticsAdventureRanking');
+  if (ranking) {
+    var ranked = analytics.adventureRanking || [];
+    ranking.innerHTML = ranked.length ? ranked.map(function(item, index) {
+      return '<div class="analytics-ranking-row"><span>' + (index + 1) + '</span><strong>' + escapeHtml(item.title || 'Adventure') + '</strong><em>' + escapeHtml(item.people || 0) + ' people</em></div>';
+    }).join('') : '<div class="dashboard-empty">No attendance ranking is available yet.</div>';
+  }
+}
+
+function exportOrganizerAnalyticsCsv() {
+  var analytics = window.organizerAnalyticsSnapshot || {};
+  var rows = [
+    ['Metric', 'Value'],
+    ['Registrations, 30 Days', analytics.registrationsLast30Days || 0],
+    ['People, 30 Days', analytics.peopleLast30Days || 0],
+    ['Average Group Size', analytics.averageGroupSize || 0],
+    ['Check-In Rate', (analytics.checkInRate || 0) + '%'],
+    ['Unique Participants', analytics.uniqueParticipants || 0],
+    ['Returning Participants', analytics.returningParticipants || 0],
+    ['Returning Participant Rate', (analytics.returningParticipantRate || 0) + '%'],
+    ['Approved Memories', analytics.approvedMemories || 0],
+    ['Pending Memories', analytics.pendingMemories || 0],
+    ['Memories per Completed Adventure', analytics.memoryEngagementRate || 0]
+  ];
+  (analytics.monthlyTrend || []).forEach(function(month) {
+    rows.push(['Participation ' + (month.label || ''), month.people || 0]);
+  });
+  (analytics.adventureRanking || []).forEach(function(item, index) {
+    rows.push(['Top Adventure #' + (index + 1) + ' - ' + (item.title || 'Adventure'), item.people || 0]);
+  });
+  var csv = rows.map(function(row) {
+    return row.map(function(value) {
+      var text = String(value == null ? '' : value).replace(/"/g, '""');
+      return '"' + text + '"';
+    }).join(',');
+  }).join('\r\n');
+  downloadTextFile('organizer-analytics.csv', csv, 'text/csv;charset=utf-8');
+}
+
 function renderLaunchReport(report) {
   setDashboardText('reportTotalEvents', report.totalEvents || 0);
   setDashboardText('reportPublishedEvents', report.publishedEvents || 0);
@@ -4133,7 +6104,8 @@ function renderNextDashboardEvent(event) {
   if (actions) {
     actions.innerHTML =
       '<button class="primary" type="button" onclick="showEventDetail(\'' + escapeJs(event.EventId) + '\')">View Adventure</button>' +
-      '<button class="secondary" type="button" onclick="viewRegistrations(\'' + escapeJs(event.EventId) + '\')">Registrations</button>';
+      '<button class="secondary" type="button" onclick="viewRegistrations(\'' + escapeJs(event.EventId) + '\')">Registrations</button>' +
+      '<button class="secondary" type="button" onclick="openMemoryManager(\'' + escapeJs(event.EventId) + '\',\'' + escapeJs(event.Title || 'Adventure') + '\')">' + escapeHtml(getMemoryButtonLabel(event)) + '</button>';
     actions.classList.remove('hidden');
   }
   renderEventReadiness(event);
@@ -4172,24 +6144,36 @@ function renderEventReadiness(event) {
 function renderDashboardAlerts(alerts) {
   var list = document.getElementById('dashboardAttentionList');
   if (!list) return;
+  alerts = alerts || [];
 
   if (!alerts.length) {
     list.innerHTML = '<div class="dashboard-all-clear">✓ Everything looks good right now.</div>';
     return;
   }
 
-  list.innerHTML = alerts.map(function(alert) {
-    var icon = getDashboardIcon(alert.type === 'payment' ? 'payment' : alert.type === 'full' ? 'people' : 'notes');
-    return '<div class="dashboard-list-item">' +
-      '<div class="dashboard-list-icon">' + icon + '</div>' +
+  list.innerHTML = alerts.map(function(alert, index) {
+    var iconType =
+      alert.type === 'payment' ? 'payment' :
+      alert.type === 'full' || alert.type === 'waitlist' ? 'people' :
+      alert.type === 'today' ? 'calendar' :
+      alert.type === 'memory' || alert.type === 'image' ? 'featured' : 'notes';
+
+    var action = alert.action ||
+      ("openDashboardAlert('" + escapeJs(alert.eventId) + "','" + escapeJs(alert.type) + "')");
+
+    return '<div class="dashboard-list-item prioritized-alert alert-' + escapeAttr(alert.severity || 'info') + '">' +
+      '<span class="alert-priority-number">' + String(index + 1).padStart(2, '0') + '</span>' +
+      '<div class="dashboard-list-icon">' + getDashboardIcon(iconType) + '</div>' +
       '<div class="dashboard-list-copy">' +
         '<strong>' + escapeHtml(alert.title || 'Adventure') + '</strong>' +
         '<span>' + escapeHtml(alert.message || '') + '</span>' +
       '</div>' +
-      '<button class="secondary" type="button" onclick="openDashboardAlert(\'' + escapeJs(alert.eventId) + '\',\'' + escapeJs(alert.type) + '\')">Open</button>' +
+      '<button class="' + (alert.severity === 'urgent' ? 'primary' : 'secondary') + ' compact" type="button" onclick="' +
+        escapeAttr(action) + '">' + escapeHtml(alert.actionLabel || 'Open') + '</button>' +
     '</div>';
   }).join('');
 }
+
 
 function openDashboardAlert(eventId, type) {
   if (type === 'payment') {
