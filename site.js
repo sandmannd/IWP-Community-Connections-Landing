@@ -127,6 +127,7 @@
 
   window.iwpLandingDataCallback = function (data) {
     var upcoming = data && data.upcoming ? data.upcoming : [];
+    document.documentElement.classList.toggle('one-live-adventure', upcoming.length === 1);
     renderFeaturedAdventure(data && data.featured);
     renderUpcomingAdventures(upcoming);
     renderLandingCategories(upcoming, data && data.featured);
