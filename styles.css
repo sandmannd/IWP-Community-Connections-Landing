@@ -2350,3 +2350,8 @@ a.button:active,.lp9d-actions a:active,.featured-actions a:active{transform:tran
     font-size:13px!important;
   }
 }
+
+
+/* Sprint 9J - corrected uncropped header artwork */
+.site-header.image-header > picture{display:block!important;width:100%!important;overflow:visible!important}
+.site-header.image-header .top-of-page-image{display:block!important;width:100%!important;max-width:none!important;height:auto!important;object-fit:contain!important;object-position:left top!important}
