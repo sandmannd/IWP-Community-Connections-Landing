@@ -2355,3 +2355,61 @@ a.button:active,.lp9d-actions a:active,.featured-actions a:active{transform:tran
 /* Sprint 9J - corrected uncropped header artwork */
 .site-header.image-header > picture{display:block!important;width:100%!important;overflow:visible!important}
 .site-header.image-header .top-of-page-image{display:block!important;width:100%!important;max-width:none!important;height:auto!important;object-fit:contain!important;object-position:left top!important}
+
+/* ======================================================================
+   V24 Sprint 9M — compact single-category and real featured event image
+   Prevent one live category from expanding to the full grid width and
+   allow the featured adventure card to stay useful without dominating.
+   ====================================================================== */
+.activity-button-grid > .activity-category-card:only-child {
+  width: min(100%, 380px) !important;
+  max-width: 380px !important;
+  min-height: 220px !important;
+  aspect-ratio: 16 / 9 !important;
+  justify-self: center !important;
+}
+
+.one-live-adventure .lp9d-featured-card {
+  max-width: 980px !important;
+}
+.one-live-adventure .featured-event-layout {
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr) !important;
+  gap: 24px !important;
+  padding: 22px !important;
+  margin-top: 0 !important;
+}
+.one-live-adventure .featured-event-image,
+.one-live-adventure .featured-event-image img {
+  width: 100% !important;
+  min-height: 220px !important;
+  height: 220px !important;
+  max-height: 220px !important;
+}
+.one-live-adventure .featured-event-copy h2 {
+  font-size: clamp(1.85rem, 3.5vw, 3rem) !important;
+}
+.one-live-adventure .featured-event-copy > p:not(.featured-event-date) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+}
+
+@media (max-width: 760px) {
+  .activity-button-grid > .activity-category-card:only-child {
+    min-width: min(84vw, 330px) !important;
+    width: min(84vw, 330px) !important;
+    max-width: 330px !important;
+    min-height: 190px !important;
+  }
+  .one-live-adventure .featured-event-layout {
+    grid-template-columns: 1fr !important;
+    padding: 16px !important;
+  }
+  .one-live-adventure .featured-event-image,
+  .one-live-adventure .featured-event-image img {
+    min-height: 190px !important;
+    height: 190px !important;
+    max-height: 190px !important;
+  }
+}

@@ -158,9 +158,10 @@
   function isSafeLandingImageUrl(url) {
     var value = String(url || '').trim();
     if (!value) return false;
-    // Google Drive thumbnails frequently require cookies or sharing permissions.
-    // The landing page uses a reliable category icon instead of attempting them.
-    if (/drive\.google\.com|googleusercontent\.com/i.test(value)) return false;
+
+    // Published adventure cover photos are served by the Community Connections
+    // app as HTTPS Google Drive thumbnails. Use the actual event photo first and
+    // let the existing onerror handler fall back only when the image truly fails.
     return /^https:\/\//i.test(value);
   }
 
