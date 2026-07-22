@@ -2296,7 +2296,7 @@ a.button:active,.lp9d-actions a:active,.featured-actions a:active{transform:tran
 @media (min-width:1101px) {
   .site-header.image-header .image-header-nav {
     gap:clamp(10px,1.25vw,22px);
-    padding-left:35.5%;
+    padding-left:38.5%;
     padding-right:clamp(16px,2vw,34px);
   }
   .site-header.image-header .image-header-nav a {
