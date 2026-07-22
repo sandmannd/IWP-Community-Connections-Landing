@@ -155,14 +155,22 @@
     }, 12000);
   }
 
-  function isSafeLandingImageUrl(url) {
+  function normalizeLandingImageUrl(url) {
     var value = String(url || '').trim();
-    if (!value) return false;
+    if (!value) return '';
 
-    // Published adventure cover photos are served by the Community Connections
-    // app as HTTPS Google Drive thumbnails. Use the actual event photo first and
-    // let the existing onerror handler fall back only when the image truly fails.
-    return /^https:\/\//i.test(value);
+    // Event uploads are saved as public Google Drive thumbnail URLs. Keep those
+    // intact, and also normalize older Drive share/view links when encountered.
+    var driveIdMatch = value.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?[^#]*[?&]id=)([-_a-zA-Z0-9]+)/i);
+    if (driveIdMatch && driveIdMatch[1]) {
+      return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(driveIdMatch[1]) + '&sz=w1600';
+    }
+
+    return /^https:\/\//i.test(value) ? value : '';
+  }
+
+  function isSafeLandingImageUrl(url) {
+    return Boolean(normalizeLandingImageUrl(url));
   }
 
   function renderLandingCategories(events, featuredEvent) {
@@ -356,8 +364,9 @@
       return;
     }
 
-    var image = isSafeLandingImageUrl(event.imageUrl)
-      ? '<div class="featured-event-image"><img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" src="' + escapeAttr(event.imageUrl) + '" alt=""></div>'
+    var featuredImageUrl = normalizeLandingImageUrl(event.imageUrl);
+    var image = featuredImageUrl
+      ? '<div class="featured-event-image"><img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" src="' + escapeAttr(featuredImageUrl) + '" alt="Cover image for ' + escapeAttr(event.title || 'featured adventure') + '"></div>'
       : '<div class="featured-event-image featured-event-image-fallback"><span>' + categoryIcon(event.type) + '</span></div>';
 
     container.innerHTML =

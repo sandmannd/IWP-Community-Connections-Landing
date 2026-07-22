@@ -2356,60 +2356,37 @@ a.button:active,.lp9d-actions a:active,.featured-actions a:active{transform:tran
 .site-header.image-header > picture{display:block!important;width:100%!important;overflow:visible!important}
 .site-header.image-header .top-of-page-image{display:block!important;width:100%!important;max-width:none!important;height:auto!important;object-fit:contain!important;object-position:left top!important}
 
-/* ======================================================================
-   V24 Sprint 9M — compact single-category and real featured event image
-   Prevent one live category from expanding to the full grid width and
-   allow the featured adventure card to stay useful without dominating.
-   ====================================================================== */
-.activity-button-grid > .activity-category-card:only-child {
-  width: min(100%, 380px) !important;
-  max-width: 380px !important;
-  min-height: 220px !important;
-  aspect-ratio: 16 / 9 !important;
-  justify-self: center !important;
+/* V24 Sprint 9N: lead with the actual featured event instead of a giant
+   single-category tile. Categories remain available when multiple adventures
+   are live, but a one-adventure landing page does not repeat the same event. */
+.lp9d-featured {
+  padding-top: 28px;
 }
-
+.one-live-adventure .activity-button-showcase {
+  display: none !important;
+}
+.one-live-adventure .lp9d-featured {
+  padding-top: 28px !important;
+  padding-bottom: 28px !important;
+}
 .one-live-adventure .lp9d-featured-card {
-  max-width: 980px !important;
+  max-width: 1040px;
 }
 .one-live-adventure .featured-event-layout {
-  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr) !important;
-  gap: 24px !important;
-  padding: 22px !important;
-  margin-top: 0 !important;
+  grid-template-columns: minmax(300px, .9fr) minmax(0, 1.1fr);
 }
 .one-live-adventure .featured-event-image,
 .one-live-adventure .featured-event-image img {
-  width: 100% !important;
-  min-height: 220px !important;
-  height: 220px !important;
-  max-height: 220px !important;
+  width: 100%;
+  min-height: 260px;
+  max-height: 340px;
+  object-fit: cover;
 }
-.one-live-adventure .featured-event-copy h2 {
-  font-size: clamp(1.85rem, 3.5vw, 3rem) !important;
-}
-.one-live-adventure .featured-event-copy > p:not(.featured-event-date) {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 5;
-  overflow: hidden;
-}
-
 @media (max-width: 760px) {
-  .activity-button-grid > .activity-category-card:only-child {
-    min-width: min(84vw, 330px) !important;
-    width: min(84vw, 330px) !important;
-    max-width: 330px !important;
-    min-height: 190px !important;
-  }
-  .one-live-adventure .featured-event-layout {
-    grid-template-columns: 1fr !important;
-    padding: 16px !important;
-  }
+  .one-live-adventure .featured-event-layout { grid-template-columns: 1fr; }
   .one-live-adventure .featured-event-image,
   .one-live-adventure .featured-event-image img {
-    min-height: 190px !important;
-    height: 190px !important;
-    max-height: 190px !important;
+    min-height: 210px;
+    max-height: 260px;
   }
 }
