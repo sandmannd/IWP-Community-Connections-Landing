@@ -1,0 +1,8 @@
+browser-tests/**
+node_modules/**
+reports/**
+docs/**
+README.md
+README-THIS-UPDATE.txt
+PROJECT-BRAIN.md
+*.zip

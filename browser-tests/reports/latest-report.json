@@ -1,0 +1,21 @@
+{
+  "version": "V21.4",
+  "generatedAt": "2026-07-13T19:22:39.129Z",
+  "durationMs": 13,
+  "result": "FAILED",
+  "counts": {
+    "PASS": 0,
+    "FAIL": 1,
+    "WARN": 0,
+    "SKIP": 0
+  },
+  "results": [
+    {
+      "group": "Test Runner",
+      "name": "Runner completed",
+      "status": "FAIL",
+      "details": "browserType.launch: Chromium distribution 'chrome' is not found at /opt/google/chrome/chrome\nRun \"npx playwright install chrome\"\n    at run (/mnt/data/v23_s12_package/IWP-Community-Connections/browser-tests/run-tests.js:242:28)\n    at /mnt/data/v23_s12_package/IWP-Community-Connections/browser-tests/run-tests.js:437:11\n    at Object.<anonymous> (/mnt/data/v23_s12_package/IWP-Community-Connections/browser-tests/run-tests.js:446:3)",
+      "durationMs": 0
+    }
+  ]
+}

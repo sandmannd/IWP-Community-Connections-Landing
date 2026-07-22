@@ -2279,3 +2279,74 @@ a.button:active,.lp9d-actions a:active,.featured-actions a:active{transform:tran
   .one-live-adventure .featured-event-image,
   .one-live-adventure .featured-event-image img { min-height: 190px; max-height: 220px; }
 }
+
+/* Sprint 9H - match compact app navigation and preserve full upper-left branding */
+.site-header.image-header > picture {
+  display:block;
+  width:100%;
+  overflow:visible;
+}
+.site-header.image-header .top-of-page-image {
+  width:97%;
+  max-width:97%;
+  height:auto;
+  object-fit:contain;
+  object-position:left top;
+}
+@media (min-width:1101px) {
+  .site-header.image-header .image-header-nav {
+    gap:clamp(10px,1.25vw,22px);
+    padding-left:35.5%;
+    padding-right:clamp(16px,2vw,34px);
+  }
+  .site-header.image-header .image-header-nav a {
+    font-size:clamp(9px,.76vw,12px)!important;
+    letter-spacing:-.01em;
+  }
+  .site-header.image-header .image-header-nav .facebook-nav {
+    font-size:clamp(9px,.7vw,11px)!important;
+  }
+}
+@media (max-width:1100px) {
+  .site-header.image-header .top-of-page-image {
+    width:97%;
+    max-width:97%;
+    min-height:0;
+    object-fit:contain;
+    object-position:left top;
+  }
+  .site-header.image-header .image-menu-button {
+    display:block!important;
+    position:absolute;
+    top:18px;
+    right:14px;
+    z-index:5;
+    padding:9px 13px;
+    border:1px solid rgba(242,140,24,.8);
+    border-radius:8px;
+    background:rgba(2,9,20,.94);
+    color:#fff;
+    font-size:12px;
+    font-weight:800;
+    text-transform:uppercase;
+  }
+  .site-header.image-header .image-header-nav {
+    display:none;
+    position:relative;
+    inset:auto;
+    width:100%;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:flex-start;
+    gap:2px;
+    padding:10px 18px 14px;
+    background:#020914;
+  }
+  .site-header.image-header .image-header-nav.is-open { display:flex; }
+  .site-header.image-header .image-header-nav a {
+    width:100%!important;
+    justify-content:flex-start;
+    padding:9px 0;
+    font-size:13px!important;
+  }
+}

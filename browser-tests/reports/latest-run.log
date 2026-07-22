@@ -1,0 +1,45 @@
+
+> iwp-community-connections-v23-browser-tests@23.0.0 test
+> node run-tests.js
+
+============================================================
+IWP COMMUNITY CONNECTIONS V24 COMMUNITY MEMORIES ACCEPTANCE REGRESSION
+============================================================
+[PASS] Landing Page: Production landing page loads
+[PASS] Landing Page: Brand and hero content render
+[PASS] Landing Page: Launch links point to production app
+[PASS] Landing Page: Live featured adventure finishes loading
+[PASS] Landing Page: No broken visible images
+[PASS] Backend Regression: Apps Script regression suite passes | Last server baseline clean: 317 passed, 0 failed, 0 warnings
+[PASS] Public App: Public app loads without Google login
+[PASS] Public App: Adventure cards render
+[PASS] Public App: Search filter responds
+[PASS] Public App: Category filter is available
+[PASS] Public App: View Details opens an adventure
+[PASS] Community Memories: Completed-adventure memory gallery renders
+[PASS] Community Memories: Public memory submission dialog opens
+[PASS] Community Memories: Memory lightbox supports navigation and Escape
+[PASS] Community Memories: Public multi-photo submission queues every selected photo
+[PASS] Community Memories: Organizer moderation queue shows pending and approved memories
+[PASS] Community Memories: Organizer bulk selection controls track visible memories
+[PASS] Community Memories: Organizer bulk moderation actions use the protected bulk API contract
+[PASS] Community Memories: Organizer approval, featured, and delete actions call the correct APIs
+[PASS] Community Memories: Approved and featured memories update the public gallery
+[PASS] Community Memories: Memory gallery fits a mobile viewport
+[PASS] Public App: Registration page opens from an adventure
+[PASS] Public App: Public view hides organizer controls
+[PASS] Mobile: Landing page mobile menu opens
+[PASS] Mobile: Public app has no horizontal overflow
+[PASS] Organizer: Organizer identity diagnostic | Recognized sandmannd@gmail.com as Owner.
+[PASS] Organizer: Approved organizer session is recognized | Organizer Portal switcher is visible in the public experience.
+[PASS] Organizer: Organizer Command Center loads
+[PASS] Organizer: Organizer dashboard finishes loading
+[PASS] Organizer: Adventure Builder opens without changing data
+[PASS] Organizer: No unexpected organizer JavaScript errors
+[PASS] Browser Health: No unexpected JavaScript errors
+
+============================================================
+Result: PASSED
+Passed: 32 | Failed: 0 | Warnings: 0 | Skipped: 0
+Report: browser-tests\reports\latest-report.html
+============================================================
