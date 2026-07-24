@@ -127,8 +127,9 @@
 
   window.iwpLandingDataCallback = function (data) {
     var upcoming = data && data.upcoming ? data.upcoming : [];
-    document.documentElement.classList.toggle('one-live-adventure', upcoming.length === 1);
-    renderUpcomingAdventures(upcoming);
+    var nextThirtyDays = filterEventsForNextThirtyDays(upcoming);
+    document.documentElement.classList.toggle('one-live-adventure', nextThirtyDays.length === 1);
+    renderUpcomingAdventures(nextThirtyDays);
     renderLandingCategories(upcoming, null);
     activateFastNavigation(document);
   };
@@ -396,33 +397,74 @@
     var grid = document.getElementById("upcomingAdventureGrid");
     if (!grid) return;
 
+    grid.classList.remove("is-loading", "has-1", "has-2", "has-3", "has-4-plus");
+
     if (!events.length) {
       grid.innerHTML =
-        '<div class="live-empty">' +
-          '<strong>No upcoming adventures are published yet.</strong>' +
-          '<span>Check back soon or visit the Facebook group for updates.</span>' +
+        '<div class="next-30-empty">' +
+          '<strong>No adventures are scheduled in the next 30 days.</strong>' +
+          '<span>Browse the adventure types below or check back soon.</span>' +
         '</div>';
       return;
     }
 
+    grid.classList.add(events.length === 1 ? "has-1" : events.length === 2 ? "has-2" : events.length === 3 ? "has-3" : "has-4-plus");
     grid.innerHTML = events.map(function (event) {
-      var image = isSafeLandingImageUrl(event.imageUrl)
-        ? '<div class="live-card-image"><img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" loading="lazy" decoding="async" src="' + escapeAttr(event.imageUrl) + '" alt=""></div>'
-        : '<div class="live-card-image live-card-image-fallback"><span>' + categoryIcon(event.type) + '</span></div>';
+      var detailsUrl = publicAppUrl(event.detailsUrl || event.registrationUrl || c.appUrl) || "#";
+      var imageUrl = normalizeLandingImageUrl(event.imageUrl);
+      var image = isSafeLandingImageUrl(imageUrl)
+        ? '<img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" loading="lazy" decoding="async" src="' + escapeAttr(imageUrl) + '" alt="">'
+        : '<span class="next-30-image-fallback" aria-hidden="true">' + categoryIcon(event.type) + '</span>';
 
-      return '<article class="live-event-card">' +
-        image +
-        '<div class="live-card-body">' +
-          '<div class="live-card-topline"><span>' + escapeHtml(event.type || "Adventure") + '</span><strong>' + escapeHtml(event.availabilityLabel || "Open") + '</strong></div>' +
-          '<h3>' + escapeHtml(event.title || "Community Adventure") + '</h3>' +
-          '<p class="live-card-date">' + escapeHtml(formatEventDate(event)) + '</p>' +
-          '<p class="live-card-location">📍 ' + escapeHtml(event.location || "Location in details") + '</p>' +
-          '<div class="live-card-footer"><strong>' + escapeHtml(event.costLabel || "See details") + '</strong><a href="' + escapeAttr(publicAppUrl(event.detailsUrl || c.appUrl)) + '">Details →</a></div>' +
-        '</div>' +
-      '</article>';
+      return '<a class="next-30-card" href="' + escapeAttr(detailsUrl) + '" aria-label="View ' + escapeAttr(event.title || "community adventure") + ', ' + escapeAttr(formatEventDateOnly(event)) + '">' +
+        '<span class="next-30-image">' + image + '<span class="next-30-shade"></span></span>' +
+        '<span class="next-30-copy">' +
+          '<strong>' + escapeHtml(event.title || "Community Adventure") + '</strong>' +
+          '<span>' + escapeHtml(formatEventDateOnly(event)) + '</span>' +
+        '</span>' +
+      '</a>';
     }).join("");
     activateAdventureImageFallbacks(grid);
     activatePremiumPolish(grid);
+  }
+
+  function filterEventsForNextThirtyDays(events) {
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var limit = new Date(today.getTime());
+    limit.setDate(limit.getDate() + 30);
+
+    return (events || []).filter(function (event) {
+      var start = parseDateKey(firstEventValue(event, ["startDate", "StartDate", "dateStart", "start_date"]));
+      var end = parseDateKey(firstEventValue(event, ["endDate", "EndDate", "dateEnd", "end_date"])) || start;
+      if (!start) return false;
+      return end >= today && start <= limit;
+    }).sort(function (a, b) {
+      var aDate = parseDateKey(firstEventValue(a, ["startDate", "StartDate", "dateStart", "start_date"]));
+      var bDate = parseDateKey(firstEventValue(b, ["startDate", "StartDate", "dateStart", "start_date"]));
+      return (aDate ? aDate.getTime() : 0) - (bDate ? bDate.getTime() : 0);
+    });
+  }
+
+  function formatEventDateOnly(event) {
+    event = event || {};
+    var startDateValue = firstEventValue(event, ["startDate", "StartDate", "dateStart", "start_date"]);
+    var endDateValue = firstEventValue(event, ["endDate", "EndDate", "dateEnd", "end_date"]);
+    var start = parseDateKey(startDateValue);
+    var end = parseDateKey(endDateValue);
+    if (!start) return "Date coming soon";
+
+    var sameDay = !end || startDateValue === endDateValue;
+    var full = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+    if (sameDay) return full.format(start);
+
+    var sameYear = start.getFullYear() === end.getFullYear();
+    var sameMonth = sameYear && start.getMonth() === end.getMonth();
+    var startFormatter = new Intl.DateTimeFormat("en-US", sameMonth
+      ? { weekday: "short", month: "short", day: "numeric" }
+      : { weekday: "short", month: "short", day: "numeric", year: sameYear ? undefined : "numeric" });
+    var endFormatter = new Intl.DateTimeFormat("en-US", { weekday: "short", month: sameMonth ? undefined : "short", day: "numeric", year: "numeric" });
+    return startFormatter.format(start) + " – " + endFormatter.format(end);
   }
 
   function activateAdventureImageFallbacks(root) {
