@@ -2390,6 +2390,3 @@ a.button:active,.lp9d-actions a:active,.featured-actions a:active{transform:tran
     max-height: 260px;
   }
 }
-
-/* Pre-Sprint 11 hotfix: story artwork is decorative; only the labeled calls to action navigate. */
-.lp9d-story-card > img { pointer-events: none; user-select: none; -webkit-user-drag: none; }

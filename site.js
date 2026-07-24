@@ -115,15 +115,6 @@
     });
   }
 
-
-  document.querySelectorAll('.lp9d-story-card > img').forEach(function (img) {
-    img.setAttribute('draggable', 'false');
-    img.addEventListener('click', function (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    });
-  });
-
   document.querySelectorAll(".faq-item").forEach(function (item) {
     item.addEventListener("toggle", function () {
       if (!item.open) return;
@@ -473,20 +464,12 @@
     var formatter = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
     var startLabel = start ? formatter.format(start) : "Date coming soon";
     var endLabel = end ? formatter.format(end) : "";
+    var sameDay = start && end && event.startDate === event.endDate;
+    var dateLabel = endLabel && !sameDay ? startLabel + " to " + endLabel : startLabel;
     var startTime = String(event.startTime || "").trim();
     var endTime = String(event.endTime || "").trim();
-
-    if (start && end && event.startDate !== event.endDate) {
-      var range = startLabel + " to " + endLabel;
-      if (startTime || endTime) {
-        range += " · " + (startTime || "Time TBD");
-        if (endTime) range += " to " + endTime;
-      }
-      return range;
-    }
-
-    if (startTime && endTime && endTime !== startTime) return startLabel + " · " + startTime + " to " + endTime;
-    return startTime ? startLabel + " · " + startTime : startLabel;
+    if (startTime && endTime) return dateLabel + " · " + startTime + " - " + endTime;
+    return startTime ? dateLabel + " · " + startTime : dateLabel;
   }
 
   function parseDateKey(value) {
@@ -582,28 +565,7 @@
   }
 );
 
-    Array.prototype.forEach.call(root.querySelectorAll('.lp9d-story-card'), function (card) {
-      if (card.dataset.iwpCardLinkBound === '1') return;
-      var link = card.querySelector('a[href]');
-      if (!link) return;
-      card.dataset.iwpCardLinkBound = '1';
-      card.classList.add('is-clickable');
-      card.setAttribute('tabindex', '0');
-      card.setAttribute('role', 'link');
-      card.addEventListener('click', function (event) {
-        if (event.target.closest('a')) return;
-        if (link.target === '_blank') window.open(link.href, '_blank', 'noopener');
-        else {
-          if (/script\.google\.com/i.test(link.href)) showAppLaunchOverlay();
-          window.location.href = link.href;
-        }
-      });
-      card.addEventListener('keydown', function (event) {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        card.click();
-      });
-    });
+    // Story cards are intentionally not whole-card links. Only their visible CTA links navigate.
   }
 
   activatePremiumPolish(document);

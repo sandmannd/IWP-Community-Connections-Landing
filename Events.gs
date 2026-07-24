@@ -257,29 +257,6 @@ function updateEventDraft(eventId, eventData) {
   };
 }
 
-/**
- * Google Sheets auto-converts values such as "11:00 AM" into time-only Date
- * objects. Those values can shift by an hour when the spreadsheet and Apps
- * Script time zones apply different historical offsets. Store the four event
- * schedule fields as literal text so the organizer's exact dates and times
- * survive every save and read.
- */
-function writeEventScheduleAsText_(sheet, eventId, schedule) {
-  const rowNumber = findRowById_(sheet, 'EventId', eventId);
-  if (rowNumber === -1) throw new Error('Adventure schedule row not found: ' + eventId);
-
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  ['StartDate', 'StartTime', 'EndDate', 'EndTime'].forEach(function(fieldName) {
-    const columnIndex = headers.indexOf(fieldName);
-    if (columnIndex === -1) return;
-    const value = normalizeText_(schedule[fieldName] || '');
-    const cell = sheet.getRange(rowNumber, columnIndex + 1);
-    cell.setNumberFormat('@');
-    cell.setValue(value);
-  });
-  SpreadsheetApp.flush();
-}
-
 function publishEvent(eventId) {
   requireAdmin_();
 
