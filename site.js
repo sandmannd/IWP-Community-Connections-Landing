@@ -128,9 +128,8 @@
   window.iwpLandingDataCallback = function (data) {
     var upcoming = data && data.upcoming ? data.upcoming : [];
     document.documentElement.classList.toggle('one-live-adventure', upcoming.length === 1);
-    renderFeaturedAdventure(data && data.featured);
     renderUpcomingAdventures(upcoming);
-    renderLandingCategories(upcoming, data && data.featured);
+    renderLandingCategories(upcoming, null);
     activateFastNavigation(document);
   };
 
@@ -148,8 +147,8 @@
     document.head.appendChild(script);
 
     window.setTimeout(function () {
-      var featured = document.getElementById("featuredAdventureContent");
-      if (featured && featured.querySelector(".featured-loading")) {
+      var categories = document.getElementById("landingCategoryGrid");
+      if (categories && categories.querySelector(".category-loading")) {
         renderLandingDataError();
       }
     }, 12000);
@@ -439,18 +438,7 @@
 
   function renderLandingDataError() {
     renderLandingCategories([]);
-    var featured = document.getElementById("featuredAdventureContent");
     var grid = document.getElementById("upcomingAdventureGrid");
-
-    if (featured && featured.querySelector(".featured-loading")) {
-      featured.innerHTML =
-        '<div class="featured-empty">' +
-          '<span class="featured-badge">⭐ Featured Adventure</span>' +
-          '<h2>Browse the live adventure list.</h2>' +
-          '<p>The landing page could not load the schedule right now, but the full Community Connections app is available.</p>' +
-          '<div class="featured-actions"><a class="button" href="' + escapeAttr(publicAppUrl(c.appUrl) || "#") + '">Open Community Connections</a></div>' +
-        '</div>';
-    }
 
     if (grid) {
       grid.innerHTML =
@@ -459,17 +447,32 @@
   }
 
   function formatEventDate(event) {
-    var start = parseDateKey(event.startDate);
-    var end = parseDateKey(event.endDate);
+    event = event || {};
+
+    var startDateValue = firstEventValue(event, ["startDate", "StartDate", "dateStart", "start_date"]);
+    var endDateValue = firstEventValue(event, ["endDate", "EndDate", "dateEnd", "end_date"]);
+    var start = parseDateKey(startDateValue);
+    var end = parseDateKey(endDateValue);
     var formatter = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
     var startLabel = start ? formatter.format(start) : "Date coming soon";
     var endLabel = end ? formatter.format(end) : "";
-    var sameDay = start && end && event.startDate === event.endDate;
+    var sameDay = start && end && startDateValue === endDateValue;
     var dateLabel = endLabel && !sameDay ? startLabel + " to " + endLabel : startLabel;
-    var startTime = String(event.startTime || "").trim();
-    var endTime = String(event.endTime || "").trim();
+    var startTime = firstEventValue(event, ["startTime", "StartTime", "timeStart", "start_time"]);
+    var endTime = firstEventValue(event, ["endTime", "EndTime", "timeEnd", "end_time"]);
+
     if (startTime && endTime) return dateLabel + " · " + startTime + " - " + endTime;
     return startTime ? dateLabel + " · " + startTime : dateLabel;
+  }
+
+  function firstEventValue(event, keys) {
+    for (var i = 0; i < keys.length; i += 1) {
+      var value = event[keys[i]];
+      if (value !== undefined && value !== null && String(value).trim()) {
+        return String(value).trim();
+      }
+    }
+    return "";
   }
 
   function parseDateKey(value) {
