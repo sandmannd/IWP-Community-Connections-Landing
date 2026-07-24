@@ -115,6 +115,15 @@
     });
   }
 
+
+  document.querySelectorAll('.lp9d-story-card > img').forEach(function (img) {
+    img.setAttribute('draggable', 'false');
+    img.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+  });
+
   document.querySelectorAll(".faq-item").forEach(function (item) {
     item.addEventListener("toggle", function () {
       if (!item.open) return;
@@ -459,13 +468,25 @@
   }
 
   function formatEventDate(event) {
-    var date = parseDateKey(event.startDate);
-    var dateLabel = date
-      ? new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(date)
-      : "Date coming soon";
+    var start = parseDateKey(event.startDate);
+    var end = parseDateKey(event.endDate);
+    var formatter = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+    var startLabel = start ? formatter.format(start) : "Date coming soon";
+    var endLabel = end ? formatter.format(end) : "";
+    var startTime = String(event.startTime || "").trim();
+    var endTime = String(event.endTime || "").trim();
 
-    var time = event.startTime || "";
-    return time ? dateLabel + " · " + time : dateLabel;
+    if (start && end && event.startDate !== event.endDate) {
+      var range = startLabel + " to " + endLabel;
+      if (startTime || endTime) {
+        range += " · " + (startTime || "Time TBD");
+        if (endTime) range += " to " + endTime;
+      }
+      return range;
+    }
+
+    if (startTime && endTime && endTime !== startTime) return startLabel + " · " + startTime + " to " + endTime;
+    return startTime ? startLabel + " · " + startTime : startLabel;
   }
 
   function parseDateKey(value) {
