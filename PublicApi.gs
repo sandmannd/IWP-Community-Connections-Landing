@@ -23,7 +23,7 @@ function getLandingPageData() {
 
   const featured = upcoming.find(function(event) {
     return toBoolean_(event.Featured);
-  }) || upcoming[0] || null;
+  }) || null;
 
   const baseUrl = getPublicAppUrl_();
 

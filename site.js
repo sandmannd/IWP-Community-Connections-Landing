@@ -130,7 +130,8 @@
     var nextThirtyDays = filterEventsForNextThirtyDays(upcoming);
     document.documentElement.classList.toggle('one-live-adventure', nextThirtyDays.length === 1);
     renderUpcomingAdventures(nextThirtyDays);
-    renderLandingCategories(upcoming, null);
+    renderCompactFeaturedAdventure(data && data.featured ? data.featured : null);
+    renderLandingCategories(upcoming, data && data.featured ? data.featured : null);
     activateFastNavigation(document);
   };
 
@@ -344,6 +345,36 @@
       browse: '<svg ' + common + '><circle cx="27" cy="27" r="17"/><path d="m40 40 16 16"/></svg>'
     };
     return icons[icon] || icons.people;
+  }
+
+  function renderCompactFeaturedAdventure(event) {
+    var section = document.getElementById("featured-adventure");
+    var container = document.getElementById("featuredAdventureContent");
+    if (!section || !container) return;
+
+    if (!event || !event.featured) {
+      section.hidden = true;
+      container.innerHTML = "";
+      return;
+    }
+
+    var detailsUrl = publicAppUrl(event.detailsUrl || event.registrationUrl || c.appUrl) || "#";
+    var imageUrl = normalizeLandingImageUrl(event.imageUrl);
+    var image = isSafeLandingImageUrl(imageUrl)
+      ? '<img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" loading="lazy" decoding="async" src="' + escapeAttr(imageUrl) + '" alt="">'
+      : '<span class="next-30-image-fallback" aria-hidden="true">' + categoryIcon(event.type) + '</span>';
+
+    container.innerHTML = '<a class="next-30-card compact-featured-card" href="' + escapeAttr(detailsUrl) + '" aria-label="View featured adventure ' + escapeAttr(event.title || "community adventure") + '">' +
+      '<span class="compact-featured-badge">★ Featured</span>' +
+      '<span class="next-30-image">' + image + '<span class="next-30-shade"></span></span>' +
+      '<span class="next-30-copy">' +
+        '<strong>' + escapeHtml(event.title || "Community Adventure") + '</strong>' +
+        '<span>' + escapeHtml(formatEventDateOnly(event)) + '</span>' +
+      '</span>' +
+    '</a>';
+    section.hidden = false;
+    activateAdventureImageFallbacks(container);
+    activatePremiumPolish(container);
   }
 
   function renderFeaturedAdventure(event) {

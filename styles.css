@@ -2480,3 +2480,45 @@ a.button:active,.lp9d-actions a:active,.featured-actions a:active{transform:tran
   .next-30-card,
   .next-30-image img { transition: none; }
 }
+
+
+/* Sprint 11 landing: compact featured adventure between upcoming cards and categories. */
+.compact-featured-section {
+  padding: 30px 18px 34px;
+  background: #030d17;
+  border-bottom: 1px solid rgba(242, 140, 24, .22);
+}
+.compact-featured-section[hidden] { display: none !important; }
+.compact-featured-heading { margin-bottom: 18px; }
+.compact-featured-heading h2 { font-size: clamp(1.55rem, 2.5vw, 2.25rem); }
+.compact-featured-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px);
+  justify-content: center;
+}
+.compact-featured-card {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+}
+.compact-featured-badge {
+  position: absolute;
+  z-index: 4;
+  top: 10px;
+  left: 10px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 190, 83, .85);
+  border-radius: 999px;
+  background: rgba(4, 13, 23, .9);
+  color: #ffd27a;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  box-shadow: 0 5px 14px rgba(0,0,0,.3);
+}
+@media (max-width: 600px) {
+  .compact-featured-section { padding: 24px 12px 28px; }
+  .compact-featured-grid { grid-template-columns: minmax(0, 1fr); }
+  .compact-featured-card { max-width: none; }
+}
