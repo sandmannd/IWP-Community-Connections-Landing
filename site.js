@@ -130,7 +130,7 @@
     var nextThirtyDays = filterEventsForNextThirtyDays(upcoming);
     document.documentElement.classList.toggle('one-live-adventure', nextThirtyDays.length === 1);
     renderUpcomingAdventures(nextThirtyDays);
-    renderCompactFeaturedAdventure(data && data.featured ? data.featured : null);
+    renderCompactFeaturedAdventures(collectFeaturedAdventures(data, upcoming));
     renderLandingCategories(upcoming, data && data.featured ? data.featured : null);
     activateFastNavigation(document);
   };
@@ -347,31 +347,59 @@
     return icons[icon] || icons.people;
   }
 
-  function renderCompactFeaturedAdventure(event) {
+  function collectFeaturedAdventures(data, upcoming) {
+    var candidates = [];
+    if (data && Array.isArray(data.featured)) candidates = candidates.concat(data.featured);
+    else if (data && data.featured) candidates.push(data.featured);
+    if (Array.isArray(upcoming)) {
+      upcoming.forEach(function (event) {
+        if (event && event.featured) candidates.push(event);
+      });
+    }
+
+    var seen = {};
+    return candidates.filter(function (event) {
+      if (!event) return false;
+      var key = String(event.id || event.eventId || event.title || "").toLowerCase();
+      if (!key) key = JSON.stringify(event);
+      if (seen[key]) return false;
+      seen[key] = true;
+      return event.featured !== false;
+    });
+  }
+
+  function renderCompactFeaturedAdventures(events) {
     var section = document.getElementById("featured-adventure");
     var container = document.getElementById("featuredAdventureContent");
+    var heading = document.getElementById("featuredAdventureHeading");
     if (!section || !container) return;
 
-    if (!event || !event.featured) {
+    events = Array.isArray(events) ? events : [];
+    if (!events.length) {
       section.hidden = true;
       container.innerHTML = "";
       return;
     }
 
-    var detailsUrl = publicAppUrl(event.detailsUrl || event.registrationUrl || c.appUrl) || "#";
-    var imageUrl = normalizeLandingImageUrl(event.imageUrl);
-    var image = isSafeLandingImageUrl(imageUrl)
-      ? '<img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" loading="lazy" decoding="async" src="' + escapeAttr(imageUrl) + '" alt="">'
-      : '<span class="next-30-image-fallback" aria-hidden="true">' + categoryIcon(event.type) + '</span>';
+    if (heading) heading.textContent = events.length === 1 ? "Featured Event" : "Featured Events";
+    container.className = "compact-featured-grid has-" + (events.length >= 4 ? "4-plus" : events.length);
+    container.innerHTML = events.map(function (event) {
+      var detailsUrl = publicAppUrl(event.detailsUrl || event.registrationUrl || c.appUrl) || "#";
+      var imageUrl = normalizeLandingImageUrl(event.imageUrl);
+      var image = isSafeLandingImageUrl(imageUrl)
+        ? '<img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" loading="lazy" decoding="async" src="' + escapeAttr(imageUrl) + '" alt="">'
+        : '<span class="next-30-image-fallback" aria-hidden="true">' + categoryIcon(event.type) + '</span>';
 
-    container.innerHTML = '<a class="next-30-card compact-featured-card" href="' + escapeAttr(detailsUrl) + '" aria-label="View featured adventure ' + escapeAttr(event.title || "community adventure") + '">' +
-      '<span class="compact-featured-badge">★ Featured</span>' +
-      '<span class="next-30-image">' + image + '<span class="next-30-shade"></span></span>' +
-      '<span class="next-30-copy">' +
-        '<strong>' + escapeHtml(event.title || "Community Adventure") + '</strong>' +
-        '<span>' + escapeHtml(formatEventDateOnly(event)) + '</span>' +
-      '</span>' +
-    '</a>';
+      return '<a class="next-30-card compact-featured-card" href="' + escapeAttr(detailsUrl) + '" aria-label="View featured event ' + escapeAttr(event.title || "community adventure") + '">' +
+        '<span class="compact-featured-badge">★ Featured</span>' +
+        '<span class="next-30-image">' + image + '<span class="next-30-shade"></span></span>' +
+        '<span class="next-30-copy">' +
+          '<strong>' + escapeHtml(event.title || "Community Adventure") + '</strong>' +
+          '<span>' + escapeHtml(formatEventDateOnly(event)) + '</span>' +
+        '</span>' +
+      '</a>';
+    }).join("");
+
     section.hidden = false;
     activateAdventureImageFallbacks(container);
     activatePremiumPolish(container);
