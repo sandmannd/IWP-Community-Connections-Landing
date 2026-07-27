@@ -24,6 +24,13 @@
     }
   }
 
+
+  function cloudflareAdventureUrl(event) {
+    var eventId = String((event && (event.eventId || event.EventId)) || '').trim();
+    if (!eventId) return publicAppUrl((event && (event.detailsUrl || event.registrationUrl)) || c.appUrl) || '#';
+    return (c.publicAdventurePage || '/adventure.html') + '?id=' + encodeURIComponent(eventId);
+  }
+
   function publicAppUrl(url) {
     var source = String(url || c.appUrl || '').trim();
     if (!source) return source;
@@ -384,7 +391,7 @@
     if (heading) heading.textContent = events.length === 1 ? "Featured Event" : "Featured Events";
     container.className = "compact-featured-grid has-" + (events.length >= 4 ? "4-plus" : events.length);
     container.innerHTML = events.map(function (event) {
-      var detailsUrl = publicAppUrl(event.detailsUrl || event.registrationUrl || c.appUrl) || "#";
+      var detailsUrl = cloudflareAdventureUrl(event);
       var imageUrl = normalizeLandingImageUrl(event.imageUrl);
       var image = isSafeLandingImageUrl(imageUrl)
         ? '<img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" loading="lazy" decoding="async" src="' + escapeAttr(imageUrl) + '" alt="">'
@@ -444,7 +451,7 @@
           '</div>' +
           '<div class="featured-actions">' +
             '<a class="button" href="' + escapeAttr(publicAppUrl(event.registrationUrl || event.detailsUrl || c.appUrl)) + '">Register Now →</a>' +
-            '<a class="button secondary" href="' + escapeAttr(publicAppUrl(event.detailsUrl || c.appUrl)) + '">View Details</a>' +
+            '<a class="button secondary" href="' + escapeAttr(cloudflareAdventureUrl(event)) + '">View Details</a>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -469,7 +476,7 @@
 
     grid.classList.add(events.length === 1 ? "has-1" : events.length === 2 ? "has-2" : events.length === 3 ? "has-3" : "has-4-plus");
     grid.innerHTML = events.map(function (event) {
-      var detailsUrl = publicAppUrl(event.detailsUrl || event.registrationUrl || c.appUrl) || "#";
+      var detailsUrl = cloudflareAdventureUrl(event);
       var imageUrl = normalizeLandingImageUrl(event.imageUrl);
       var image = isSafeLandingImageUrl(imageUrl)
         ? '<img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" loading="lazy" decoding="async" src="' + escapeAttr(imageUrl) + '" alt="">'

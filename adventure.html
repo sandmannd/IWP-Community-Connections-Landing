@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Adventure Details | IWP Community Connections</title>
+  <meta name="description" content="View adventure details and registration information for IWP Community Connections.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="adventure.css">
+</head>
+<body class="adventure-page-body">
+  <header class="adventure-site-header">
+    <a class="adventure-brand" href="/" aria-label="IWP Community Connections home">
+      <span class="adventure-brand-mark">IWP</span>
+      <span><strong>Community Connections</strong><small>Member-Organized Adventures</small></span>
+    </a>
+    <nav aria-label="Adventure navigation">
+      <a href="/">Home</a>
+      <a data-launch-app data-organizer-launch="true" href="#">Adventure Builder</a>
+    </nav>
+  </header>
+
+  <main id="adventureRoot" class="adventure-shell" aria-live="polite">
+    <section class="adventure-loading" aria-busy="true">
+      <div class="adventure-loading-image"></div>
+      <div class="adventure-loading-copy"><span></span><span></span><span></span><span></span></div>
+    </section>
+  </main>
+
+  <footer class="adventure-footer">
+    <p><strong>Member-organized activity.</strong> Community Connections adventures are not facilitated, monitored, or organized by IWP staff.</p>
+    <a href="/">Return to Community Connections</a>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="adventure.js"></script>
+</body>
+</html>
