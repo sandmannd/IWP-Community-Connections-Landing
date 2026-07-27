@@ -2528,3 +2528,14 @@ a.button:active,.lp9d-actions a:active,.featured-actions a:active{transform:tran
   .compact-featured-grid.has-3,
   .compact-featured-grid.has-4-plus { grid-template-columns: 1fr; }
 }
+
+/* Migration 2C — shared Cloudflare header */
+.cc-global-header{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:112px;padding:0 clamp(18px,3vw,48px);background:#020914;border-top:2px solid #7ed0ff;border-bottom:1px solid rgba(255,255,255,.12);position:relative;z-index:50;box-sizing:border-box}
+.cc-global-brand{display:block;flex:0 1 706px;max-width:min(706px,62vw);line-height:0}
+.cc-global-brand img{display:block;width:100%;height:auto;max-height:110px;object-fit:contain;object-position:left center}
+.cc-global-nav{display:flex;align-items:center;justify-content:flex-end;gap:clamp(16px,2.2vw,34px);white-space:nowrap}
+.cc-global-nav a{color:#f7f4ed;text-decoration:none;font-weight:800;font-size:clamp(.82rem,1.15vw,1.08rem)}
+.cc-global-nav a:hover,.cc-global-nav a:focus-visible,.cc-global-nav a.is-active{color:#f28c18}
+.cc-menu-button{display:none}
+@media(max-width:900px){.cc-global-header{min-height:92px;padding:0 14px}.cc-global-brand{max-width:72vw}.cc-menu-button{display:block;position:absolute;right:14px;top:26px;z-index:3}.cc-global-nav{display:none;position:absolute;top:100%;left:0;right:0;padding:12px 18px;background:#020914;border-bottom:1px solid rgba(255,255,255,.15);flex-direction:column;align-items:flex-start;gap:2px}.cc-global-nav.is-open{display:flex}.cc-global-nav a{padding:10px 0;font-size:.9rem}}
+@media(max-width:560px){.cc-global-header{min-height:76px}.cc-global-brand{max-width:78vw}.cc-global-brand img{max-height:74px}.cc-menu-button{top:18px}}
