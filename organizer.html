@@ -29,7 +29,7 @@
       <h1 id="organizerGreeting">Adventure Builder</h1>
       <p>See what needs attention, review upcoming adventures, and enter the full organizer workspace when you need to make changes.</p>
     </div>
-    <a id="openBuilderTop" class="organizer-primary-button" href="#">Open Full Adventure Builder</a>
+    <button id="organizerSignOutTop" class="organizer-secondary-button" type="button" hidden>Sign Out</button>
   </section>
 
   <section id="organizerLoading" class="organizer-state-card" aria-live="polite">
@@ -38,8 +38,8 @@
   </section>
 
   <section id="organizerAccess" class="organizer-state-card organizer-access-card" hidden>
-    <div><strong>Organizer sign-in required</strong><p id="organizerAccessMessage">Open the Adventure Builder and sign in with your approved Google account.</p></div>
-    <a id="organizerSignIn" class="organizer-primary-button" href="#">Sign In to Adventure Builder</a>
+    <div><strong>Organizer sign-in required</strong><p id="organizerAccessMessage">Sign in with the approved Google account used for Community Connections.</p></div>
+    <div id="googleSignInButton" class="organizer-google-signin" aria-label="Sign in with Google"></div>
   </section>
 
   <div id="organizerDashboard" hidden>
@@ -80,12 +80,13 @@
     </section>
 
     <section class="organizer-workspace-links">
-      <div><span class="organizer-eyebrow">Full Organizer Tools</span><h2>Continue in Adventure Builder</h2><p>Creating and editing adventures, registrations, check-in, payments, resources, categories, and administrator controls remain in the secured Apps Script workspace during this stage.</p></div>
-      <a id="openBuilderBottom" class="organizer-primary-button" href="#">Open Full Adventure Builder</a>
+      <div><span class="organizer-eyebrow">Organizer Migration</span><h2>Your organizer command center is now on Cloudflare</h2><p>This signed-in dashboard is the first organizer screen moved off Apps Script. Creating and editing tools will move here in the next stages.</p></div>
+      <button id="organizerSignOutBottom" class="organizer-secondary-button" type="button">Sign Out</button>
     </section>
   </div>
 </main>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="config.js"></script>
 <script src="organizer.js"></script>
 </body>

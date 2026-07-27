@@ -5,6 +5,7 @@ window.IWP_SITE_CONFIG = {
   appUrl: "https://script.google.com/macros/s/AKfycbxPNqswpRLvj0LZ0ZaVw6DTSpTcZIDt0S0zWFJgOES7g864n734dDF2UpGMwdpsEPGK4Q/exec",
   publicAdventurePage: "/adventure.html",
   organizerPage: "/organizer.html",
+  googleClientId: "976851999093-8d1na61p55803iim4202s189uncggp3t.apps.googleusercontent.com",
   apiUrl: "https://script.google.com/macros/s/AKfycbxPNqswpRLvj0LZ0ZaVw6DTSpTcZIDt0S0zWFJgOES7g864n734dDF2UpGMwdpsEPGK4Q/exec?api=landing",
   facebookUrl: "https://www.facebook.com/groups/1000568346273790/?sorting_setting=CHRONOLOGICAL",
   iwpWebsiteUrl: "https://www.iwproject.org/",
