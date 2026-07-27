@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="IWP Community Connections organizer command center.">
+  <title>Adventure Builder | IWP Community Connections</title>
+  <link rel="icon" href="assets/favicon.ico" sizes="any">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="organizer.css">
+</head>
+<body class="organizer-page">
+<header class="cc-global-header" aria-label="IWP Community Connections navigation">
+  <a class="cc-global-brand" href="/" aria-label="IWP Community Connections home">
+    <img src="assets/iwp-community-connections-header.png" alt="IWP Community Connections, You Are Not Alone">
+  </a>
+  <button class="mobile-menu-button cc-menu-button" type="button" aria-expanded="false" aria-controls="mainNavigation">Menu</button>
+  <nav class="cc-global-nav" id="mainNavigation" aria-label="Main navigation">
+    <a href="/">Home</a>
+    <a class="is-active" href="/organizer.html">Adventure Builder</a>
+    <a href="/#next-30-days">Coming Adventures</a>
+  </nav>
+</header>
+
+<main class="organizer-main">
+  <section class="organizer-hero">
+    <div>
+      <span class="organizer-eyebrow">Organizer Workspace</span>
+      <h1 id="organizerGreeting">Adventure Builder</h1>
+      <p>See what needs attention, review upcoming adventures, and enter the full organizer workspace when you need to make changes.</p>
+    </div>
+    <a id="openBuilderTop" class="organizer-primary-button" href="#">Open Full Adventure Builder</a>
+  </section>
+
+  <section id="organizerLoading" class="organizer-state-card" aria-live="polite">
+    <span class="organizer-spinner" aria-hidden="true"></span>
+    <div><strong>Loading organizer command center</strong><p>Checking your approved Google account and retrieving live information.</p></div>
+  </section>
+
+  <section id="organizerAccess" class="organizer-state-card organizer-access-card" hidden>
+    <div><strong>Organizer sign-in required</strong><p id="organizerAccessMessage">Open the Adventure Builder and sign in with your approved Google account.</p></div>
+    <a id="organizerSignIn" class="organizer-primary-button" href="#">Sign In to Adventure Builder</a>
+  </section>
+
+  <div id="organizerDashboard" hidden>
+    <section class="organizer-health" id="organizerHealth">
+      <div><span>Current Status</span><h2 id="healthTitle">Everything looks good</h2><p id="healthMessage"></p></div>
+      <span id="dashboardUpdated" class="organizer-updated"></span>
+    </section>
+
+    <section class="organizer-stat-grid" aria-label="Organizer overview">
+      <article><span>Upcoming Adventures</span><strong id="statUpcoming">0</strong><small id="statWeek">0 this week</small></article>
+      <article><span>Registered People</span><strong id="statPeople">0</strong><small>Across upcoming adventures</small></article>
+      <article><span>Needs Attention</span><strong id="statAttention">0</strong><small>Alerts and capacity issues</small></article>
+      <article><span>Pending Payments</span><strong id="statPayments">0</strong><small id="statPaymentEvents">Across 0 adventures</small></article>
+      <article><span>Waitlisted People</span><strong id="statWaitlist">0</strong><small id="statWaitlistEvents">Across 0 adventures</small></article>
+      <article><span>Draft Adventures</span><strong id="statDrafts">0</strong><small>Not yet published</small></article>
+    </section>
+
+    <section class="organizer-dashboard-grid">
+      <article class="organizer-panel">
+        <div class="organizer-panel-heading"><div><span>Next Up</span><h2>Next Adventure</h2></div></div>
+        <div id="nextAdventure" class="organizer-empty">No upcoming adventures.</div>
+      </article>
+
+      <article class="organizer-panel">
+        <div class="organizer-panel-heading"><div><span>Action Center</span><h2>Needs Attention</h2></div><span id="attentionBadge" class="organizer-count-badge">0</span></div>
+        <div id="attentionList" class="organizer-list"><div class="organizer-empty">No current alerts.</div></div>
+      </article>
+
+      <article class="organizer-panel">
+        <div class="organizer-panel-heading"><div><span>Today</span><h2>Organizer Tasks</h2></div></div>
+        <div id="taskList" class="organizer-list"><div class="organizer-empty">No tasks are due.</div></div>
+      </article>
+
+      <article class="organizer-panel">
+        <div class="organizer-panel-heading"><div><span>Activity</span><h2>Recent Registrations</h2></div></div>
+        <div id="registrationList" class="organizer-list"><div class="organizer-empty">No recent registrations.</div></div>
+      </article>
+    </section>
+
+    <section class="organizer-workspace-links">
+      <div><span class="organizer-eyebrow">Full Organizer Tools</span><h2>Continue in Adventure Builder</h2><p>Creating and editing adventures, registrations, check-in, payments, resources, categories, and administrator controls remain in the secured Apps Script workspace during this stage.</p></div>
+      <a id="openBuilderBottom" class="organizer-primary-button" href="#">Open Full Adventure Builder</a>
+    </section>
+  </div>
+</main>
+
+<script src="config.js"></script>
+<script src="organizer.js"></script>
+</body>
+</html>
