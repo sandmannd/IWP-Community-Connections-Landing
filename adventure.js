@@ -106,7 +106,7 @@
             '<p class="adventure-availability">' + escapeHtml(availability) + '</p>' +
             (event.Address ? '<address>' + escapeHtml(event.Address) + '</address>' : '') +
             (maps ? '<a class="adventure-secondary-button" target="_blank" rel="noopener" href="' + escapeAttr(maps) + '">Get Directions</a>' : '') +
-            (canRegister ? '<a class="adventure-primary-button" href="' + escapeAttr(data.registrationUrl || config.appUrl) + '">' + registerLabel + '</a>' : '<span class="adventure-disabled-button">Registration unavailable</span>') +
+            (canRegister ? '<a class="adventure-primary-button" href="' + escapeAttr('/register.html?id=' + encodeURIComponent(event.EventId || '')) + '">' + registerLabel + '</a>' : '<span class="adventure-disabled-button">Registration unavailable</span>') +
             '<button id="shareAdventure" class="adventure-secondary-button" type="button">Copy Adventure Link</button>' +
           '</aside>' +
         '</div>' +
