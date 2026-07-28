@@ -18,7 +18,7 @@ function createOrganizerSessionJsonp_(callbackName, credential) {
   let payload;
 
   try {
-    const identity = getOrganizerIdentity_(credential, '');
+    const identity = getOrganizerIdentity_(credential, sessionToken);
     const role = identity.role || getUserRole_(identity.email);
     const authorized = role === APP_CONFIG.roles.owner || role === APP_CONFIG.roles.admin;
 
