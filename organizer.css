@@ -4,3 +4,19 @@
 .organizer-secondary-button{appearance:none;border:1px solid rgba(255,255,255,.32);background:#0d192b;color:#fff;border-radius:999px;padding:.85rem 1.2rem;font:inherit;font-weight:800;cursor:pointer}
 .organizer-secondary-button:hover,.organizer-secondary-button:focus-visible{background:#172842;border-color:rgba(255,255,255,.55)}
 @media(max-width:720px){.organizer-google-signin{justify-content:flex-start}.organizer-secondary-button{width:100%}}
+
+
+.organizer-workspace-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end}
+.organizer-primary-link{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 18px;border-radius:999px;background:linear-gradient(135deg,#38bdf8,#0ea5e9);color:#03131e;text-decoration:none;font-weight:900;box-shadow:0 12px 28px rgba(14,165,233,.22)}
+.organizer-primary-link:hover{transform:translateY(-1px);filter:brightness(1.06)}
+.organizer-adventure-controls{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:12px;margin:0 0 20px}
+.organizer-search,.organizer-select{width:100%;min-height:48px;border:1px solid rgba(148,163,184,.28);border-radius:14px;background:rgba(15,23,42,.82);color:#fff;padding:0 14px;font:inherit}
+.organizer-search::placeholder{color:#94a3b8}
+.organizer-adventure-list{display:grid;gap:14px}
+.organizer-adventure-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;padding:19px;border:1px solid rgba(148,163,184,.18);border-radius:20px;background:rgba(15,23,42,.72);box-shadow:0 14px 34px rgba(0,0,0,.2)}
+.organizer-adventure-card h2{margin:5px 0 7px;font-size:1.2rem}.organizer-adventure-card p{margin:0;color:#cbd5e1;line-height:1.55}
+.organizer-adventure-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}.organizer-chip{display:inline-flex;align-items:center;min-height:28px;padding:0 10px;border-radius:999px;border:1px solid rgba(148,163,184,.2);background:rgba(148,163,184,.08);color:#dbeafe;font-size:.76rem;font-weight:800}
+.organizer-chip.is-draft{color:#fde68a;border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.1)}.organizer-chip.is-published{color:#bbf7d0;border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.1)}.organizer-chip.is-cancelled{color:#fecaca;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.1)}
+.organizer-card-actions{display:flex;flex-direction:column;gap:9px;min-width:160px}.organizer-card-actions a{display:flex;align-items:center;justify-content:center;min-height:40px;padding:0 13px;border-radius:12px;text-decoration:none;font-weight:850}.organizer-card-actions .primary{background:#0ea5e9;color:#03131e}.organizer-card-actions .secondary{border:1px solid rgba(148,163,184,.25);color:#e2e8f0;background:rgba(255,255,255,.03)}
+.organizer-results-summary{margin:0 0 12px;color:#94a3b8;font-size:.9rem}.organizer-back-link{display:inline-flex;margin-bottom:14px;color:#7dd3fc;text-decoration:none;font-weight:800}
+@media(max-width:720px){.organizer-adventure-controls{grid-template-columns:1fr}.organizer-adventure-card{grid-template-columns:1fr}.organizer-card-actions{min-width:0;flex-direction:row}.organizer-card-actions a{flex:1}.organizer-workspace-actions{justify-content:flex-start}}

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Manage IWP Community Connections adventures."><title>Manage Adventures | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"></head>
+<body class="organizer-page">
+<header class="cc-global-header" aria-label="IWP Community Connections navigation"><a class="cc-global-brand" href="/" aria-label="IWP Community Connections home"><img src="assets/iwp-community-connections-header.png" alt="IWP Community Connections, You Are Not Alone"></a><button class="mobile-menu-button cc-menu-button" type="button" aria-expanded="false" aria-controls="mainNavigation">Menu</button><nav class="cc-global-nav" id="mainNavigation" aria-label="Main navigation"><a href="/">Home</a><a class="is-active" href="/organizer.html">Adventure Builder</a><a href="/#next-30-days">Coming Adventures</a></nav></header>
+<main class="organizer-main">
+  <a class="organizer-back-link" href="/organizer.html">← Back to Command Center</a>
+  <section class="organizer-hero"><div><span class="organizer-eyebrow">Organizer Workspace</span><h1>Manage Adventures</h1><p>Review every adventure, registration total, capacity, waitlist, and publishing status in one place.</p></div><button id="organizerSignOutTop" class="organizer-secondary-button" type="button" hidden>Sign Out</button></section>
+  <section id="organizerLoading" class="organizer-state-card" aria-live="polite"><span class="organizer-spinner" aria-hidden="true"></span><div><strong>Loading adventures</strong><p>Checking your approved Google account and retrieving the live adventure index.</p></div></section>
+  <section id="organizerAccess" class="organizer-state-card organizer-access-card" hidden><div><strong>Organizer sign-in required</strong><p id="organizerAccessMessage">Sign in with the approved Google account used for Community Connections.</p></div><div id="googleSignInButton" class="organizer-google-signin" aria-label="Sign in with Google"></div></section>
+  <div id="organizerAdventureWorkspace" hidden>
+    <section class="organizer-panel">
+      <div class="organizer-panel-heading"><div><span>Adventure Index</span><h2>All Adventures</h2></div><span id="adventureTotalBadge" class="organizer-count-badge">0</span></div>
+      <div class="organizer-adventure-controls"><input id="adventureSearch" class="organizer-search" type="search" placeholder="Search title, location, or type"><select id="adventureStatus" class="organizer-select"><option value="all">All statuses</option><option value="draft">Draft</option><option value="published">Published</option><option value="complete">Complete</option><option value="cancelled">Cancelled</option><option value="archived">Archived</option></select></div>
+      <p id="adventureResultsSummary" class="organizer-results-summary"></p>
+      <div id="organizerAdventureList" class="organizer-adventure-list"><div class="organizer-empty">No adventures found.</div></div>
+    </section>
+  </div>
+</main>
+<script src="https://accounts.google.com/gsi/client" async defer></script><script src="config.js"></script><script src="organizer-adventures.js"></script></body></html>
