@@ -7,9 +7,11 @@
   var requestNumber=0;
   var activeTimeout=0;
 
-  function readSession(){try{var raw=sessionStorage.getItem(sessionKey)||'';var data=raw?JSON.parse(raw):null;if(!data||!data.token||!data.expiresAt||Date.parse(data.expiresAt)<=Date.now()){sessionStorage.removeItem(sessionKey);return null;}return data;}catch(ignore){return null;}}
-  function writeSession(payload){try{sessionStorage.setItem(sessionKey,JSON.stringify({token:String(payload.sessionToken||''),expiresAt:String(payload.expiresAt||''),user:payload.user||{}}));}catch(ignore){}}
-  function clearSession(){try{sessionStorage.removeItem(sessionKey);}catch(ignore){}}
+  function storageAreas(){var areas=[];try{if(window.sessionStorage)areas.push(window.sessionStorage);}catch(ignore){}try{if(window.localStorage)areas.push(window.localStorage);}catch(ignore){}return areas;}
+  function normalizeSession(payload){var session={token:String(payload&&payload.sessionToken||payload&&payload.token||''),expiresAt:String(payload&&payload.expiresAt||''),user:payload&&payload.user||{}};if(!session.token||!session.expiresAt||isNaN(Date.parse(session.expiresAt))||Date.parse(session.expiresAt)<=Date.now())return null;return session;}
+  function readSession(){var areas=storageAreas();for(var i=0;i<areas.length;i++){try{var raw=areas[i].getItem(sessionKey)||'';var data=raw?JSON.parse(raw):null;var session=normalizeSession(data);if(session)return session;areas[i].removeItem(sessionKey);}catch(ignore){}}return null;}
+  function writeSession(payload){var session=normalizeSession(payload);if(!session)return null;var raw=JSON.stringify(session);storageAreas().forEach(function(area){try{area.setItem(sessionKey,raw);}catch(ignore){}});return session;}
+  function clearSession(){storageAreas().forEach(function(area){try{area.removeItem(sessionKey);}catch(ignore){}});}
   function removeRequestScripts(prefix){Array.prototype.slice.call(document.querySelectorAll('script[id^="'+prefix+'"]')).forEach(function(node){if(node.parentNode)node.parentNode.removeChild(node);});}
   function clearRequestTimeout(){if(activeTimeout){clearTimeout(activeTimeout);activeTimeout=0;}}
 
@@ -31,7 +33,7 @@
   window.iwpOrganizerSignOutCallback=function(){location.href='/organizer.html';};
   ['organizerSignOutTop','organizerSignOutBottom'].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('click',signOut);});
 
-  window.iwpOrganizerSessionCallback=function(payload){clearRequestTimeout();if(!payload||!payload.success||!payload.authorized){showAccess(payload&&payload.error);return;}writeSession(payload);loadDashboard(readSession());};
+  window.iwpOrganizerSessionCallback=function(payload){clearRequestTimeout();removeRequestScripts('organizerSessionRequest');if(!payload||!payload.success||!payload.authorized){showAccess(payload&&payload.error||'Google sign-in was not accepted by the organizer service.');return;}var session=writeSession(payload);if(!session){showAccess('The organizer session could not be saved. Please allow site storage and sign in again.');return;}loadDashboard(session);};
   window.iwpOrganizerDashboardCallback=function(payload){
     clearRequestTimeout();removeRequestScripts('organizerApiRequest');
     if(!payload||!payload.success||!payload.authorized){showAccess(payload&&payload.error);return;}
