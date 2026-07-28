@@ -316,6 +316,12 @@ function getOrganizerAdventuresJsonp_(callbackName, credential, sessionToken) {
     .setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 
+function normalizeOrganizerBoolean_(value) {
+  if (value === true || value === false) return value;
+  const normalized = String(value == null ? '' : value).trim().toLowerCase();
+  return normalized === 'true' || normalized === 'yes' || normalized === 'y' || normalized === '1';
+}
+
 function getOrganizerAdventureIndex_() {
   const events = getEventObjects_(getSheetByName_(APP_CONFIG.sheets.events));
   const registrations = getDataObjects_(getSheetByName_(APP_CONFIG.sheets.registrations));
@@ -354,8 +360,8 @@ function getOrganizerAdventureIndex_() {
       waitlistCount: waitlistRegistrations.length,
       maxParticipants: maxParticipants > 0 ? maxParticipants : null,
       spotsRemaining: maxParticipants > 0 ? Math.max(0, maxParticipants - peopleCount) : null,
-      registrationClosed: normalizeBoolean_(event.RegistrationClosed),
-      featured: normalizeBoolean_(event.Featured),
+      registrationClosed: normalizeOrganizerBoolean_(event.RegistrationClosed),
+      featured: normalizeOrganizerBoolean_(event.Featured),
       imageUrl: String(event.ImageUrl || event.EventImageUrl || ''),
       updatedAt: String(event.UpdatedAt || event.ModifiedAt || '')
     };
