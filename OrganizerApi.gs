@@ -373,6 +373,14 @@ function getOrganizerAdventureIndex_() {
 }
 
 
+function getOrganizerEventRecord_(eventId) {
+  const id = String(eventId || '').trim();
+  const events = getEventObjects_(getSheetByName_(APP_CONFIG.sheets.events));
+  const event = events.find(function(item) { return String(item.EventId || '') === id; });
+  if (!event) throw new Error('Adventure not found.');
+  return event;
+}
+
 /** Sprint M4.2: Cloudflare Adventure Builder data and draft-save bridge. */
 function getOrganizerBuilderJsonp_(callbackName, credential, sessionToken, eventId) {
   const callback = sanitizeOrganizerCallback_(callbackName || 'iwpOrganizerBuilderCallback');
@@ -380,7 +388,7 @@ function getOrganizerBuilderJsonp_(callbackName, credential, sessionToken, event
   try {
     const identity = getOrganizerIdentity_(credential, sessionToken);
     const id = String(eventId || '').trim();
-    const event = id ? getEvent(id) : null;
+    const event = id ? getOrganizerEventRecord_(id) : null;
     payload = {
       success: true,
       authorized: true,
@@ -442,7 +450,7 @@ function saveOrganizerAdventureDraft_(eventId, eventData, identity) {
   const record = normalizeEventRecord_(eventData || {});
   record.UpdatedAt = now_();
   if (eventId) {
-    const existing = getEvent(eventId);
+    const existing = getOrganizerEventRecord_(eventId);
     record.Status = existing.Status || APP_CONFIG.eventStatuses.draft;
     record.CreatedBy = existing.CreatedBy || identity.email;
     record.CreatedAt = existing.CreatedAt || now_();
@@ -459,4 +467,18 @@ function saveOrganizerAdventureDraft_(eventId, eventData, identity) {
   appendObject_(sheet, record);
   writeEventScheduleText_(sheet, record.EventId, record);
   return { success: true, created: true, eventId: record.EventId, message: 'Adventure draft created.', event: toClientEvent_(record) };
+}
+
+
+/** Sprint M4.2.1: authenticated image upload for the Cloudflare builder. */
+function uploadOrganizerAdventureImage_(sessionToken, fileName, mimeType, dataUrl) {
+  verifyOrganizerSession_(sessionToken);
+  const raw = String(dataUrl || '');
+  if (!/^data:image\/(png|jpeg|jpg|webp);base64,/i.test(raw)) throw new Error('Choose a PNG, JPG, or WebP image.');
+  if (raw.length > 5500000) throw new Error('The image is too large. Choose a smaller image and try again.');
+  return uploadEventImage({
+    fileName: String(fileName || 'adventure-image.jpg'),
+    mimeType: String(mimeType || 'image/jpeg'),
+    base64: raw
+  });
 }
