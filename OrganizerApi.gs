@@ -371,3 +371,92 @@ function getOrganizerAdventureIndex_() {
     return aDate.localeCompare(bDate) || String(a.title).localeCompare(String(b.title));
   });
 }
+
+
+/** Sprint M4.2: Cloudflare Adventure Builder data and draft-save bridge. */
+function getOrganizerBuilderJsonp_(callbackName, credential, sessionToken, eventId) {
+  const callback = sanitizeOrganizerCallback_(callbackName || 'iwpOrganizerBuilderCallback');
+  let payload;
+  try {
+    const identity = getOrganizerIdentity_(credential, sessionToken);
+    const id = String(eventId || '').trim();
+    const event = id ? getEvent(id) : null;
+    payload = {
+      success: true,
+      authorized: true,
+      user: { email: identity.email, name: identity.name || '', picture: identity.picture || '', role: identity.role || '' },
+      event: event ? toClientEvent_(event) : null,
+      eventTypes: getActiveEventTypes(),
+      mode: event ? 'edit' : 'create'
+    };
+  } catch (error) {
+    payload = { success: false, authorized: false, error: error && error.message ? error.message : 'Unable to load the Adventure Builder.' };
+  }
+  return ContentService.createTextOutput(callback + '(' + JSON.stringify(payload) + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function saveOrganizerAdventureJsonp_(callbackName, credential, sessionToken, eventId, encodedData) {
+  const callback = sanitizeOrganizerCallback_(callbackName || 'iwpOrganizerSaveAdventureCallback');
+  let payload;
+  try {
+    const identity = getOrganizerIdentity_(credential, sessionToken);
+    const data = decodeOrganizerBuilderData_(encodedData);
+    validateOrganizerBuilderData_(data);
+    const lock = LockService.getScriptLock();
+    lock.waitLock(20000);
+    try {
+      payload = saveOrganizerAdventureDraft_(String(eventId || '').trim(), data, identity);
+    } finally {
+      lock.releaseLock();
+    }
+    payload.authorized = true;
+  } catch (error) {
+    payload = { success: false, authorized: true, error: error && error.message ? error.message : 'Unable to save the adventure.' };
+  }
+  return ContentService.createTextOutput(callback + '(' + JSON.stringify(payload) + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function decodeOrganizerBuilderData_(encodedData) {
+  const raw = String(encodedData || '');
+  if (!raw) return {};
+  if (raw.length > 45000) throw new Error('The adventure is too large to save in one request.');
+  let jsonText = raw;
+  try { jsonText = decodeURIComponent(raw); } catch (ignore) {}
+  let data;
+  try { data = JSON.parse(jsonText); } catch (error) { throw new Error('The adventure form could not be read. Please reload and try again.'); }
+  return data && typeof data === 'object' ? data : {};
+}
+
+function validateOrganizerBuilderData_(data) {
+  if (!normalizeText_(data.Title || data.title)) throw new Error('Adventure name is required.');
+  if (!normalizeText_(data.EventType || data.eventType)) throw new Error('Adventure type is required.');
+  if (!normalizeText_(data.StartDate || data.startDate)) throw new Error('Start date is required.');
+  if (!normalizeText_(data.EndDate || data.endDate)) throw new Error('End date is required.');
+  const start = String(data.StartDate || data.startDate || '');
+  const end = String(data.EndDate || data.endDate || '');
+  if (end < start) throw new Error('End date cannot be before the start date.');
+}
+
+function saveOrganizerAdventureDraft_(eventId, eventData, identity) {
+  const sheet = getSheetByName_(APP_CONFIG.sheets.events);
+  const record = normalizeEventRecord_(eventData || {});
+  record.UpdatedAt = now_();
+  if (eventId) {
+    const existing = getEvent(eventId);
+    record.Status = existing.Status || APP_CONFIG.eventStatuses.draft;
+    record.CreatedBy = existing.CreatedBy || identity.email;
+    record.CreatedAt = existing.CreatedAt || now_();
+    record.DriveFolderId = existing.DriveFolderId || '';
+    const updated = updateObjectById_(sheet, 'EventId', eventId, record);
+    writeEventScheduleText_(sheet, eventId, record);
+    return { success: true, created: false, eventId: eventId, message: 'Adventure draft updated.', event: toClientEvent_(updated) };
+  }
+  record.EventId = createId_('event');
+  record.Status = APP_CONFIG.eventStatuses.draft;
+  record.RegistrationLink = '';
+  record.CreatedBy = identity.email;
+  record.CreatedAt = now_();
+  appendObject_(sheet, record);
+  writeEventScheduleText_(sheet, record.EventId, record);
+  return { success: true, created: true, eventId: record.EventId, message: 'Adventure draft created.', event: toClientEvent_(record) };
+}

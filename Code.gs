@@ -20,6 +20,12 @@ function doGet(e) {
   if (apiRoute === 'organizer-dashboard') {
     return getOrganizerDashboardJsonp_(params.callback || 'iwpOrganizerDashboardCallback', params.credential || params.idToken || '', params.session || params.sessionToken || '');
   }
+  if (apiRoute === 'organizer-builder') {
+    return getOrganizerBuilderJsonp_(params.callback || 'iwpOrganizerBuilderCallback', params.credential || params.idToken || '', params.session || params.sessionToken || '', params.eventId || params.event || '');
+  }
+  if (apiRoute === 'organizer-save-adventure') {
+    return saveOrganizerAdventureJsonp_(params.callback || 'iwpOrganizerSaveAdventureCallback', params.credential || params.idToken || '', params.session || params.sessionToken || '', params.eventId || params.event || '', params.data || '');
+  }
   if (apiRoute === 'organizer-adventures') {
     return getOrganizerAdventuresJsonp_(params.callback || 'iwpOrganizerAdventuresCallback', params.credential || params.idToken || '', params.session || params.sessionToken || '');
   }
