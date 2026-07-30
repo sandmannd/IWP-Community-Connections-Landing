@@ -33,8 +33,8 @@ function doPost(e) {
     }
     const safePayload = JSON.stringify(payload).replace(/</g, '\u003c');
     return HtmlService.createHtmlOutput(
-      '<!doctype html><meta charset="utf-8"><script>try{parent.iwpOrganizerImageUploadComplete(' +
-      JSON.stringify(callbackId) + ',' + safePayload + ')}catch(e){}<\/script>'
+      '<!doctype html><meta charset="utf-8"><script>try{parent.postMessage({type:"iwpOrganizerImageUploadComplete",callbackId:' +
+      JSON.stringify(callbackId) + ',payload:' + safePayload + '},"*")}catch(e){}<\/script>'
     );
   }
 
