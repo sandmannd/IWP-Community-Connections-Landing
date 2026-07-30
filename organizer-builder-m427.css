@@ -58,3 +58,10 @@ body.organizer-page.builder-themed-page .organizer-back-link{color:#7dd3fc}
 .builder-cancel-button{border:1px solid #41536f;border-radius:14px;background:#172842;color:#fff;padding:.9rem 1.25rem;font-weight:900;cursor:pointer}
 .builder-cancel-button:hover,.builder-cancel-button:focus-visible{background:#203653;border-color:#7dd3fc}
 @media(max-width:720px){.builder-save-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.builder-cancel-button{width:100%}}
+
+/* M4.2.9 validation popup */
+.builder-validation-dialog{max-width:520px;width:calc(100% - 32px)}
+.builder-validation-dialog>div{padding:30px}
+.builder-validation-dialog h2{margin:0 0 12px}
+.builder-validation-dialog p{margin:0 0 24px;color:#b8c8df;line-height:1.6}
+.builder-validation-dialog .primary{min-width:110px}
