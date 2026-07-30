@@ -9,3 +9,76 @@
 .builder-ai-options button{white-space:nowrap}
 .builder-ai-generate{width:100%;margin-top:.5rem}
 @media (max-width:600px){.builder-ai-options{grid-template-columns:1fr}.builder-ai-options button{width:100%}}
+
+/* Sprint M4.2.4 — match the Adventure Builder to the dark Community Connections theme */
+.builder-card{
+  color:#f7f8f7;
+  background:linear-gradient(180deg,#0b1512,#08110e);
+  border-color:rgba(255,255,255,.14);
+  box-shadow:0 22px 55px rgba(0,0,0,.42);
+}
+.builder-card h2{color:#fff}
+.builder-card p,.builder-card small{color:#b6c1ba}
+.builder-card label{color:#f3f6f4}
+.builder-card input,.builder-card select,.builder-card textarea{
+  border-color:#66756d;
+  background:#fff;
+  color:#111827;
+  opacity:1;
+}
+.builder-card input:focus,.builder-card select:focus,.builder-card textarea:focus{
+  outline:3px solid rgba(57,185,85,.32);
+  border-color:#39b955;
+}
+.builder-card input::placeholder,.builder-card textarea::placeholder{color:#6b7280;opacity:1}
+.builder-card-heading>span{background:linear-gradient(135deg,#1f9d3a,#126f28)}
+.builder-card-heading .builder-ai-button{
+  background:linear-gradient(135deg,#1f9d3a,#126f28);
+  color:#fff;
+  box-shadow:0 10px 30px rgba(31,157,58,.17);
+}
+.builder-image-preview{
+  border-color:rgba(255,255,255,.22);
+  background:#101e19;
+}
+.builder-text-button{
+  border-color:rgba(255,255,255,.55);
+  background:transparent;
+  color:#fff;
+}
+.builder-text-button:hover,.builder-text-button:focus-visible{border-color:#39b955;background:rgba(31,157,58,.13)}
+.builder-savebar{
+  background:linear-gradient(180deg,#0b1512,#08110e);
+  border:1px solid rgba(255,255,255,.16);
+}
+.builder-savebar .primary,.builder-ai-generate{
+  background:linear-gradient(135deg,#1f9d3a,#126f28);
+  color:#fff;
+}
+.builder-ai-dialog{
+  color:#f7f8f7;
+  background:linear-gradient(180deg,#0b1512,#08110e);
+  border:1px solid rgba(255,255,255,.14);
+}
+.builder-ai-dialog h2{color:#fff}
+.builder-ai-dialog p{color:#b6c1ba}
+.builder-dialog-close{color:#fff}
+.builder-ai-select-all{
+  border-color:rgba(255,255,255,.16);
+  background:#101e19;
+}
+.builder-ai-options label{color:#f3f6f4}
+.builder-ai-options button{
+  border:1px solid rgba(255,255,255,.55);
+  border-radius:12px;
+  background:transparent;
+  color:#fff;
+  padding:.72rem .9rem;
+  font-weight:800;
+  cursor:pointer;
+}
+.builder-ai-options button:hover,.builder-ai-options button:focus-visible{
+  border-color:#39b955;
+  background:rgba(31,157,58,.13);
+}
+.builder-ai-dialog input[type="checkbox"],.builder-checks input[type="checkbox"]{accent-color:#1f9d3a}
