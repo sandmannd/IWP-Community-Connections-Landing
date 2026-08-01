@@ -28,7 +28,7 @@
     document.getElementById('organizerDashboard').hidden=name!=='dashboard';
     ['organizerSignOutTop'].forEach(function(id){var el=document.getElementById(id);if(el)el.hidden=name!=='dashboard';});
   }
-  function showAccess(message){clearRequestTimeout();clearSession();setState('access');text('organizerAccessMessage',message||'Sign in with the approved Google account used for Community Connections.');renderGoogleButton();}
+  function showAccess(message){clearRequestTimeout();setState('access');text('organizerAccessMessage',message||'Sign in with the approved Google account used for Community Connections.');renderGoogleButton();}
   function signOut(){var session=readSession();clearSession();if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();if(session&&session.token&&appUrl){var script=document.createElement('script');script.src=appUrl+(appUrl.indexOf('?')===-1?'?':'&')+'api=organizer-signout&callback=iwpOrganizerSignOutCallback&session='+encodeURIComponent(session.token)+'&_='+Date.now();document.head.appendChild(script);}setState('access');renderGoogleButton();}
   window.iwpOrganizerSignOutCallback=function(){location.href='/organizer.html';};
   ['organizerSignOutTop','organizerSignOutBottom'].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('click',signOut);});
