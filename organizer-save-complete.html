@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Adventure Save Complete</title></head>
+<body style="font-family:Arial,sans-serif;background:#101c31;color:#fff;padding:28px"><h2>Adventure save complete</h2><p id="message">Returning to Manage Adventures…</p><script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var key=q.get('resultKey')||'';
+  var result={success:q.get('success')==='1',eventId:q.get('eventId')||'',imageUrl:q.get('imageUrl')||'',error:q.get('error')||''};
+  if(key){try{localStorage.setItem(key,JSON.stringify(result));}catch(e){}}
+  try{if(window.opener&&!window.opener.closed)window.opener.postMessage({type:'iwpAdventureSaveComplete',resultKey:key,payload:result},location.origin);}catch(e){}
+  document.getElementById('message').textContent=result.success?'Adventure saved. This window will close automatically.':('Save failed: '+(result.error||'Unknown error'));
+  setTimeout(function(){try{window.close();}catch(e){}},400);
+})();
+</script></body></html>

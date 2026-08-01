@@ -5,7 +5,7 @@
   var clientId=String(config.googleClientId||'');
   var sessionKey='iwpOrganizerSessionV1';
   var requestNumber=0;
-  var activeTimeout=0;
+  var activeTimeout=0;var transientRetries=0;
 
   function byId(id){return document.getElementById(id);}
   function text(id,value){var el=byId(id);if(el)el.textContent=value==null?'':String(value);}
@@ -48,7 +48,7 @@
       showAccess(payload&&payload.error||'Organizer authorization was not accepted.');
       return;
     }
-    var data=payload.dashboard||{};
+    transientRetries=0;var data=payload.dashboard||{};
     setState('dashboard');
     try{
       var displayName=(payload.user&&payload.user.name)||data.greetingName||'';
@@ -79,9 +79,9 @@
     setState('loading');
     var script=document.createElement('script');script.async=true;script.id='organizerApiRequest'+(++requestNumber);
     script.src=appUrl+(appUrl.indexOf('?')===-1?'?':'&')+'api=organizer-dashboard&callback=iwpOrganizerDashboardCallback&session='+encodeURIComponent(session.token)+'&_='+Date.now();
-    script.onerror=function(){showAccess('Unable to reach the organizer service. Please sign in again.');};
+    script.onerror=function(){if(transientRetries<1){transientRetries++;setTimeout(function(){loadDashboard(readSession())},1200);return}showAccess('Unable to reach the organizer service. Your login is still saved; refresh to retry.');};
     document.head.appendChild(script);
-    activeTimeout=setTimeout(function(){var loading=byId('organizerLoading');if(loading&&!loading.hidden)showAccess('The organizer service took too long to respond. Please sign in again.');},20000);
+    activeTimeout=setTimeout(function(){var loading=byId('organizerLoading');if(loading&&!loading.hidden){if(transientRetries<1){transientRetries++;loadDashboard(readSession());return}showAccess('The organizer service is taking longer than expected. Your login is still saved; refresh to retry.');}},45000);
   }
   function handleGoogleCredential(response){var credential=response&&response.credential?String(response.credential):'';if(!credential){showAccess('Google did not return a sign-in credential. Please try again.');return;}setState('loading');var script=document.createElement('script');script.async=true;script.id='organizerApiRequest'+(++requestNumber);script.src=appUrl+(appUrl.indexOf('?')===-1?'?':'&')+'api=organizer-session&callback=iwpOrganizerSessionCallback&credential='+encodeURIComponent(credential)+'&_='+Date.now();script.onerror=function(){showAccess('Unable to start the organizer session. Please try again.');};document.head.appendChild(script);}
   function renderGoogleButton(){var target=byId('googleSignInButton');if(!target||target.dataset.rendered==='true')return;if(!clientId){text('organizerAccessMessage','The Google sign-in client has not been configured.');return;}if(!(window.google&&google.accounts&&google.accounts.id)){setTimeout(renderGoogleButton,150);return;}google.accounts.id.initialize({client_id:clientId,callback:handleGoogleCredential,auto_select:false,cancel_on_tap_outside:true});google.accounts.id.renderButton(target,{theme:'outline',size:'large',shape:'pill',text:'signin_with',width:300});target.dataset.rendered='true';}
