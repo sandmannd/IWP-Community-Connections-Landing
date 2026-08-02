@@ -9,11 +9,12 @@
   <section id="organizerAccess" class="organizer-state-card organizer-access-card" hidden><div><strong>Organizer sign-in required</strong><p id="organizerAccessMessage">Sign in with the approved Google account used for Community Connections.</p></div><div id="googleSignInButton" class="organizer-google-signin" aria-label="Sign in with Google"></div></section>
   <div id="organizerAdventureWorkspace" hidden>
     <section class="organizer-panel">
-      <div class="organizer-panel-heading"><div><span>Adventure Index</span><h2>All Adventures</h2></div><div class="organizer-card-actions"><a class="primary" href="/organizer-builder.html?v=m4.2.3">Create Adventure</a><span id="adventureTotalBadge" class="organizer-count-badge">0</span></div></div>
+      <div class="organizer-panel-heading"><div><span>Adventure Index</span><h2 id="adventureListHeading">Current Adventures</h2></div><div class="organizer-card-actions"><a class="primary" href="/organizer-builder.html?v=m4.2.3">Create Adventure</a><span id="adventureTotalBadge" class="organizer-count-badge">0</span></div></div>
       <div class="organizer-adventure-controls"><input id="adventureSearch" class="organizer-search" type="search" placeholder="Search title, location, or type"><select id="adventureStatus" class="organizer-select"><option value="all">All statuses</option><option value="draft">Draft</option><option value="published">Published</option><option value="complete">Complete</option><option value="cancelled">Cancelled</option><option value="archived">Archived</option></select></div>
       <p id="adventureResultsSummary" class="organizer-results-summary"></p>
       <div id="organizerAdventureList" class="organizer-adventure-list"><div class="organizer-empty">No adventures found.</div></div>
+      <div class="organizer-past-events-row"><button id="togglePastEvents" class="organizer-secondary-button" type="button">Past Events</button></div>
     </section>
   </div>
 </main>
-<script src="https://accounts.google.com/gsi/client" async defer></script><script src="config.js"></script><script src="organizer-adventures.js?v=m4.2.22"></script></body></html>
+<script src="https://accounts.google.com/gsi/client" async defer></script><script src="config.js"></script><script src="organizer-adventures-m52.js?v=m5.2"></script></body></html>

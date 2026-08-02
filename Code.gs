@@ -26,8 +26,14 @@ function doGet(e) {
   if (apiRoute === 'organizer-save-adventure') {
     return saveOrganizerAdventureJsonp_(params.callback || 'iwpOrganizerSaveAdventureCallback', params.credential || params.idToken || '', params.session || params.sessionToken || '', params.eventId || params.event || '', params.data || '');
   }
+  if (apiRoute === 'organizer-save-status') {
+    return getOrganizerSaveStatusJsonp_(params.callback || 'iwpOrganizerSaveStatusCallback', params.session || params.sessionToken || '', params.operationId || '');
+  }
   if (apiRoute === 'organizer-adventures') {
     return getOrganizerAdventuresJsonp_(params.callback || 'iwpOrganizerAdventuresCallback', params.credential || params.idToken || '', params.session || params.sessionToken || '');
+  }
+  if (apiRoute === 'organizer-email-data') {
+    return getOrganizerEmailDataJsonp_(params.callback || 'iwpOrganizerEmailDataCallback', params.session || params.sessionToken || '', params.eventId || params.event || '');
   }
   const forcePublic = String(params.public || '').toLowerCase() === '1' ||
     String(params.public || '').toLowerCase() === 'true';

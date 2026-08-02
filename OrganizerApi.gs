@@ -43,7 +43,9 @@ function createOrganizerSessionJsonp_(callbackName, credential) {
           name: identity.name || '',
           picture: identity.picture || '',
           role: String(role || '')
-        }
+        },
+        dashboard: getCommandCenterData_(),
+        adventures: getOrganizerAdventureIndex_()
       };
     }
   } catch (error) {
@@ -424,6 +426,45 @@ function saveOrganizerAdventureJsonp_(callbackName, credential, sessionToken, ev
   return ContentService.createTextOutput(callback + '(' + JSON.stringify(payload) + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 
+function organizerSaveStatusCacheKey_(operationId) {
+  return 'organizer-save-status:' + String(operationId || '').replace(/[^0-9A-Za-z_-]/g, '').slice(0, 100);
+}
+
+function storeOrganizerSaveStatus_(operationId, payload) {
+  const key = organizerSaveStatusCacheKey_(operationId);
+  if (!key || key === 'organizer-save-status:') return;
+  CacheService.getScriptCache().put(key, JSON.stringify(payload || {}), 600);
+}
+
+function getOrganizerSaveStatusJsonp_(callbackName, sessionToken, operationId) {
+  const callback = String(callbackName || '').replace(/[^\w.$]/g, '');
+  if (!callback) throw new Error('A valid callback is required.');
+  let payload;
+  try {
+    verifyOrganizerSession_(sessionToken);
+    const key = organizerSaveStatusCacheKey_(operationId);
+    const raw = key && key !== 'organizer-save-status:' ? CacheService.getScriptCache().get(key) : '';
+    payload = raw ? JSON.parse(raw) : { success: true, complete: false };
+  } catch (error) {
+    payload = { success: false, complete: true, error: error && error.message ? String(error.message) : 'Unable to check save status.' };
+  }
+  return ContentService.createTextOutput(callback + '(' + JSON.stringify(payload).replace(/<\//g, '<\\/') + ');')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function writeOrganizerScheduleTextValues_(sheet, eventId, record) {
+  const rowNumber = findRowById_(sheet, 'EventId', eventId);
+  if (rowNumber === -1) return;
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  ['StartDate', 'StartTime', 'EndDate', 'EndTime'].forEach(function(field) {
+    const index = headers.indexOf(field);
+    if (index === -1) return;
+    const cell = sheet.getRange(rowNumber, index + 1);
+    cell.setNumberFormat('@');
+    cell.setValue(String(record[field] || ''));
+  });
+}
+
 function decodeOrganizerBuilderData_(encodedData) {
   const raw = String(encodedData || '');
   if (!raw) return {};
@@ -456,6 +497,7 @@ function saveOrganizerAdventureDraft_(eventId, eventData, identity) {
     record.CreatedAt = existing.CreatedAt || now_();
     record.DriveFolderId = existing.DriveFolderId || '';
     const updated = updateObjectById_(sheet, 'EventId', eventId, record);
+    writeOrganizerScheduleTextValues_(sheet, eventId, record);
     writeEventScheduleText_(sheet, eventId, record);
     return { success: true, created: false, eventId: eventId, message: 'Adventure draft updated.', event: toClientEvent_(updated) };
   }
@@ -465,6 +507,7 @@ function saveOrganizerAdventureDraft_(eventId, eventData, identity) {
   record.CreatedBy = identity.email;
   record.CreatedAt = now_();
   appendObject_(sheet, record);
+  writeOrganizerScheduleTextValues_(sheet, record.EventId, record);
   writeEventScheduleText_(sheet, record.EventId, record);
   return { success: true, created: true, eventId: record.EventId, message: 'Adventure draft created.', event: toClientEvent_(record) };
 }
@@ -476,9 +519,67 @@ function uploadOrganizerAdventureImage_(sessionToken, fileName, mimeType, dataUr
   const raw = String(dataUrl || '');
   if (!/^data:image\/(png|jpeg|jpg|webp);base64,/i.test(raw)) throw new Error('Choose a PNG, JPG, or WebP image.');
   if (raw.length > 5500000) throw new Error('The image is too large. Choose a smaller image and try again.');
-  return uploadEventImage({
+  const uploaded = uploadEventImageAuthorized_({
     fileName: String(fileName || 'adventure-image.jpg'),
     mimeType: String(mimeType || 'image/jpeg'),
     base64: raw
   });
+  const imageUrl = uploaded && (uploaded.imageUrl || uploaded.ImageUrl || uploaded.url);
+  if (!imageUrl) throw new Error('The image uploaded, but no usable image URL was returned.');
+  return String(imageUrl);
+}
+
+/** Session-authenticated email composer for the Cloudflare organizer workspace. */
+function getOrganizerEmailDataJsonp_(callbackName, sessionToken, eventId) {
+  const callback = sanitizeOrganizerCallback_(callbackName || 'iwpOrganizerEmailDataCallback');
+  let payload;
+  try {
+    verifyOrganizerSession_(sessionToken);
+    const event = getEvent(String(eventId || '').trim());
+    if (!event) throw new Error('Adventure not found.');
+    payload = {
+      success: true,
+      authorized: true,
+      data: {
+        event: makeCommunicationSafe_(event),
+        counts: getEventRecipientCounts_(eventId),
+        history: getEventEmailHistory_(eventId, 8)
+      }
+    };
+  } catch (error) {
+    payload = { success: false, authorized: false, error: error && error.message ? error.message : 'Unable to load email details.' };
+  }
+  return ContentService.createTextOutput(callback + '(' + JSON.stringify(payload).replace(/<\//g, '<\\/') + ');')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+/** Sends a participant email after validating the opaque organizer session. */
+function sendOrganizerParticipantEmail_(sessionToken, eventId, subject, body, audience, taskLabel) {
+  const identity = verifyOrganizerSession_(sessionToken);
+  const event = getEvent(String(eventId || '').trim());
+  if (!event) throw new Error('Adventure not found.');
+  const cleanSubject = normalizeText_(subject);
+  const cleanBody = String(body || '').trim();
+  if (!cleanSubject) throw new Error('Email subject is required.');
+  if (!cleanBody) throw new Error('Email message is required.');
+  const cleanAudience = normalizeEventEmailAudience_(audience);
+  const recipients = getUniqueEventRecipientEmails_(eventId, cleanAudience);
+  if (!recipients.length) throw new Error('There are no participant email addresses for this event.');
+  const remainingQuota = MailApp.getRemainingDailyQuota();
+  if (recipients.length > remainingQuota) throw new Error('This email needs ' + recipients.length + ' sends, but only ' + remainingQuota + ' remain in today\'s Apps Script email quota.');
+  let sent = 0; const failed = [];
+  recipients.forEach(function(email) {
+    try { MailApp.sendEmail({ to: email, subject: cleanSubject, body: cleanBody, name: 'IWP Community Connections' }); sent++; }
+    catch (error) { failed.push(email); Logger.log('Participant email failed for ' + email + ': ' + error.message); }
+  });
+  logOrganizerEventEmailSend_(eventId, event, cleanAudience, cleanSubject, sent, failed, identity.email, taskLabel);
+  return { success: failed.length === 0, sent: sent, failed: failed.length, failedEmails: failed, message: sent + ' email' + (sent === 1 ? '' : 's') + ' sent' + (failed.length ? '. ' + failed.length + ' failed.' : '.') };
+}
+
+function logOrganizerEventEmailSend_(eventId, event, audience, subject, sent, failedEmails, sentBy, taskLabel) {
+  try {
+    const ss = getDatabase(); let sheet = ss.getSheetByName('Email Log');
+    if (!sheet) { sheet = ss.insertSheet('Email Log'); sheet.appendRow(['SentAt','EventId','EventTitle','Audience','Subject','SentCount','FailedCount','SentBy','TaskLabel']); sheet.setFrozenRows(1); }
+    sheet.appendRow([new Date(), eventId, event && event.Title ? event.Title : '', audience, subject, sent, failedEmails ? failedEmails.length : 0, sentBy || '', taskLabel || '']);
+  } catch (error) { Logger.log('Unable to write organizer email history: ' + error.message); }
 }
