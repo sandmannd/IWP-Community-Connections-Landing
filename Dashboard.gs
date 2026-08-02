@@ -155,23 +155,31 @@ function getCommandCenterData() {
 
   let todayTasks = [];
   try {
+    const taskWindowEnd = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
+    const taskWindowEndKey = Utilities.formatDate(taskWindowEnd, Session.getScriptTimeZone(), 'yyyy-MM-dd');
     todayTasks = getDataObjects_(getOrCreateEventTasksSheet_()).filter(function(task) {
       const due = dashboardDateKey_(task.DueDate);
       const status = String(task.Status || 'Pending').toLowerCase();
-      return due && due <= todayKey && status !== 'complete';
+      const eventId = String(task.EventId || '');
+      return activeIds[eventId] === true &&
+        due &&
+        due >= todayKey &&
+        due <= taskWindowEndKey &&
+        status !== 'complete';
     }).map(function(task) {
       const due = dashboardDateKey_(task.DueDate);
       return {
         taskId: String(task.TaskId || ''),
+        taskKey: String(task.TaskKey || ''),
         eventId: String(task.EventId || ''),
         eventTitle: eventTitleById[String(task.EventId || '')] || 'Adventure',
         label: String(task.TaskLabel || 'Organizer task'),
         dueDate: due,
-        overdue: due < todayKey,
+        dueToday: due === todayKey,
         status: String(task.Status || 'Pending')
       };
     }).sort(function(a, b) {
-      return a.dueDate.localeCompare(b.dueDate);
+      return a.dueDate.localeCompare(b.dueDate) || a.eventTitle.localeCompare(b.eventTitle);
     }).slice(0, 12);
   } catch (error) {
     Logger.log('Unable to load dashboard tasks: ' + error.message);
