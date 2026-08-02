@@ -23,6 +23,40 @@ function doPost(e) {
     jsonBody = {};
   }
 
+  if (String(jsonBody.action || '') === 'landingDataApi') {
+    try {
+      return ContentService.createTextOutput(JSON.stringify(getLandingPageData()))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: error && error.message ? String(error.message) : 'Landing data could not be loaded.'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  if (String(jsonBody.action || '') === 'organizerEmailDataApi') {
+    try {
+      verifyOrganizerSession_(String(jsonBody.session || ''));
+      const eventId = String(jsonBody.eventId || '').trim();
+      const event = getEvent(eventId);
+      if (!event) throw new Error('Adventure not found.');
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        data: {
+          event: makeCommunicationSafe_(event),
+          counts: getEventRecipientCounts_(eventId),
+          history: getEventEmailHistory_(eventId, 8)
+        }
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: error && error.message ? String(error.message) : 'Unable to load email details.'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   if (String(jsonBody.action || '') === 'organizerSendParticipantEmailApi') {
     try {
       const result = sendOrganizerParticipantEmail_(

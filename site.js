@@ -143,24 +143,17 @@
   };
 
   function loadLandingData() {
-    if (!c.apiUrl) {
-      renderLandingDataError();
-      return;
-    }
-
-    var script = document.createElement("script");
-    var separator = c.apiUrl.indexOf("?") === -1 ? "?" : "&";
-    script.src = c.apiUrl + separator + "callback=iwpLandingDataCallback&_=" + Date.now();
-    script.async = true;
-    script.onerror = renderLandingDataError;
-    document.head.appendChild(script);
-
-    window.setTimeout(function () {
-      var categories = document.getElementById("landingCategoryGrid");
-      if (categories && categories.querySelector(".category-loading")) {
-        renderLandingDataError();
-      }
-    }, 12000);
+    fetch('/api/landing-data', { headers: { 'accept': 'application/json' } })
+      .then(function (response) {
+        return response.json().then(function (data) {
+          if (!response.ok || !data || data.success === false) {
+            throw new Error(data && (data.error || data.message) || 'Unable to load adventures.');
+          }
+          return data;
+        });
+      })
+      .then(function (data) { window.iwpLandingDataCallback(data); })
+      .catch(function () { renderLandingDataError(); });
   }
 
   function normalizeLandingImageUrl(url) {
