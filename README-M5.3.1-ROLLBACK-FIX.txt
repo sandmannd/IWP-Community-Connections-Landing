@@ -1,0 +1,1 @@
+M5.3.1 restores the working M5.2 public and organizer data paths, removes the broken M5.3 Cloudflare proxy loaders, and carries the organizer session directly into the reminder composer before removing it from the URL.

@@ -44,7 +44,7 @@ function createOrganizerSessionJsonp_(callbackName, credential) {
           picture: identity.picture || '',
           role: String(role || '')
         },
-        dashboard: getCachedCommandCenterData_(),
+        dashboard: getCommandCenterData_(),
         adventures: getOrganizerAdventureIndex_()
       };
     }
@@ -154,20 +154,6 @@ function getOrganizerIdentity_(credential, sessionToken) {
   return identity;
 }
 
-
-/** Short cache for the expensive command-center aggregation. */
-function getCachedCommandCenterData_() {
-  const cache = CacheService.getScriptCache();
-  const key = 'IWP_COMMAND_CENTER_V1';
-  const cached = cache.get(key);
-  if (cached) {
-    try { return JSON.parse(cached); } catch (ignore) {}
-  }
-  const data = getCommandCenterData_();
-  try { cache.put(key, JSON.stringify(data), 30); } catch (ignore) {}
-  return data;
-}
-
 function getOrganizerDashboardJsonp_(callbackName, credential, sessionToken) {
   const callback = sanitizeOrganizerCallback_(callbackName || 'iwpOrganizerDashboardCallback');
   let payload;
@@ -196,7 +182,7 @@ function getOrganizerDashboardJsonp_(callbackName, credential, sessionToken) {
           picture: identity.picture || '',
           role: String(role || '')
         },
-        dashboard: getCachedCommandCenterData_()
+        dashboard: getCommandCenterData_()
       };
     }
   } catch (error) {
@@ -544,29 +530,25 @@ function uploadOrganizerAdventureImage_(sessionToken, fileName, mimeType, dataUr
 }
 
 /** Session-authenticated email composer for the Cloudflare organizer workspace. */
-function getOrganizerEmailDataObject_(sessionToken, eventId) {
+function getOrganizerEmailDataJsonp_(callbackName, sessionToken, eventId) {
+  const callback = sanitizeOrganizerCallback_(callbackName || 'iwpOrganizerEmailDataCallback');
+  let payload;
   try {
     verifyOrganizerSession_(sessionToken);
-    const cleanEventId = String(eventId || '').trim();
-    const event = getEvent(cleanEventId);
+    const event = getEvent(String(eventId || '').trim());
     if (!event) throw new Error('Adventure not found.');
-    return {
+    payload = {
       success: true,
       authorized: true,
       data: {
         event: makeCommunicationSafe_(event),
-        counts: getEventRecipientCounts_(cleanEventId),
-        history: getEventEmailHistory_(cleanEventId, 8)
+        counts: getEventRecipientCounts_(eventId),
+        history: getEventEmailHistory_(eventId, 8)
       }
     };
   } catch (error) {
-    return { success: false, authorized: false, error: error && error.message ? error.message : 'Unable to load email details.' };
+    payload = { success: false, authorized: false, error: error && error.message ? error.message : 'Unable to load email details.' };
   }
-}
-
-function getOrganizerEmailDataJsonp_(callbackName, sessionToken, eventId) {
-  const callback = sanitizeOrganizerCallback_(callbackName || 'iwpOrganizerEmailDataCallback');
-  const payload = getOrganizerEmailDataObject_(sessionToken, eventId);
   return ContentService.createTextOutput(callback + '(' + JSON.stringify(payload).replace(/<\//g, '<\\/') + ');')
     .setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
