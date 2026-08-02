@@ -11,7 +11,7 @@
   function text(id,value){var el=byId(id);if(el)el.textContent=value==null?'':String(value);}
   function esc(value){return String(value==null?'':value).replace(/[&<>'"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch];});}
   function plural(n,one,many){return Number(n)===1?one:many;}
-  function eventUrl(id){return '/adventure.html?id='+encodeURIComponent(id||'');} function editEventUrl(id){return '/organizer-builder.html?id='+encodeURIComponent(id||'');} function emailTaskUrl(item){return '/organizer-email.html?id='+encodeURIComponent(item.eventId||'')+'&task='+encodeURIComponent(item.label||'Organizer Reminder');}
+  function eventUrl(id){return '/adventure.html?id='+encodeURIComponent(id||'');} function editEventUrl(id){return '/organizer-builder.html?id='+encodeURIComponent(id||'');} function emailTaskUrl(item){var url='/organizer-email.html?id='+encodeURIComponent(item.eventId||'')+'&task='+encodeURIComponent(item.label||'Organizer Reminder'),session=readSession();if(session&&session.token&&session.expiresAt){url+='#session='+encodeURIComponent(session.token)+'&expiresAt='+encodeURIComponent(session.expiresAt);}return url;}
   function clearActiveTimeout(){if(activeTimeout){clearTimeout(activeTimeout);activeTimeout=0;}}
   function removeRequests(){Array.prototype.slice.call(document.querySelectorAll('script[id^="organizerApiRequest"]')).forEach(function(node){if(node.parentNode)node.parentNode.removeChild(node);});}
   function setState(name){
