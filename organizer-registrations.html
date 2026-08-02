@@ -1,14 +1,59 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Manage registrations for an IWP Community Connections adventure."><title>Adventure Registrations | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-registrations.css"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Manage registrations for an IWP Community Connections adventure."><title>Adventure Registrations | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-registrations-m552.css?v=m5.5.2"></head>
 <body class="organizer-page"><header class="cc-global-header" aria-label="IWP Community Connections navigation"><a class="cc-global-brand" href="/"><img src="assets/iwp-community-connections-header.png" alt="IWP Community Connections, You Are Not Alone"></a><nav class="cc-global-nav"><a href="/">Home</a><a class="is-active" href="/organizer.html">Adventure Builder</a></nav></header>
 <main class="organizer-main"><a class="organizer-back-link" href="/organizer-adventures.html">← Back to Manage Adventures</a>
-<section class="organizer-hero"><div><span class="organizer-eyebrow">Organizer Registration Manager</span><h1 id="registrationPageHeading">Adventure Registrations</h1><p>Review participants, contact attendees, cancel the adventure, or permanently remove a test event.</p></div></section>
+<section class="organizer-hero"><div><span class="organizer-eyebrow">Organizer Registration Manager</span><h1 id="registrationPageHeading">Adventure Registrations</h1><p>Search participants, manage check-in and payment, contact attendees, and export the event roster.</p></div></section>
 <section id="registrationLoading" class="organizer-state-card"><span class="organizer-spinner"></span><div><strong>Loading registrations</strong><p>Retrieving the adventure and participant list.</p></div></section>
 <section id="registrationAccess" class="organizer-state-card organizer-access-card" hidden><div><strong>Organizer sign-in required</strong><p id="registrationAccessMessage">Return to the Organizer Command Center and sign in.</p></div><a class="organizer-primary-link" href="/organizer.html">Open Command Center</a></section>
 <div id="registrationWorkspace" hidden>
-<section class="organizer-panel"><div class="organizer-panel-heading"><div><span>Adventure</span><h2 id="registrationEventTitle">Adventure</h2><p id="registrationEventDetails" class="organizer-results-summary"></p></div><div class="organizer-card-actions"><a id="emailParticipantsLink" class="primary" href="#">Email Participants</a><a id="editAdventureLink" class="secondary" href="#">Edit Adventure</a></div></div>
-<div class="organizer-registration-metrics"><div><strong id="registrationCount">0</strong><span>Registrations</span></div><div><strong id="peopleCount">0</strong><span>People</span></div><div><strong id="waitlistCount">0</strong><span>Waitlist</span></div><div><strong id="checkedInCount">0</strong><span>Checked In</span></div></div>
-<div class="organizer-adventure-controls"><input id="registrationSearch" class="organizer-search" type="search" placeholder="Search name, email, phone, or status"><select id="registrationStatus" class="organizer-select"><option value="all">All statuses</option><option value="confirmed">Confirmed</option><option value="checked in">Checked In</option><option value="waitlist">Waitlist</option><option value="cancelled">Cancelled</option></select></div>
-<p id="registrationResultsSummary" class="organizer-results-summary"></p><div id="registrationList" class="organizer-registration-list"></div></section>
+<section class="organizer-panel"><div class="organizer-panel-heading"><div><span>Adventure</span><h2 id="registrationEventTitle">Adventure</h2><p id="registrationEventDetails" class="organizer-results-summary"></p></div><div class="organizer-card-actions"><a id="emailParticipantsLink" class="primary" href="#">Email Participants</a><button id="exportCsvButton" class="organizer-secondary-button" type="button">Export CSV</button><a id="editAdventureLink" class="secondary" href="#">Edit Adventure</a></div></div>
+<div class="organizer-registration-metrics">
+<div><strong id="registrationCount">0</strong><span>Registrations</span></div><div><strong id="peopleCount">0</strong><span>Total People</span></div><div><strong id="adultCount">0</strong><span>Adults</span></div><div><strong id="childCount">0</strong><span>Children</span></div><div><strong id="waitlistCount">0</strong><span>Waitlist</span></div><div><strong id="checkedInCount">0</strong><span>Checked In</span></div><div><strong id="paidCount">0</strong><span>Paid</span></div><div><strong id="needsPaymentCount">0</strong><span>Needs Payment</span></div>
+</div>
+<div class="organizer-adventure-controls"><input id="registrationSearch" class="organizer-search" type="search" placeholder="Search name, email, phone, guest, or status"><div class="registration-filter-row" aria-label="Registration filters">
+<label class="filter-check"><input type="checkbox" value="confirmed" data-status-filter> Confirmed</label>
+<label class="filter-check"><input type="checkbox" value="checked in" data-status-filter> Checked In</label>
+<label class="filter-check"><input type="checkbox" value="waitlist" data-status-filter> Waitlist</label>
+<label class="filter-check"><input type="checkbox" value="cancelled" data-status-filter> Cancelled</label>
+<label class="filter-check"><input type="checkbox" value="paid" data-payment-filter> Paid</label>
+<label class="filter-check"><input type="checkbox" value="needs payment" data-payment-filter> Needs Payment</label>
+<button id="clearFiltersButton" class="organizer-text-button" type="button">Clear filters</button>
+</div></div>
+<div id="bulkToolbar" class="registration-bulk-toolbar" hidden><strong><span id="selectedCount">0</span> selected</strong><div>
+<button type="button" data-bulk-action="email">Email Selected</button>
+<button type="button" data-bulk-action="checkin">Check In</button>
+<button type="button" data-bulk-action="mark-paid">Mark Paid</button>
+<button type="button" data-bulk-action="cancel">Cancel Registrations</button>
+<button id="clearSelectionButton" type="button">Clear</button>
+</div></div>
+<div class="registration-list-heading"><label class="filter-check select-all"><input id="selectAllVisible" type="checkbox"> Select visible</label><p id="registrationResultsSummary" class="organizer-results-summary"></p></div>
+<div id="registrationList" class="organizer-registration-list"></div></section>
 <section class="organizer-panel organizer-danger-zone"><div><span class="organizer-eyebrow">Adventure Controls</span><h2>Cancel or Delete Adventure</h2><p>Cancellation preserves registrations and email history. Deletion permanently removes the adventure and its associated records.</p></div><div class="organizer-card-actions"><button id="cancelAdventureButton" class="organizer-secondary-button" type="button">Cancel Adventure</button><button id="deleteAdventureButton" class="organizer-danger-button" type="button">Delete Adventure</button></div></section>
-</div></main><script src="config.js"></script><script src="organizer-registrations.js?v=m5.5"></script></body></html>
+</div></main>
+
+<dialog id="registrationDetailDialog" class="registration-detail-dialog">
+<form method="dialog" class="registration-detail-shell">
+<div class="registration-detail-header"><div><span class="organizer-eyebrow">Participant Details</span><h2 id="detailHeading">Registration</h2></div><button class="dialog-close" value="cancel" aria-label="Close">×</button></div>
+<input id="detailRegistrationId" type="hidden">
+<div class="registration-detail-grid">
+<label>Name<input id="detailName" type="text" required></label>
+<label>Email<input id="detailEmail" type="email"></label>
+<label>Phone<input id="detailPhone" type="tel"></label>
+<label>Status<select id="detailStatus"><option>Pending</option><option>Confirmed</option><option>Waitlist</option><option>Cancelled</option><option>Checked In</option></select></label>
+<label>Payment status<select id="detailPaymentStatus"><option>Not Required</option><option>Pending</option><option>Paid</option><option>Pay At Event</option><option>Buy Own Ticket</option></select></label>
+<label>Payment method<select id="detailPaymentMethod"><option value="">Not recorded</option><option>Cash</option><option>Check</option><option>Venmo</option><option>PayPal</option><option>Credit Card</option><option>Other</option></select></label>
+<label class="wide">Notes<textarea id="detailNotes" rows="4"></textarea></label>
+</div>
+<div id="detailFacts" class="registration-detail-facts"></div>
+<div class="registration-detail-actions">
+<button id="detailEmailButton" type="button">Email</button>
+<button id="detailCallButton" type="button">Call</button>
+<button id="detailCheckInButton" type="button">Check In</button>
+<button id="detailPaidButton" type="button">Mark Paid</button>
+<button id="detailCancelButton" class="danger" type="button">Cancel Registration</button>
+<button id="detailSaveButton" class="primary" type="button">Save Changes</button>
+</div>
+<p id="detailStatusMessage" class="organizer-results-summary" aria-live="polite"></p>
+</form>
+</dialog>
+<script src="config.js"></script><script src="organizer-registrations-m552.js?v=m5.5.2"></script></body></html>

@@ -70,6 +70,40 @@ function doPost(e) {
     }
   }
 
+  if (String(jsonBody.action || '') === 'organizerRegistrationActionApi') {
+    try {
+      const result = organizerRegistrationAction_(
+        String(jsonBody.session || ''),
+        String(jsonBody.eventId || ''),
+        jsonBody.registrationIds || [],
+        String(jsonBody.registrationAction || ''),
+        jsonBody.changes || {}
+      );
+      return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: error && error.message ? String(error.message) : 'Registration action failed.'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  if (String(jsonBody.action || '') === 'organizerEventLifecycleApi') {
+    try {
+      const result = organizerEventLifecycleAction_(
+        String(jsonBody.session || ''),
+        String(jsonBody.eventId || ''),
+        String(jsonBody.eventAction || '')
+      );
+      return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: error && error.message ? String(error.message) : 'Adventure action failed.'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   if (String(jsonBody.action || '') === 'organizerUploadImageApi') {
     try {
       const imageUrl = uploadOrganizerAdventureImage_(

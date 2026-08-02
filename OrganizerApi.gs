@@ -529,21 +529,41 @@ function uploadOrganizerAdventureImage_(sessionToken, fileName, mimeType, dataUr
   return String(imageUrl);
 }
 
+/**
+ * Reads an adventure after an opaque organizer session has already been verified.
+ * Do not call getEvent() here: getEvent() checks Session.getActiveUser(), which is
+ * blank for requests coming from the Cloudflare organizer workspace.
+ */
+function getOrganizerEventForSession_(eventId) {
+  const cleanEventId = String(eventId || '').trim();
+  if (!cleanEventId) throw new Error('Adventure ID is required.');
+
+  const events = getEventObjects_(getSheetByName_(APP_CONFIG.sheets.events));
+  const event = events.find(function(item) {
+    return String(item.EventId || '') === cleanEventId;
+  });
+  if (!event) throw new Error('Adventure not found.');
+
+  const clientEvent = toClientEvent_(event);
+  clientEvent.Resources = listAdventureResources_(cleanEventId, false);
+  return clientEvent;
+}
+
 /** Session-authenticated email composer for the Cloudflare organizer workspace. */
 function getOrganizerEmailDataJsonp_(callbackName, sessionToken, eventId) {
   const callback = sanitizeOrganizerCallback_(callbackName || 'iwpOrganizerEmailDataCallback');
   let payload;
   try {
     verifyOrganizerSession_(sessionToken);
-    const event = getEvent(String(eventId || '').trim());
-    if (!event) throw new Error('Adventure not found.');
+    const cleanEventId = String(eventId || '').trim();
+    const event = getOrganizerEventForSession_(cleanEventId);
     payload = {
       success: true,
       authorized: true,
       data: {
         event: makeCommunicationSafe_(event),
-        counts: getEventRecipientCounts_(eventId),
-        history: getEventEmailHistory_(eventId, 8)
+        counts: getEventRecipientCounts_(cleanEventId),
+        history: getEventEmailHistory_(cleanEventId, 8)
       }
     };
   } catch (error) {
@@ -556,14 +576,14 @@ function getOrganizerEmailDataJsonp_(callbackName, sessionToken, eventId) {
 /** Sends a participant email after validating the opaque organizer session. */
 function sendOrganizerParticipantEmail_(sessionToken, eventId, subject, body, audience, taskLabel) {
   const identity = verifyOrganizerSession_(sessionToken);
-  const event = getEvent(String(eventId || '').trim());
-  if (!event) throw new Error('Adventure not found.');
+  const cleanEventId = String(eventId || '').trim();
+  const event = getOrganizerEventForSession_(cleanEventId);
   const cleanSubject = normalizeText_(subject);
   const cleanBody = String(body || '').trim();
   if (!cleanSubject) throw new Error('Email subject is required.');
   if (!cleanBody) throw new Error('Email message is required.');
   const cleanAudience = normalizeEventEmailAudience_(audience);
-  const recipients = getUniqueEventRecipientEmails_(eventId, cleanAudience);
+  const recipients = getUniqueEventRecipientEmails_(cleanEventId, cleanAudience);
   if (!recipients.length) throw new Error('There are no participant email addresses for this event.');
   const remainingQuota = MailApp.getRemainingDailyQuota();
   if (recipients.length > remainingQuota) throw new Error('This email needs ' + recipients.length + ' sends, but only ' + remainingQuota + ' remain in today\'s Apps Script email quota.');
@@ -573,6 +593,9 @@ function sendOrganizerParticipantEmail_(sessionToken, eventId, subject, body, au
     catch (error) { failed.push(email); Logger.log('Participant email failed for ' + email + ': ' + error.message); }
   });
   logOrganizerEventEmailSend_(eventId, event, cleanAudience, cleanSubject, sent, failed, identity.email, taskLabel);
+  if (sent > 0 && taskLabel) {
+    completeOrganizerReminderTask_(cleanEventId, taskLabel, identity.email);
+  }
   return { success: failed.length === 0, sent: sent, failed: failed.length, failedEmails: failed, message: sent + ' email' + (sent === 1 ? '' : 's') + ' sent' + (failed.length ? '. ' + failed.length + ' failed.' : '.') };
 }
 
@@ -582,4 +605,273 @@ function logOrganizerEventEmailSend_(eventId, event, audience, subject, sent, fa
     if (!sheet) { sheet = ss.insertSheet('Email Log'); sheet.appendRow(['SentAt','EventId','EventTitle','Audience','Subject','SentCount','FailedCount','SentBy','TaskLabel']); sheet.setFrozenRows(1); }
     sheet.appendRow([new Date(), eventId, event && event.Title ? event.Title : '', audience, subject, sent, failedEmails ? failedEmails.length : 0, sentBy || '', taskLabel || '']);
   } catch (error) { Logger.log('Unable to write organizer email history: ' + error.message); }
+}
+
+
+/** M5.5: registration management data for the Cloudflare organizer workspace. */
+function getOrganizerRegistrationsJsonp_(callbackName, sessionToken, eventId) {
+  const callback = sanitizeOrganizerCallback_(callbackName || 'iwpOrganizerRegistrationsCallback');
+  let payload;
+  try {
+    verifyOrganizerSession_(sessionToken);
+    const cleanEventId = String(eventId || '').trim();
+    const event = getOrganizerEventForSession_(cleanEventId);
+    const registrations = listRegistrationsForEvent_(cleanEventId).map(function(registration) {
+      return {
+        registrationId: String(registration.RegistrationId || ''),
+        status: String(registration.Status || ''),
+        name: String(registration.Name || ''),
+        email: String(registration.Email || ''),
+        phone: String(registration.Phone || ''),
+        emergencyContactName: String(registration.EmergencyContactName || ''),
+        emergencyContactPhone: String(registration.EmergencyContactPhone || ''),
+        adults: getRegistrationPeopleField_(registration, ['AdultCount','Adult Count','Adults']),
+        children: getRegistrationPeopleField_(registration, ['ChildCount','Child Count','Children']),
+        adultGuestNames: String(registration.AdultGuestNames || registration['Adult Guest Names'] || ''),
+        childNames: String(registration.ChildNames || registration['Child Names'] || ''),
+        paymentStatus: String(registration.PaymentStatus || ''),
+        paymentMethod: String(registration.PaymentMethod || ''),
+        attendanceType: String(registration.AttendanceType || ''),
+        arrivalDate: serializeOrganizerRegistrationValue_(registration.ArrivalDate),
+        departureDate: serializeOrganizerRegistrationValue_(registration.DepartureDate),
+        dayVisitDate: serializeOrganizerRegistrationValue_(registration.DayVisitDate),
+        accommodationType: String(registration.AccommodationType || ''),
+        accommodationSiteNumber: String(registration.AccommodationSiteNumber || ''),
+        notes: String(registration.Notes || ''),
+        registeredAt: serializeOrganizerRegistrationValue_(registration.RegisteredAt),
+        acknowledgementsComplete: organizerRegistrationAcknowledgementsComplete_(registration)
+      };
+    });
+    const confirmedStatus = String(APP_CONFIG.registrationStatuses.confirmed || 'Confirmed').toLowerCase();
+    const checkedInStatus = String(APP_CONFIG.registrationStatuses.checkedIn || 'Checked In').toLowerCase();
+    const waitlistStatus = String(APP_CONFIG.registrationStatuses.waitlist || 'Waitlist').toLowerCase();
+    const cancelledStatus = String(APP_CONFIG.registrationStatuses.cancelled || 'Cancelled').toLowerCase();
+    let totalPeople = 0, registered = 0, waitlist = 0, checkedIn = 0, adults = 0, children = 0, paid = 0, needsPayment = 0;
+    registrations.forEach(function(item) {
+      const status = String(item.status || '').toLowerCase();
+      if (status !== cancelledStatus && status !== waitlistStatus) {
+        registered++;
+        totalPeople += Number(item.adults || 0) + Number(item.children || 0);
+        adults += Number(item.adults || 0);
+        children += Number(item.children || 0);
+      }
+      if (status === waitlistStatus) waitlist++;
+      if (status === checkedInStatus) checkedIn++;
+      const payment = String(item.paymentStatus || '').toLowerCase();
+      if (payment === 'paid') paid++;
+      if (payment === 'pending' || payment === 'pay at event') needsPayment++;
+    });
+    payload = {
+      success: true,
+      authorized: true,
+      data: {
+        event: makeCommunicationSafe_(event),
+        registrations: registrations,
+        counts: { registrations: registered, people: totalPeople, adults: adults, children: children, waitlist: waitlist, checkedIn: checkedIn, paid: paid, needsPayment: needsPayment }
+      }
+    };
+  } catch (error) {
+    payload = { success: false, authorized: false, error: error && error.message ? error.message : 'Unable to load registrations.' };
+  }
+  return ContentService.createTextOutput(callback + '(' + JSON.stringify(payload).replace(/<\//g, '<\\/') + ');')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function getRegistrationPeopleField_(registration, keys) {
+  for (let i = 0; i < keys.length; i++) {
+    const value = registration[keys[i]];
+    if (value !== undefined && value !== null && value !== '') {
+      const number = Number(value);
+      return isNaN(number) ? 0 : Math.max(0, number);
+    }
+  }
+  return 0;
+}
+
+function serializeOrganizerRegistrationValue_(value) {
+  if (value instanceof Date) return Utilities.formatDate(value, Session.getScriptTimeZone(), 'MMM d, yyyy h:mm a');
+  return value === undefined || value === null ? '' : String(value);
+}
+
+function organizerRegistrationAcknowledgementsComplete_(registration) {
+  const fields = ['AcknowledgementMemberOrganized','AcknowledgementVoluntary','AcknowledgementRespect','AcknowledgementPhotosVideos'];
+  return fields.every(function(field) {
+    const value = registration[field];
+    return value === '' || value === undefined || value === null || toBoolean_(value);
+  });
+}
+
+
+/** M5.5.2: update registrations after organizer-session validation. */
+function organizerRegistrationAction_(sessionToken, eventId, registrationIds, action, changes) {
+  const identity = verifyOrganizerSession_(sessionToken);
+  const cleanEventId = String(eventId || '').trim();
+  const cleanAction = String(action || '').trim().toLowerCase();
+  const ids = Array.isArray(registrationIds) ? registrationIds : [registrationIds];
+  const cleanIds = ids.map(function(id) { return String(id || '').trim(); }).filter(Boolean);
+  if (!cleanEventId) throw new Error('Adventure ID is required.');
+  if (!cleanIds.length) throw new Error('Choose at least one registration.');
+
+  getOrganizerEventRecord_(cleanEventId);
+  const sheet = getSheetByName_(APP_CONFIG.sheets.registrations);
+  const registrations = getDataObjects_(sheet);
+  const matches = registrations.filter(function(item) {
+    return cleanIds.indexOf(String(item.RegistrationId || '').trim()) !== -1 &&
+      String(item.EventId || '').trim() === cleanEventId;
+  });
+  if (matches.length !== cleanIds.length) throw new Error('One or more registrations could not be found for this adventure.');
+
+  const statuses = APP_CONFIG.registrationStatuses || {};
+  const payments = APP_CONFIG.paymentStatuses || {};
+  const updates = [];
+  const allowedPaymentMethods = ['','Cash','Check','Venmo','PayPal','Credit Card','Other'];
+
+  matches.forEach(function(registration) {
+    let patch = { UpdatedAt: now_() };
+    if (cleanAction === 'checkin') {
+      patch.Status = statuses.checkedIn || 'Checked In';
+    } else if (cleanAction === 'undo-checkin') {
+      patch.Status = statuses.confirmed || 'Confirmed';
+    } else if (cleanAction === 'mark-paid') {
+      patch.PaymentStatus = payments.paid || 'Paid';
+      if (changes && changes.paymentMethod !== undefined) {
+        const method = String(changes.paymentMethod || '').trim();
+        if (allowedPaymentMethods.indexOf(method) === -1) throw new Error('Invalid payment method.');
+        patch.PaymentMethod = method;
+      }
+    } else if (cleanAction === 'payment-pending') {
+      patch.PaymentStatus = payments.pending || 'Pending';
+    } else if (cleanAction === 'cancel') {
+      patch.Status = statuses.cancelled || 'Cancelled';
+    } else if (cleanAction === 'confirm') {
+      patch.Status = statuses.confirmed || 'Confirmed';
+    } else if (cleanAction === 'waitlist') {
+      patch.Status = statuses.waitlist || 'Waitlist';
+    } else if (cleanAction === 'update') {
+      const c = changes || {};
+      if (c.name !== undefined) patch.Name = String(c.name || '').trim();
+      if (c.email !== undefined) patch.Email = String(c.email || '').trim();
+      if (c.phone !== undefined) patch.Phone = String(c.phone || '').trim();
+      if (c.notes !== undefined) patch.Notes = String(c.notes || '').trim();
+      if (c.paymentMethod !== undefined) {
+        const method = String(c.paymentMethod || '').trim();
+        if (allowedPaymentMethods.indexOf(method) === -1) throw new Error('Invalid payment method.');
+        patch.PaymentMethod = method;
+      }
+      if (c.paymentStatus !== undefined) {
+        const allowedPayments = [
+          payments.notRequired || 'Not Required',
+          payments.pending || 'Pending',
+          payments.paid || 'Paid',
+          payments.payAtEvent || 'Pay At Event',
+          payments.buyOwnTicket || 'Buy Own Ticket'
+        ];
+        if (allowedPayments.indexOf(String(c.paymentStatus || '')) === -1) throw new Error('Invalid payment status.');
+        patch.PaymentStatus = String(c.paymentStatus || '');
+      }
+      if (c.status !== undefined) {
+        const allowedStatuses = [
+          statuses.pending || 'Pending',
+          statuses.confirmed || 'Confirmed',
+          statuses.waitlist || 'Waitlist',
+          statuses.cancelled || 'Cancelled',
+          statuses.checkedIn || 'Checked In'
+        ];
+        if (allowedStatuses.indexOf(String(c.status || '')) === -1) throw new Error('Invalid registration status.');
+        patch.Status = String(c.status || '');
+      }
+      if (!patch.Name) throw new Error('Participant name is required.');
+    } else {
+      throw new Error('Unsupported registration action.');
+    }
+
+    const updated = updateObjectById_(sheet, 'RegistrationId', registration.RegistrationId, patch);
+    updates.push({
+      registrationId: String(updated.RegistrationId || ''),
+      status: String(updated.Status || ''),
+      paymentStatus: String(updated.PaymentStatus || ''),
+      paymentMethod: String(updated.PaymentMethod || ''),
+      name: String(updated.Name || ''),
+      email: String(updated.Email || ''),
+      phone: String(updated.Phone || ''),
+      notes: String(updated.Notes || '')
+    });
+  });
+
+  if (cleanAction === 'cancel') promoteResourceWaitlistsForEvent_(cleanEventId);
+  return {
+    success: true,
+    action: cleanAction,
+    updated: updates,
+    updatedCount: updates.length,
+    updatedBy: identity.email || ''
+  };
+}
+
+/** M5.5: cancel or permanently delete an adventure after organizer-session validation. */
+function organizerEventLifecycleAction_(sessionToken, eventId, action) {
+  const identity = verifyOrganizerSession_(sessionToken);
+  const cleanEventId = String(eventId || '').trim();
+  const cleanAction = String(action || '').trim().toLowerCase();
+  if (!cleanEventId) throw new Error('Adventure ID is required.');
+  const event = getOrganizerEventRecord_(cleanEventId);
+  if (cleanAction === 'cancel') {
+    const updated = updateObjectById_(getSheetByName_(APP_CONFIG.sheets.events), 'EventId', cleanEventId, {
+      Status: APP_CONFIG.eventStatuses.cancelled,
+      RegistrationClosed: true,
+      UpdatedAt: now_()
+    });
+    if (typeof deleteQueuedEmailsForEvent_ === 'function') deleteQueuedEmailsForEvent_(cleanEventId);
+    return { success: true, action: 'cancel', message: 'Adventure cancelled. Registrations and history were preserved.', event: toClientEvent_(updated) };
+  }
+  if (cleanAction !== 'delete') throw new Error('Unsupported adventure action.');
+  const removed = {
+    registrations: deleteRowsForEvent_(getSheetByName_(APP_CONFIG.sheets.registrations), cleanEventId),
+    tasks: deleteRowsForEvent_(getOrCreateEventTasksSheet_(), cleanEventId),
+    resources: deleteRowsForEvent_(getSheetByName_(APP_CONFIG.sheets.resources), cleanEventId),
+    queuedEmails: typeof deleteQueuedEmailsForEvent_ === 'function' ? deleteQueuedEmailsForEvent_(cleanEventId) : 0,
+    emailHistory: deleteRowsForEvent_(getDatabase().getSheetByName('Email Log'), cleanEventId)
+  };
+  deleteOrganizerEventDriveAssets_(event);
+  deleteRowById_(getSheetByName_(APP_CONFIG.sheets.events), 'EventId', cleanEventId);
+  return {
+    success: true,
+    action: 'delete',
+    message: 'Adventure and associated records were permanently deleted.',
+    removed: removed,
+    deletedBy: identity.email || ''
+  };
+}
+
+function deleteRowsForEvent_(sheet, eventId) {
+  if (!sheet || sheet.getLastRow() < 2) return 0;
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0].map(function(value) { return String(value || '').trim(); });
+  const candidates = ['EventId','Event ID','EventID','AdventureId','Adventure ID'];
+  let column = -1;
+  for (let i = 0; i < candidates.length && column < 0; i++) column = headers.indexOf(candidates[i]);
+  if (column < 0) return 0;
+  let removed = 0;
+  for (let row = values.length - 1; row >= 1; row--) {
+    if (String(values[row][column] || '').trim() === String(eventId || '').trim()) {
+      sheet.deleteRow(row + 1);
+      removed++;
+    }
+  }
+  return removed;
+}
+
+function deleteOrganizerEventDriveAssets_(event) {
+  try {
+    const folderId = String((event || {}).DriveFolderId || '').trim();
+    if (folderId) {
+      DriveApp.getFolderById(folderId).setTrashed(true);
+      return;
+    }
+    const imageUrl = String((event || {}).ImageUrl || (event || {}).EventImageUrl || '');
+    const match = imageUrl.match(/[-\w]{25,}/);
+    if (match) DriveApp.getFileById(match[0]).setTrashed(true);
+  } catch (error) {
+    Logger.log('Unable to remove event Drive assets: ' + error.message);
+  }
 }
