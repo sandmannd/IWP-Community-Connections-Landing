@@ -143,17 +143,39 @@
   };
 
   function loadLandingData() {
-    fetch('/api/landing-data', { headers: { 'accept': 'application/json' } })
-      .then(function (response) {
-        return response.json().then(function (data) {
-          if (!response.ok || !data || data.success === false) {
-            throw new Error(data && (data.error || data.message) || 'Unable to load adventures.');
-          }
-          return data;
-        });
-      })
-      .then(function (data) { window.iwpLandingDataCallback(data); })
-      .catch(function () { renderLandingDataError(); });
+    if (!c.appUrl) {
+      renderLandingDataError();
+      return;
+    }
+    var callbackName = 'iwpLandingDataCallback';
+    var script = document.createElement('script');
+    var separator = c.appUrl.indexOf('?') === -1 ? '?' : '&';
+    var finished = false;
+    var timeout = window.setTimeout(function () {
+      if (finished) return;
+      finished = true;
+      script.remove();
+      renderLandingDataError();
+    }, 30000);
+    var originalCallback = window[callbackName];
+    window[callbackName] = function (data) {
+      if (finished) return;
+      finished = true;
+      window.clearTimeout(timeout);
+      script.remove();
+      window[callbackName] = originalCallback;
+      originalCallback(data);
+    };
+    script.src = c.appUrl + separator + 'api=landing&callback=' + encodeURIComponent(callbackName) + '&_=' + Date.now();
+    script.onerror = function () {
+      if (finished) return;
+      finished = true;
+      window.clearTimeout(timeout);
+      script.remove();
+      window[callbackName] = originalCallback;
+      renderLandingDataError();
+    };
+    document.head.appendChild(script);
   }
 
   function normalizeLandingImageUrl(url) {
