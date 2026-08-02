@@ -23,6 +23,35 @@ function doPost(e) {
     jsonBody = {};
   }
 
+  if (String(jsonBody.action || '') === 'publicLandingDataApi') {
+    try {
+      return ContentService.createTextOutput(JSON.stringify(getLandingPageData()))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService.createTextOutput(JSON.stringify({ success:false, error:error && error.message ? String(error.message) : 'Landing data could not be loaded.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  if (String(jsonBody.action || '') === 'organizerDashboardApi') {
+    try {
+      const identity = verifyOrganizerSession_(String(jsonBody.session || ''));
+      return ContentService.createTextOutput(JSON.stringify({
+        success:true, authorized:true, authenticated:true,
+        user:{ email:identity.email, name:identity.name || '', picture:identity.picture || '', role:String(identity.role || '') },
+        dashboard:getCachedCommandCenterData_()
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService.createTextOutput(JSON.stringify({ success:false, authorized:false, authenticated:false, error:error && error.message ? String(error.message) : 'Unable to load organizer dashboard.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  if (String(jsonBody.action || '') === 'organizerEmailDataApi') {
+    return ContentService.createTextOutput(JSON.stringify(getOrganizerEmailDataObject_(String(jsonBody.session || ''), String(jsonBody.eventId || ''))))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (String(jsonBody.action || '') === 'organizerSendParticipantEmailApi') {
     try {
       const result = sendOrganizerParticipantEmail_(

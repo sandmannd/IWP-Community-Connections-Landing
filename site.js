@@ -143,24 +143,10 @@
   };
 
   function loadLandingData() {
-    if (!c.apiUrl) {
-      renderLandingDataError();
-      return;
-    }
-
-    var script = document.createElement("script");
-    var separator = c.apiUrl.indexOf("?") === -1 ? "?" : "&";
-    script.src = c.apiUrl + separator + "callback=iwpLandingDataCallback&_=" + Date.now();
-    script.async = true;
-    script.onerror = renderLandingDataError;
-    document.head.appendChild(script);
-
-    window.setTimeout(function () {
-      var categories = document.getElementById("landingCategoryGrid");
-      if (categories && categories.querySelector(".category-loading")) {
-        renderLandingDataError();
-      }
-    }, 12000);
+    var cacheKey='iwpLandingDataV2',cached=null;
+    try{cached=JSON.parse(localStorage.getItem(cacheKey)||'null')}catch(ignore){}
+    if(cached&&cached.data){window.iwpLandingDataCallback(cached.data)}
+    fetch('/api/landing-data',{headers:{'accept':'application/json'}}).then(function(response){if(!response.ok)throw new Error('Landing data unavailable');return response.json()}).then(function(data){if(!data||!data.success)throw new Error(data&&data.error||'Landing data unavailable');try{localStorage.setItem(cacheKey,JSON.stringify({savedAt:Date.now(),data:data}))}catch(ignore){}window.iwpLandingDataCallback(data)}).catch(function(){if(!cached)renderLandingDataError()});
   }
 
   function normalizeLandingImageUrl(url) {

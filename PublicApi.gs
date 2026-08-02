@@ -5,6 +5,12 @@
  */
 
 function getLandingPageData() {
+  const cache = CacheService.getScriptCache();
+  const cacheKey = 'IWP_LANDING_DATA_V2';
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    try { return JSON.parse(cached); } catch (ignore) {}
+  }
   const allEvents = listEvents();
   const todayKey = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
 
@@ -21,32 +27,43 @@ function getLandingPageData() {
       String(a.StartTime || '').localeCompare(String(b.StartTime || ''));
   });
 
+  const past = allEvents.filter(function(event) {
+    return isCompletedEventStatus_(event.Status);
+  }).sort(function(a, b) {
+    return String(b.StartDate || '').localeCompare(String(a.StartDate || '')) ||
+      String(b.StartTime || '').localeCompare(String(a.StartTime || ''));
+  });
+
   const featured = upcoming.find(function(event) {
     return toBoolean_(event.Featured);
-  }) || null;
+  }) || upcoming[0] || null;
 
   const baseUrl = getPublicAppUrl_();
+  const cloudflareBaseUrl = 'https://connections.redlinecreates.com';
 
-  return {
+  const result = {
     success: true,
     generatedAt: new Date().toISOString(),
-    featured: featured ? buildLandingEvent_(featured, baseUrl) : null,
+    featured: featured ? buildLandingEvent_(featured, baseUrl, cloudflareBaseUrl) : null,
     upcoming: upcoming.slice(0, 4).map(function(event) {
-      return buildLandingEvent_(event, baseUrl);
+      return buildLandingEvent_(event, baseUrl, cloudflareBaseUrl);
+    }),
+    past: past.slice(0, 12).map(function(event) {
+      return buildLandingEvent_(event, baseUrl, cloudflareBaseUrl);
     }),
     stats: {
       upcomingAdventures: upcoming.length,
       publishedAdventures: allEvents.filter(function(event) {
         return String(event.Status || '') === APP_CONFIG.eventStatuses.published;
       }).length,
-      completedAdventures: allEvents.filter(function(event) {
-        return String(event.Status || '') === APP_CONFIG.eventStatuses.complete;
-      }).length
+      completedAdventures: past.length
     }
   };
+  try { cache.put(cacheKey, JSON.stringify(result), 300); } catch (ignore) {}
+  return result;
 }
 
-function buildLandingEvent_(event, baseUrl) {
+function buildLandingEvent_(event, baseUrl, cloudflareBaseUrl) {
   const maxParticipants = Number(event.MaxParticipants || 0);
   const peopleCount = Number(event.PeopleCount || 0);
   const spotsRemaining = maxParticipants > 0
@@ -76,7 +93,8 @@ function buildLandingEvent_(event, baseUrl) {
     waitlistEnabled: waitlistEnabled,
     full: full,
     availabilityLabel: buildLandingAvailabilityLabel_(spotsRemaining, maxParticipants, waitlistEnabled),
-    detailsUrl: baseUrl + '?event=' + encodeURIComponent(event.EventId),
+    detailsUrl: cloudflareBaseUrl + '/adventure.html?id=' + encodeURIComponent(event.EventId),
+    legacyDetailsUrl: baseUrl + '?event=' + encodeURIComponent(event.EventId),
     registrationUrl: baseUrl + '?register=' + encodeURIComponent(event.EventId),
     featured: toBoolean_(event.Featured)
   };
@@ -108,4 +126,48 @@ function getLandingPageJsonp_(callbackName) {
   return ContentService
     .createTextOutput(callback + '(' + payload + ');')
     .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+
+/**
+ * Public, read-only adventure detail endpoint for the Cloudflare frontend.
+ * JSONP is used because Apps Script ContentService does not provide configurable
+ * CORS response headers. Only data already approved for public browsing is returned.
+ */
+function getPublicAdventureJsonp_(eventId, callbackName) {
+  const callback = String(callbackName || '').replace(/[^\w.$]/g, '');
+  if (!callback) throw new Error('A valid callback is required.');
+
+  const cleanEventId = String(eventId || '').trim();
+  if (!cleanEventId) {
+    return ContentService
+      .createTextOutput(callback + '(' + JSON.stringify({ success: false, message: 'Adventure ID is required.' }) + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  try {
+    const detail = getEventDetailData(cleanEventId, true);
+    const payload = {
+      success: true,
+      generatedAt: new Date().toISOString(),
+      event: detail.event || {},
+      registrations: detail.registrations || [],
+      memories: detail.memories || [],
+      resourceAvailability: detail.resourceAvailability || {},
+      spotsTaken: Number(detail.spotsTaken || 0),
+      spotsRemaining: detail.spotsRemaining === null ? null : Number(detail.spotsRemaining || 0),
+      registrationUrl: getPublicAppUrl_() + '?register=' + encodeURIComponent(cleanEventId)
+    };
+    return ContentService
+      .createTextOutput(callback + '(' + JSON.stringify(payload).replace(/<\//g, '<\\/') + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  } catch (error) {
+    const errorPayload = {
+      success: false,
+      message: error && error.message ? String(error.message) : 'Adventure could not be loaded.'
+    };
+    return ContentService
+      .createTextOutput(callback + '(' + JSON.stringify(errorPayload).replace(/<\//g, '<\\/') + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
 }
