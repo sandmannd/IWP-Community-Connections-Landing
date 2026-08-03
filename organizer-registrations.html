@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Manage registrations for an IWP Community Connections adventure."><title>Adventure Registrations | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-registrations-m552.css?v=m5.5.3"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Manage registrations for an IWP Community Connections adventure."><title>Adventure Registrations | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-registrations-m65.css?v=m6.5"></head>
 <body class="organizer-page"><header class="cc-global-header" aria-label="IWP Community Connections navigation"><a class="cc-global-brand" href="/"><img src="assets/iwp-community-connections-header.png" alt="IWP Community Connections, You Are Not Alone"></a><nav class="cc-global-nav"><a href="/">Home</a><a class="is-active" href="/organizer.html">Adventure Builder</a></nav></header>
 <main class="organizer-main"><a class="organizer-back-link" href="/organizer-adventures.html">← Back to Manage Adventures</a>
 <section class="organizer-hero"><div><span class="organizer-eyebrow">Organizer Registration Manager</span><h1 id="registrationPageHeading">Adventure Registrations</h1><p>Search participants, manage check-in and payment, contact attendees, and export the event roster.</p></div></section>
@@ -10,7 +10,20 @@
 <div class="organizer-registration-metrics">
 <div><strong id="registrationCount">0</strong><span>Registrations</span></div><div><strong id="peopleCount">0</strong><span>Total People</span></div><div><strong id="adultCount">0</strong><span>Adults</span></div><div><strong id="childCount">0</strong><span>Children</span></div><div><strong id="waitlistCount">0</strong><span>Waitlist</span></div><div><strong id="checkedInCount">0</strong><span>Checked In</span></div><div><strong id="paidCount">0</strong><span>Paid</span></div><div><strong id="needsPaymentCount">0</strong><span>Needs Payment</span></div>
 </div>
-<div class="organizer-adventure-controls"><input id="registrationSearch" class="organizer-search" type="search" placeholder="Search name, email, phone, guest, or status"><div class="registration-filter-row" aria-label="Registration filters">
+<div id="registrationStickyTools" class="registration-sticky-tools">
+<div class="organizer-adventure-controls">
+<input id="registrationSearch" class="organizer-search" type="search" placeholder="Search name, email, phone, guest, or status">
+<label class="registration-sort-label">Sort
+<select id="registrationSort">
+<option value="name-asc">Name A–Z</option>
+<option value="name-desc">Name Z–A</option>
+<option value="newest">Newest registration</option>
+<option value="oldest">Oldest registration</option>
+<option value="checked">Checked in first</option>
+<option value="unpaid">Needs payment first</option>
+</select>
+</label>
+<div class="registration-filter-row" aria-label="Registration filters">
 <label class="filter-check"><input type="checkbox" value="confirmed" data-status-filter> Confirmed</label>
 <label class="filter-check"><input type="checkbox" value="checked in" data-status-filter> Checked In</label>
 <label class="filter-check"><input type="checkbox" value="waitlist" data-status-filter> Waitlist</label>
@@ -18,7 +31,7 @@
 <label class="filter-check"><input type="checkbox" value="paid" data-payment-filter> Paid</label>
 <label class="filter-check"><input type="checkbox" value="needs payment" data-payment-filter> Needs Payment</label>
 <button id="clearFiltersButton" class="organizer-text-button" type="button">Clear filters</button>
-</div></div>
+</div><p class="registration-shortcuts">Shortcuts: <kbd>/</kbd> search · <kbd>A</kbd> select visible · <kbd>C</kbd> check in selected · <kbd>P</kbd> mark selected paid · <kbd>Esc</kbd> close details</p></div>
 <div id="bulkToolbar" class="registration-bulk-toolbar" hidden><strong><span id="selectedCount">0</span> selected</strong><div>
 <button type="button" data-bulk-action="email">Email Selected</button>
 <button type="button" data-bulk-action="checkin">Check In</button>
@@ -56,4 +69,4 @@
 <p id="detailStatusMessage" class="organizer-results-summary" aria-live="polite"></p>
 </form>
 </dialog>
-<script src="config.js"></script><script src="organizer-registrations-m552.js?v=m5.5.3"></script></body></html>
+<script src="config.js"></script><script src="organizer-registrations-m65.js?v=m6.5"></script></body></html>
