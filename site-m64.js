@@ -1,0 +1,878 @@
+(function () {
+
+  window.iwpAdventureImageFallback = function (img) {
+    if (!img) return;
+    var parent = img.parentNode;
+    if (!parent || parent.getAttribute('data-fallback-active') === 'true') return;
+    parent.setAttribute('data-fallback-active', 'true');
+    parent.classList.add(parent.classList.contains('featured-event-image') ? 'featured-event-image-fallback' : 'live-card-image-fallback');
+    var icon = img.getAttribute('data-fallback-icon') || '🤝';
+    parent.innerHTML = '<span>' + escapeHtml(icon) + '</span>';
+  };
+  var c = window.IWP_SITE_CONFIG || {};
+
+  function appendQueryParam(url, key, value) {
+    var source = String(url || '').trim();
+    if (!source) return source;
+    try {
+      var parsed = new URL(source, window.location.href);
+      if (!parsed.searchParams.has(key)) parsed.searchParams.set(key, value);
+      return parsed.toString();
+    } catch (error) {
+      var separator = source.indexOf('?') === -1 ? '?' : '&';
+      return source + separator + encodeURIComponent(key) + '=' + encodeURIComponent(value);
+    }
+  }
+
+
+  function cloudflareAdventureUrl(event) {
+    var eventId = String((event && (event.eventId || event.EventId)) || '').trim();
+    if (!eventId) return publicAppUrl((event && (event.detailsUrl || event.registrationUrl)) || c.appUrl) || '#';
+    return (c.publicAdventurePage || '/adventure.html') + '?id=' + encodeURIComponent(eventId);
+  }
+
+  function publicAppUrl(url) {
+    var source = String(url || c.appUrl || '').trim();
+    if (!source) return source;
+    return /script\.google\.com\/macros\/s\//i.test(source)
+      ? appendQueryParam(source, 'public', '1')
+      : source;
+  }
+
+  function showAppLaunchOverlay() {
+    var overlay = document.getElementById('appLaunchOverlay');
+    if (!overlay) return;
+    overlay.classList.add('is-visible');
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+
+  function warmCommunityConnections() {
+    var url = publicAppUrl(c.appUrl);
+    if (!url || window.__iwpAppWarmStarted) return;
+    window.__iwpAppWarmStarted = true;
+    try {
+      fetch(url, { mode: 'no-cors', credentials: 'omit', cache: 'no-store', keepalive: true }).catch(function () {});
+    } catch (error) {}
+  }
+
+  document.querySelectorAll("[data-config]").forEach(function (el) {
+    var key = el.getAttribute("data-config");
+    if (c[key]) el.textContent = c[key];
+  });
+
+  document.querySelectorAll("[data-href-config]").forEach(function (el) {
+    var key = el.getAttribute("data-href-config");
+    if (c[key]) el.href = c[key];
+  });
+
+  document.querySelectorAll("[data-mailto-config]").forEach(function (el) {
+    var key = el.getAttribute("data-mailto-config");
+    if (c[key]) el.href = "mailto:" + c[key];
+  });
+
+  document.querySelectorAll("[data-launch-app]").forEach(function (el) {
+  if (!c.appUrl || c.appUrl.indexOf("PASTE_") === 0) {
+    el.href = "#launch";
+
+    el.addEventListener("click", function (event) {
+      event.preventDefault();
+      alert("The Community Connections application link is being finalized.");
+    });
+  } else {
+    var isAdventureBuilder =
+      el.dataset.organizerLaunch === "true" ||
+      el.textContent.trim().toLowerCase().indexOf("adventure builder") !== -1;
+
+    if (isAdventureBuilder) {
+      el.href = c.appUrl;
+      el.dataset.organizerLaunch = "true";
+    } else {
+      el.href = publicAppUrl(c.appUrl);
+    }
+
+    el.removeAttribute("target");
+    el.removeAttribute("rel");
+    el.addEventListener("pointerenter", warmCommunityConnections, { once: true });
+    el.addEventListener("touchstart", warmCommunityConnections, {
+      once: true,
+      passive: true
+    });
+    el.addEventListener("click", showAppLaunchOverlay);
+  }
+});
+
+
+  var menuButton = document.querySelector(".mobile-menu-button");
+  var mainNavigation = document.getElementById("mainNavigation");
+
+  if (menuButton && mainNavigation) {
+    menuButton.addEventListener("click", function () {
+      var expanded = menuButton.getAttribute("aria-expanded") === "true";
+      menuButton.setAttribute("aria-expanded", String(!expanded));
+      mainNavigation.classList.toggle("is-open", !expanded);
+      menuButton.textContent = expanded ? "Menu" : "Close";
+    });
+
+    mainNavigation.querySelectorAll("a").forEach(function (link) {
+      link.addEventListener("click", function () {
+        menuButton.setAttribute("aria-expanded", "false");
+        mainNavigation.classList.remove("is-open");
+        menuButton.textContent = "Menu";
+      });
+    });
+  }
+
+  document.querySelectorAll(".faq-item").forEach(function (item) {
+    item.addEventListener("toggle", function () {
+      if (!item.open) return;
+      document.querySelectorAll(".faq-item[open]").forEach(function (other) {
+        if (other !== item) other.removeAttribute("open");
+      });
+    });
+  });
+
+
+  var landingCacheKey = 'iwpLandingDataCacheV1';
+  var landingCacheMaxAge = 6 * 60 * 60 * 1000;
+  var landingCacheRendered = false;
+  var adventureDetailCachePrefix = 'iwpAdventureDetailCacheV1:';
+  var adventureDetailCacheMaxAge = 15 * 60 * 1000;
+  var adventurePrefetchQueue = {};
+
+  function adventureDetailCacheKey(eventId) {
+    return adventureDetailCachePrefix + String(eventId || '').trim();
+  }
+
+  function writeAdventureDetailCache(eventId, payload) {
+    if (!eventId || !payload || !payload.success || !payload.event) return;
+    try {
+      window.localStorage.setItem(adventureDetailCacheKey(eventId), JSON.stringify({
+        savedAt: Date.now(),
+        data: payload
+      }));
+    } catch (ignore) {}
+  }
+
+
+  function landingEventToAdventurePayload(event) {
+    event = event || {};
+    var id = String(event.eventId || event.EventId || '').trim();
+    if (!id) return null;
+    var max = Number(event.maxParticipants || event.MaxParticipants || 0);
+    var remaining = event.spotsRemaining;
+    if (remaining === undefined || remaining === null || remaining === '') remaining = event.SpotsRemaining;
+    return {
+      success: true,
+      preview: true,
+      event: {
+        EventId: id,
+        Title: event.title || event.Title || 'Community Adventure',
+        EventType: event.type || event.EventType || 'Adventure',
+        ImageUrl: event.imageUrl || event.ImageUrl || '',
+        StartDate: event.startDate || event.StartDate || '',
+        StartTime: event.startTime || event.StartTime || '',
+        EndDate: event.endDate || event.EndDate || '',
+        EndTime: event.endTime || event.EndTime || '',
+        LocationName: event.location || event.LocationName || '',
+        Description: event.description || event.Description || '',
+        WhatToExpect: event.whatToExpect || event.WhatToExpect || '',
+        WhatToBring: event.whatToBring || event.WhatToBring || '',
+        Provided: event.provided || event.Provided || '',
+        SpecialNotes: event.specialNotes || event.SpecialNotes || '',
+        Address: event.address || event.Address || '',
+        FreeEvent: event.freeEvent !== undefined ? event.freeEvent : String(event.costLabel || '').toLowerCase() === 'free',
+        AdultCost: event.adultCost || event.AdultCost || '',
+        ChildCost: event.childCost || event.ChildCost || '',
+        VariableCost: event.variableCost || event.VariableCost || '',
+        MaxParticipants: max,
+        WaitlistEnabled: event.waitlistEnabled !== undefined ? event.waitlistEnabled : event.WaitlistEnabled,
+        RegistrationRequired: event.registrationRequired !== undefined ? event.registrationRequired : true,
+        Status: event.status || event.Status || 'Published',
+        Featured: event.featured !== undefined ? event.featured : event.Featured
+      },
+      spotsRemaining: remaining === undefined || remaining === null || remaining === '' ? null : Number(remaining)
+    };
+  }
+
+  function seedAdventurePreviewCache(data) {
+    var events = [];
+    if (data && data.featured) events.push(data.featured);
+    ['upcoming', 'past'].forEach(function (key) {
+      (data && data[key] || []).forEach(function (event) { events.push(event); });
+    });
+    var seen = {};
+    events.forEach(function (event) {
+      var payload = landingEventToAdventurePayload(event);
+      if (!payload) return;
+      var id = String(payload.event.EventId || '');
+      if (!id || seen[id]) return;
+      seen[id] = true;
+      writeAdventureDetailCache(id, payload);
+    });
+  }
+
+  function prefetchAdventureDetail(eventId) {
+    eventId = String(eventId || '').trim();
+    if (!eventId || !c.appUrl || adventurePrefetchQueue[eventId]) return;
+    try {
+      var cachedRaw = window.localStorage.getItem(adventureDetailCacheKey(eventId));
+      var cached = cachedRaw ? JSON.parse(cachedRaw) : null;
+      if (cached && cached.savedAt && Date.now() - Number(cached.savedAt) < adventureDetailCacheMaxAge) return;
+    } catch (ignore) {}
+
+    adventurePrefetchQueue[eventId] = true;
+    var callbackName = 'iwpAdventurePrefetch' + eventId.replace(/[^a-zA-Z0-9]/g, '') + Date.now();
+    var script = document.createElement('script');
+    var separator = c.appUrl.indexOf('?') === -1 ? '?' : '&';
+    var timeout = window.setTimeout(cleanup, 20000);
+    function cleanup() {
+      window.clearTimeout(timeout);
+      try { delete window[callbackName]; } catch (ignore) { window[callbackName] = undefined; }
+      script.remove();
+      delete adventurePrefetchQueue[eventId];
+    }
+    window[callbackName] = function (payload) {
+      writeAdventureDetailCache(eventId, payload);
+      cleanup();
+    };
+    script.onerror = cleanup;
+    script.async = true;
+    script.src = c.appUrl + separator + 'api=public-adventure&eventId=' + encodeURIComponent(eventId) + '&callback=' + encodeURIComponent(callbackName) + '&_=' + Date.now();
+    document.head.appendChild(script);
+  }
+
+  function activateAdventurePrefetch(root) {
+    root = root || document;
+    Array.prototype.forEach.call(root.querySelectorAll('a[href*="/adventure.html?id="]'), function (link) {
+      if (link.dataset.iwpAdventurePrefetchBound === '1') return;
+      link.dataset.iwpAdventurePrefetchBound = '1';
+      var id = '';
+      try { id = new URL(link.href, window.location.href).searchParams.get('id') || ''; } catch (ignore) {}
+      if (!id) return;
+      link.addEventListener('pointerenter', function () { prefetchAdventureDetail(id); }, { once: true });
+      link.addEventListener('touchstart', function () { prefetchAdventureDetail(id); }, { once: true, passive: true });
+    });
+
+    var ids = [];
+    Array.prototype.forEach.call(root.querySelectorAll('a[href*="/adventure.html?id="]'), function (link) {
+      try {
+        var id = new URL(link.href, window.location.href).searchParams.get('id') || '';
+        if (id && ids.indexOf(id) < 0) ids.push(id);
+      } catch (ignore) {}
+    });
+    ids.slice(0, 8).forEach(function (id, index) {
+      window.setTimeout(function () { prefetchAdventureDetail(id); }, 250 + index * 180);
+    });
+  }
+
+  function readLandingCache() {
+    try {
+      var raw = window.localStorage.getItem(landingCacheKey);
+      var cached = raw ? JSON.parse(raw) : null;
+      if (!cached || !cached.savedAt || !cached.data) return null;
+      if (Date.now() - Number(cached.savedAt) > landingCacheMaxAge) return null;
+      return cached.data;
+    } catch (ignore) { return null; }
+  }
+
+  function writeLandingCache(data) {
+    try { window.localStorage.setItem(landingCacheKey, JSON.stringify({ savedAt: Date.now(), data: data })); } catch (ignore) {}
+  }
+
+  window.iwpLandingDataCallback = function (data) {
+    if (data) {
+      writeLandingCache(data);
+      seedAdventurePreviewCache(data);
+    }
+    var upcoming = data && data.upcoming ? data.upcoming : [];
+    var nextThirtyDays = filterEventsForNextThirtyDays(upcoming);
+    document.documentElement.classList.toggle('one-live-adventure', nextThirtyDays.length === 1);
+    renderUpcomingAdventures(nextThirtyDays);
+    renderCompactFeaturedAdventures(collectFeaturedAdventures(data, upcoming));
+    renderLandingCategories(upcoming, data && data.featured ? data.featured : null);
+    activateFastNavigation(document);
+    activateAdventurePrefetch(document);
+  };
+
+  function loadLandingData() {
+    var cachedLandingData = readLandingCache();
+    if (cachedLandingData) {
+      landingCacheRendered = true;
+      window.iwpLandingDataCallback(cachedLandingData);
+    }
+    if (!c.appUrl) {
+      if (!landingCacheRendered) renderLandingDataError();
+      return;
+    }
+    var callbackName = 'iwpLandingDataCallback';
+    var script = document.createElement('script');
+    var separator = c.appUrl.indexOf('?') === -1 ? '?' : '&';
+    var finished = false;
+    var timeout = window.setTimeout(function () {
+      if (finished) return;
+      finished = true;
+      script.remove();
+      if (!landingCacheRendered) renderLandingDataError();
+    }, 30000);
+    var originalCallback = window[callbackName];
+    window[callbackName] = function (data) {
+      if (finished) return;
+      finished = true;
+      window.clearTimeout(timeout);
+      script.remove();
+      window[callbackName] = originalCallback;
+      originalCallback(data);
+    };
+    script.src = c.appUrl + separator + 'api=landing&callback=' + encodeURIComponent(callbackName) + '&_=' + Date.now();
+    script.onerror = function () {
+      if (finished) return;
+      finished = true;
+      window.clearTimeout(timeout);
+      script.remove();
+      window[callbackName] = originalCallback;
+      if (!landingCacheRendered) renderLandingDataError();
+    };
+    document.head.appendChild(script);
+  }
+
+  function normalizeLandingImageUrl(url) {
+    var value = String(url || '').trim();
+    if (!value) return '';
+
+    // Event uploads are saved as public Google Drive thumbnail URLs. Keep those
+    // intact, and also normalize older Drive share/view links when encountered.
+    var driveIdMatch = value.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?[^#]*[?&]id=)([-_a-zA-Z0-9]+)/i);
+    if (driveIdMatch && driveIdMatch[1]) {
+      return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(driveIdMatch[1]) + '&sz=w1600';
+    }
+
+    return /^https:\/\//i.test(value) ? value : '';
+  }
+
+  function isSafeLandingImageUrl(url) {
+    return Boolean(normalizeLandingImageUrl(url));
+  }
+
+  function renderLandingCategories(events, featuredEvent) {
+    var grid = document.getElementById("landingCategoryGrid");
+    if (!grid) return;
+
+    var featuredCategory = featuredEvent ? canonicalLandingCategory(featuredEvent.type) : null;
+    var categories = {};
+
+    (events || []).forEach(function (event) {
+      var sourceType = String(event.type || "").trim();
+      if (!sourceType) return;
+
+      var category = canonicalLandingCategory(sourceType);
+      if (!categories[category.key]) {
+        categories[category.key] = {
+          key: category.key,
+          label: category.label,
+          order: category.order,
+          count: 0,
+          featured: false
+        };
+      }
+      categories[category.key].count += 1;
+    });
+
+    if (featuredCategory && categories[featuredCategory.key]) {
+      categories[featuredCategory.key].featured = true;
+    }
+
+    var items = Object.keys(categories)
+      .map(function (key) { return categories[key]; })
+      .sort(function (a, b) {
+        if (a.featured !== b.featured) return a.featured ? -1 : 1;
+        return b.count - a.count || a.order - b.order || a.label.localeCompare(b.label);
+      });
+
+    if (!items.length) {
+      grid.innerHTML = '<a class="activity-category-card activity-category-card--browse" href="' + escapeAttr(publicAppUrl(c.appUrl) || '#') + '">' +
+        '<span class="activity-category-photo is-loading" data-bg="assets/hands-community.webp"></span>' +
+        '<span class="activity-category-shade"></span>' +
+        '<span class="activity-category-content"><span class="activity-category-icon">' + categorySvg('browse') + '</span><strong>Browse Adventures</strong><span class="activity-category-count">New adventures coming soon</span></span>' +
+      '</a>';
+      activateLazyCategoryImages(grid);
+      return;
+    }
+
+    grid.innerHTML = items.map(function (category) {
+      var visual = categoryVisual(category.key);
+      var countLabel = category.count + ' ' + (category.count === 1 ? 'Adventure' : 'Adventures');
+      var featuredBadge = category.featured ? '<span class="activity-category-featured">★ Featured</span>' : '';
+
+      return '<a class="activity-category-card' + (category.featured ? ' is-featured' : '') + '" href="' + escapeAttr(publicAppUrl(c.appUrl) || '#') + '" aria-label="View ' + escapeAttr(category.label) + ' adventures, ' + category.count + ' available">' +
+        '<span class="activity-category-photo is-loading" data-bg="' + escapeAttr(visual.image) + '"></span>' +
+        '<span class="activity-category-shade"></span>' +
+        featuredBadge +
+        '<span class="activity-category-content">' +
+          '<span class="activity-category-icon" aria-hidden="true">' + categorySvg(visual.icon) + '</span>' +
+          '<strong>' + escapeHtml(category.label) + '</strong>' +
+          '<span class="activity-category-count">' + escapeHtml(countLabel) + '</span>' +
+        '</span>' +
+      '</a>';
+    }).join('');
+    activateLazyCategoryImages(grid);
+  }
+
+  function activateLazyCategoryImages(root) {
+    var photos = Array.prototype.slice.call((root || document).querySelectorAll('.activity-category-photo[data-bg]'));
+    if (!photos.length) return;
+
+    function loadPhoto(photo) {
+      if (!photo || photo.dataset.loaded === 'true') return;
+      var src = photo.getAttribute('data-bg');
+      if (!src) return;
+      var img = new Image();
+      img.decoding = 'async';
+      img.onload = function () {
+        photo.style.backgroundImage = 'url(\"' + src.replace(/\"/g, '') + '\")';
+        photo.dataset.loaded = 'true';
+        photo.classList.remove('is-loading');
+        window.requestAnimationFrame(function () { photo.classList.add('is-loaded'); });
+      };
+      img.onerror = function () { photo.classList.remove('is-loading'); photo.classList.add('is-error'); };
+      img.src = src;
+    }
+
+    if (!('IntersectionObserver' in window)) {
+      photos.forEach(loadPhoto);
+      return;
+    }
+
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        loadPhoto(entry.target);
+        observer.unobserve(entry.target);
+      });
+    }, { rootMargin: '260px 0px', threshold: 0.01 });
+
+    photos.forEach(function (photo) { observer.observe(photo); });
+  }
+
+  function canonicalLandingCategory(type) {
+    var value = String(type || '').toLowerCase().replace(/&/g, ' and ');
+    if (/atv|utv|off.?road|four.?wheel|trail ride/.test(value)) return { key: 'atv-utv', label: 'ATV / UTV', order: 10 };
+    if (/camp|camping|bonfire|campfire/.test(value)) return { key: 'camping', label: 'Camping', order: 20 };
+    if (/hik|hiking|walk|walking|trail/.test(value)) return { key: 'hiking', label: 'Hiking', order: 30 };
+    if (/ice\s*fish/.test(value)) return { key: 'ice-fishing', label: 'Ice Fishing', order: 40 };
+    if (/fish/.test(value)) return { key: 'fishing', label: 'Fishing', order: 50 };
+    if (/hunt|hunting|shoot|archer/.test(value)) return { key: 'hunting', label: 'Hunting', order: 60 };
+    if (/tub|tube|kayak|canoe|paddle|water/.test(value)) return { key: 'water-adventures', label: 'Tubing / Kayaking', order: 70 };
+    if (/sport|game|ball|golf|race|rodeo|bowling/.test(value)) return { key: 'sporting-events', label: 'Sporting Events', order: 80 };
+    if (/poker|cribbage|card|board game|game night|bingo/.test(value)) return { key: 'games-social', label: 'Games & Social', order: 90 };
+    if (/family|kid|children/.test(value)) return { key: 'family-activities', label: 'Family Activities', order: 100 };
+    if (/wellness|support|peer|therapy|health/.test(value)) return { key: 'wellness-support', label: 'Wellness & Support', order: 110 };
+    if (/community|meetup|social|connection|gather/.test(value)) return { key: 'community-meetups', label: 'Community Meetups', order: 120 };
+    var fallbackLabel = titleCaseCategory(type) || 'Other Adventures';
+    return { key: slugifyCategory(fallbackLabel), label: fallbackLabel, order: 900 };
+  }
+
+  function titleCaseCategory(value) {
+    return String(value || '')
+      .trim()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .replace(/\b\w/g, function (letter) { return letter.toUpperCase(); });
+  }
+
+  function slugifyCategory(value) {
+    var slug = String(value || '')
+      .toLowerCase()
+      .replace(/&/g, ' and ')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return slug || 'other-adventures';
+  }
+
+  function categoryVisual(key) {
+    var visuals = {
+      'atv-utv': { image: 'assets/hiking.webp', icon: 'mountain' },
+      'camping': { image: 'assets/bonfire.webp', icon: 'camp' },
+      'hiking': { image: 'assets/hiking.webp', icon: 'hike' },
+      'ice-fishing': { image: 'assets/ice-fishing.webp', icon: 'snow' },
+      'fishing': { image: 'assets/kayak.webp', icon: 'fish' },
+      'hunting': { image: 'assets/hiking.webp', icon: 'target' },
+      'water-adventures': { image: 'assets/kayak.webp', icon: 'water' },
+      'sporting-events': { image: 'assets/campfire-community.webp', icon: 'people' },
+      'games-social': { image: 'assets/campfire-community.webp', icon: 'cards' },
+      'family-activities': { image: 'assets/hands-community.webp', icon: 'family' },
+      'wellness-support': { image: 'assets/hands-community.webp', icon: 'heart' },
+      'community-meetups': { image: 'assets/campfire-community.webp', icon: 'people' },
+      'other-adventures': { image: 'assets/campfire-community.webp', icon: 'browse' }
+    };
+    return visuals[key] || visuals['other-adventures'];
+  }
+
+  function categorySvg(icon) {
+    var common = 'viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"';
+    var icons = {
+      camp: '<svg ' + common + '><path d="M8 53 31 12l25 41H8Z"/><path d="M31 12v41M19 53l12-20 13 20"/></svg>',
+      hike: '<svg ' + common + '><circle cx="39" cy="10" r="5"/><path d="m34 20-9 13 10 8-6 15M35 27l12 8 8-5M25 33l-12 9"/></svg>',
+      fish: '<svg ' + common + '><path d="M10 32c10-13 24-16 37-7l9-7v28l-9-7c-13 9-27 6-37-7Z"/><circle cx="42" cy="28" r="1" fill="currentColor" stroke="none"/></svg>',
+      snow: '<svg ' + common + '><path d="M32 5v54M8 19l48 26M8 45l48-26M20 10l12 10 12-10M20 54l12-10 12 10M9 30l15 2-6 14M55 34l-15-2 6-14"/></svg>',
+      target: '<svg ' + common + '><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="14"/><circle cx="32" cy="32" r="4"/><path d="M32 3v10M32 51v10M3 32h10M51 32h10"/></svg>',
+      water: '<svg ' + common + '><path d="M32 6C20 21 14 29 14 40a18 18 0 0 0 36 0C50 29 44 21 32 6Z"/><path d="M21 43c5 5 14 6 22 0"/></svg>',
+      mountain: '<svg ' + common + '><path d="M5 54 23 22l9 15 8-12 19 29H5Z"/><path d="m17 33 6-11 5 9"/></svg>',
+      people: '<svg ' + common + '><circle cx="32" cy="20" r="8"/><circle cx="14" cy="27" r="6"/><circle cx="50" cy="27" r="6"/><path d="M18 55v-9c0-8 6-14 14-14s14 6 14 14v9M3 55v-6c0-7 5-12 11-12 3 0 5 1 7 3M61 55v-6c0-7-5-12-11-12-3 0-5 1-7 3"/></svg>',
+      cards: '<svg ' + common + '><rect x="9" y="13" width="30" height="40" rx="4"/><rect x="25" y="7" width="30" height="40" rx="4"/><path d="M40 18l4 6-4 6-4-6 4-6Z"/></svg>',
+      family: '<svg ' + common + '><circle cx="22" cy="20" r="7"/><circle cx="43" cy="20" r="7"/><circle cx="32" cy="35" r="6"/><path d="M8 56v-8c0-9 6-15 14-15 4 0 8 2 10 5M56 56v-8c0-9-6-15-13-15-5 0-8 2-11 5M21 57v-5c0-7 5-12 11-12s11 5 11 12v5"/></svg>',
+      heart: '<svg ' + common + '><path d="M32 55 10 34C-1 23 6 8 19 8c7 0 11 4 13 9 2-5 6-9 13-9 13 0 20 15 9 26L32 55Z"/></svg>',
+      browse: '<svg ' + common + '><circle cx="27" cy="27" r="17"/><path d="m40 40 16 16"/></svg>'
+    };
+    return icons[icon] || icons.people;
+  }
+
+  function collectFeaturedAdventures(data, upcoming) {
+    var candidates = [];
+    if (data && Array.isArray(data.featured)) candidates = candidates.concat(data.featured);
+    else if (data && data.featured) candidates.push(data.featured);
+    if (Array.isArray(upcoming)) {
+      upcoming.forEach(function (event) {
+        if (event && event.featured) candidates.push(event);
+      });
+    }
+
+    var seen = {};
+    return candidates.filter(function (event) {
+      if (!event) return false;
+      var key = String(event.id || event.eventId || event.title || "").toLowerCase();
+      if (!key) key = JSON.stringify(event);
+      if (seen[key]) return false;
+      seen[key] = true;
+      return event.featured !== false;
+    });
+  }
+
+  function renderCompactFeaturedAdventures(events) {
+    var section = document.getElementById("featured-adventure");
+    var container = document.getElementById("featuredAdventureContent");
+    var heading = document.getElementById("featuredAdventureHeading");
+    if (!section || !container) return;
+
+    events = Array.isArray(events) ? events : [];
+    if (!events.length) {
+      section.hidden = true;
+      container.innerHTML = "";
+      return;
+    }
+
+    if (heading) heading.textContent = events.length === 1 ? "Featured Event" : "Featured Events";
+    container.className = "compact-featured-grid has-" + (events.length >= 4 ? "4-plus" : events.length);
+    container.innerHTML = events.map(function (event) {
+      var detailsUrl = cloudflareAdventureUrl(event);
+      var imageUrl = normalizeLandingImageUrl(event.imageUrl);
+      var image = isSafeLandingImageUrl(imageUrl)
+        ? '<img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" loading="lazy" decoding="async" src="' + escapeAttr(imageUrl) + '" alt="">'
+        : '<span class="next-30-image-fallback" aria-hidden="true">' + categoryIcon(event.type) + '</span>';
+
+      return '<a class="next-30-card compact-featured-card" href="' + escapeAttr(detailsUrl) + '" aria-label="View featured event ' + escapeAttr(event.title || "community adventure") + '">' +
+        '<span class="compact-featured-badge">★ Featured</span>' +
+        '<span class="next-30-image">' + image + '<span class="next-30-shade"></span></span>' +
+        '<span class="next-30-copy">' +
+          '<strong>' + escapeHtml(event.title || "Community Adventure") + '</strong>' +
+          '<span>' + escapeHtml(formatEventDateOnly(event)) + '</span>' +
+        '</span>' +
+      '</a>';
+    }).join("");
+
+    section.hidden = false;
+    activateAdventureImageFallbacks(container);
+    activatePremiumPolish(container);
+  }
+
+  function renderFeaturedAdventure(event) {
+    var container = document.getElementById("featuredAdventureContent");
+    if (!container) return;
+
+    if (!event) {
+      container.innerHTML =
+        '<div class="featured-empty">' +
+          '<span class="featured-badge">⭐ Featured Adventure</span>' +
+          '<h2>New adventures are coming soon.</h2>' +
+          '<p>Visit the live adventure list or Facebook group for the newest updates.</p>' +
+          '<div class="featured-actions">' +
+            '<a class="button" href="' + escapeAttr(publicAppUrl(c.appUrl) || "#") + '">Browse Adventures</a>' +
+            '<a class="button secondary" target="_blank" rel="noopener" href="' + escapeAttr(c.facebookUrl || "#") + '">Facebook Group</a>' +
+          '</div>' +
+        '</div>';
+      return;
+    }
+
+    var featuredImageUrl = normalizeLandingImageUrl(event.imageUrl);
+    var image = featuredImageUrl
+      ? '<div class="featured-event-image"><img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" src="' + escapeAttr(featuredImageUrl) + '" alt="Cover image for ' + escapeAttr(event.title || 'featured adventure') + '"></div>'
+      : '<div class="featured-event-image featured-event-image-fallback"><span>' + categoryIcon(event.type) + '</span></div>';
+
+    container.innerHTML =
+      '<div class="featured-badge">⭐ Featured Adventure</div>' +
+      '<div class="featured-event-layout">' +
+        image +
+        '<div class="featured-event-copy">' +
+          '<span class="eyebrow">' + escapeHtml(event.type || "Adventure") + '</span>' +
+          '<h2>' + escapeHtml(event.title || "Community Adventure") + '</h2>' +
+          '<p class="featured-event-date">' + escapeHtml(formatEventDate(event)) + '</p>' +
+          '<p>' + escapeHtml(event.description || "Join the community for the next adventure.") + '</p>' +
+          '<div class="featured-event-meta">' +
+            metaPill("📍", event.location || "Location in details") +
+            metaPill("💵", event.costLabel || "See details") +
+            metaPill("👥", event.availabilityLabel || "Registration open") +
+          '</div>' +
+          '<div class="featured-actions">' +
+            '<a class="button" href="' + escapeAttr(publicAppUrl(event.registrationUrl || event.detailsUrl || c.appUrl)) + '">Register Now →</a>' +
+            '<a class="button secondary" href="' + escapeAttr(cloudflareAdventureUrl(event)) + '">View Details</a>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    activateAdventureImageFallbacks(container);
+    activatePremiumPolish(container);
+  }
+
+  function renderUpcomingAdventures(events) {
+    var grid = document.getElementById("upcomingAdventureGrid");
+    if (!grid) return;
+
+    grid.classList.remove("is-loading", "has-1", "has-2", "has-3", "has-4-plus");
+
+    if (!events.length) {
+      grid.innerHTML =
+        '<div class="next-30-empty">' +
+          '<strong>No adventures are scheduled in the next 30 days.</strong>' +
+          '<span>Browse the adventure types below or check back soon.</span>' +
+        '</div>';
+      return;
+    }
+
+    grid.classList.add(events.length === 1 ? "has-1" : events.length === 2 ? "has-2" : events.length === 3 ? "has-3" : "has-4-plus");
+    grid.innerHTML = events.map(function (event) {
+      var detailsUrl = cloudflareAdventureUrl(event);
+      var imageUrl = normalizeLandingImageUrl(event.imageUrl);
+      var image = isSafeLandingImageUrl(imageUrl)
+        ? '<img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" loading="lazy" decoding="async" src="' + escapeAttr(imageUrl) + '" alt="">'
+        : '<span class="next-30-image-fallback" aria-hidden="true">' + categoryIcon(event.type) + '</span>';
+
+      return '<a class="next-30-card" href="' + escapeAttr(detailsUrl) + '" aria-label="View ' + escapeAttr(event.title || "community adventure") + ', ' + escapeAttr(formatEventDateOnly(event)) + '">' +
+        '<span class="next-30-image">' + image + '<span class="next-30-shade"></span></span>' +
+        '<span class="next-30-copy">' +
+          '<strong>' + escapeHtml(event.title || "Community Adventure") + '</strong>' +
+          '<span>' + escapeHtml(formatEventDateOnly(event)) + '</span>' +
+        '</span>' +
+      '</a>';
+    }).join("");
+    activateAdventureImageFallbacks(grid);
+    activatePremiumPolish(grid);
+  }
+
+  function filterEventsForNextThirtyDays(events) {
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var limit = new Date(today.getTime());
+    limit.setDate(limit.getDate() + 30);
+
+    return (events || []).filter(function (event) {
+      var start = parseDateKey(firstEventValue(event, ["startDate", "StartDate", "dateStart", "start_date"]));
+      var end = parseDateKey(firstEventValue(event, ["endDate", "EndDate", "dateEnd", "end_date"])) || start;
+      if (!start) return false;
+      return end >= today && start <= limit;
+    }).sort(function (a, b) {
+      var aDate = parseDateKey(firstEventValue(a, ["startDate", "StartDate", "dateStart", "start_date"]));
+      var bDate = parseDateKey(firstEventValue(b, ["startDate", "StartDate", "dateStart", "start_date"]));
+      return (aDate ? aDate.getTime() : 0) - (bDate ? bDate.getTime() : 0);
+    });
+  }
+
+  function formatEventDateOnly(event) {
+    event = event || {};
+    var startDateValue = firstEventValue(event, ["startDate", "StartDate", "dateStart", "start_date"]);
+    var endDateValue = firstEventValue(event, ["endDate", "EndDate", "dateEnd", "end_date"]);
+    var start = parseDateKey(startDateValue);
+    var end = parseDateKey(endDateValue);
+    if (!start) return "Date coming soon";
+
+    var sameDay = !end || startDateValue === endDateValue;
+    var full = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+    if (sameDay) return full.format(start);
+
+    var sameYear = start.getFullYear() === end.getFullYear();
+    var sameMonth = sameYear && start.getMonth() === end.getMonth();
+    var startFormatter = new Intl.DateTimeFormat("en-US", sameMonth
+      ? { weekday: "short", month: "short", day: "numeric" }
+      : { weekday: "short", month: "short", day: "numeric", year: sameYear ? undefined : "numeric" });
+    var endFormatter = new Intl.DateTimeFormat("en-US", { weekday: "short", month: sameMonth ? undefined : "short", day: "numeric", year: "numeric" });
+    return startFormatter.format(start) + " – " + endFormatter.format(end);
+  }
+
+  function activateAdventureImageFallbacks(root) {
+    if (!root) return;
+    Array.prototype.forEach.call(root.querySelectorAll('img[data-adventure-image]'), function (img) {
+      var showFallback = function () {
+        window.iwpAdventureImageFallback(img);
+      };
+      img.addEventListener('error', showFallback, { once: true });
+      if (img.complete && img.naturalWidth === 0) showFallback();
+    });
+  }
+
+  function renderLandingDataError() {
+    renderLandingCategories([]);
+    var grid = document.getElementById("upcomingAdventureGrid");
+
+    if (grid) {
+      grid.innerHTML =
+        '<div class="live-empty"><strong>Live schedule temporarily unavailable.</strong><span>Open Community Connections to see current adventures.</span></div>';
+    }
+  }
+
+  function formatEventDate(event) {
+    event = event || {};
+
+    var startDateValue = firstEventValue(event, ["startDate", "StartDate", "dateStart", "start_date"]);
+    var endDateValue = firstEventValue(event, ["endDate", "EndDate", "dateEnd", "end_date"]);
+    var start = parseDateKey(startDateValue);
+    var end = parseDateKey(endDateValue);
+    var formatter = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+    var startLabel = start ? formatter.format(start) : "Date coming soon";
+    var endLabel = end ? formatter.format(end) : "";
+    var sameDay = start && end && startDateValue === endDateValue;
+    var dateLabel = endLabel && !sameDay ? startLabel + " to " + endLabel : startLabel;
+    var startTime = firstEventValue(event, ["startTime", "StartTime", "timeStart", "start_time"]);
+    var endTime = firstEventValue(event, ["endTime", "EndTime", "timeEnd", "end_time"]);
+
+    if (startTime && endTime) return dateLabel + " · " + startTime + " - " + endTime;
+    return startTime ? dateLabel + " · " + startTime : dateLabel;
+  }
+
+  function firstEventValue(event, keys) {
+    for (var i = 0; i < keys.length; i += 1) {
+      var value = event[keys[i]];
+      if (value !== undefined && value !== null && String(value).trim()) {
+        return String(value).trim();
+      }
+    }
+    return "";
+  }
+
+  function parseDateKey(value) {
+    var match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return null;
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+
+  function categoryIcon(type) {
+    var value = String(type || "").toLowerCase();
+    if (value.indexOf("fish") !== -1) return "🎣";
+    if (value.indexOf("camp") !== -1 || value.indexOf("bonfire") !== -1) return "🏕️";
+    if (value.indexOf("tub") !== -1 || value.indexOf("kayak") !== -1) return "🌊";
+    if (value.indexOf("hunt") !== -1) return "🦌";
+    if (value.indexOf("bowling") !== -1) return "🎳";
+    if (value.indexOf("concert") !== -1) return "🎵";
+    if (value.indexOf("atv") !== -1 || value.indexOf("utv") !== -1) return "🏞️";
+    return "🤝";
+  }
+
+  function metaPill(icon, text) {
+    return '<span><b>' + icon + '</b>' + escapeHtml(text || "") + '</span>';
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function escapeAttr(value) {
+    return escapeHtml(value);
+  }
+
+
+  // V24 Sprint 9E premium polish: image fade-in and restrained button ripple.
+  function activatePremiumPolish(root) {
+    root = root || document;
+    Array.prototype.forEach.call(root.querySelectorAll('img'), function (img) {
+      if (img.dataset.iwpPolishBound === '1') return;
+      img.dataset.iwpPolishBound = '1';
+      var markLoaded = function () { img.classList.add('is-loaded'); };
+      img.addEventListener('load', markLoaded, { once: true });
+      if (img.complete && img.naturalWidth > 0) markLoaded();
+    });
+
+    Array.prototype.forEach.call(root.querySelectorAll('a.button, .lp9d-actions a, .featured-actions a, .lp9d-primary, .lp9d-secondary'), function (button) {
+      if (button.dataset.iwpRippleBound === '1') return;
+      button.dataset.iwpRippleBound = '1';
+      button.addEventListener('pointerdown', function (event) {
+        var rect = button.getBoundingClientRect();
+        var ripple = document.createElement('span');
+        ripple.className = 'iwp-ripple';
+        ripple.style.left = (event.clientX - rect.left) + 'px';
+        ripple.style.top = (event.clientY - rect.top) + 'px';
+        button.appendChild(ripple);
+        window.setTimeout(function () { ripple.remove(); }, 620);
+      });
+    });
+  }
+
+  function activateFastNavigation(root) {
+    root = root || document;
+
+    Array.prototype.forEach.call(
+  root.querySelectorAll('a[href*="script.google.com/macros/s/"]'),
+  function (link) {
+
+    var isOrganizerLink =
+      link.dataset.organizerLaunch === "true" ||
+      link.textContent.toLowerCase().indexOf("adventure builder") !== -1 ||
+      link.textContent.toLowerCase().indexOf("organizer") !== -1;
+
+    if (isOrganizerLink) {
+      link.href = c.appUrl;
+      link.dataset.organizerLaunch = "true";
+    } else {
+      link.href = publicAppUrl(link.href);
+    }
+
+    if (link.dataset.iwpFastNavBound === "1") return;
+    link.dataset.iwpFastNavBound = "1";
+
+    link.addEventListener("pointerenter", warmCommunityConnections, { once: true });
+    link.addEventListener("touchstart", warmCommunityConnections, {
+      once: true,
+      passive: true
+    });
+    link.addEventListener("click", showAppLaunchOverlay);
+  }
+);
+
+    // Story cards are intentionally not whole-card links. Only their visible CTA links navigate.
+  }
+
+  activatePremiumPolish(document);
+  activateFastNavigation(document);
+  activateAdventurePrefetch(document);
+  window.setTimeout(warmCommunityConnections, 900);
+  loadLandingData();
+
+  var revealElements = document.querySelectorAll(".reveal");
+  if ("IntersectionObserver" in window) {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    revealElements.forEach(function (element) {
+      if (!element.classList.contains("is-visible")) observer.observe(element);
+    });
+  } else {
+    revealElements.forEach(function (element) {
+      element.classList.add("is-visible");
+    });
+  }
+})();
