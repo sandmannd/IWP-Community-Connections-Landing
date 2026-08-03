@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Manage registrations for an IWP Community Connections adventure."><title>Adventure Registrations | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-registrations-m69.css?v=m6.9"><link rel="stylesheet" href="organizer-polish.css?v=m6.8"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Manage registrations for an IWP Community Connections adventure."><title>Adventure Registrations | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-registrations-m610.css?v=m6.10"><link rel="stylesheet" href="organizer-polish.css?v=m6.8"></head>
 <body class="organizer-page"><header class="cc-global-header" aria-label="IWP Community Connections navigation"><a class="cc-global-brand" href="/"><img src="assets/iwp-community-connections-header.png" alt="IWP Community Connections, You Are Not Alone"></a><nav class="cc-global-nav"><a href="/">Home</a><a class="is-active" href="/organizer.html">Adventure Builder</a></nav></header>
 <main class="organizer-main"><a class="organizer-back-link" href="/organizer-adventures.html">← Back to Manage Adventures</a>
 <section class="organizer-hero"><div><span class="organizer-eyebrow">Organizer Registration Manager</span><h1 id="registrationPageHeading">Adventure Registrations</h1><p>Search participants, manage check-in and payment, contact attendees, and export the event roster.</p></div></section>
@@ -8,8 +8,12 @@
 <div id="registrationWorkspace" hidden>
 <section class="organizer-panel"><div class="organizer-panel-heading"><div><span>Adventure</span><h2 id="registrationEventTitle">Adventure</h2><p id="registrationEventDetails" class="organizer-results-summary"></p></div><div class="organizer-card-actions"><button id="checkInModeButton" class="organizer-primary-link" type="button">Check-In Mode</button><a id="emailParticipantsLink" class="primary" href="#">Email Participants</a><button id="exportCsvButton" class="organizer-secondary-button" type="button">Export CSV</button><a id="editAdventureLink" class="secondary" href="#">Edit Adventure</a></div></div>
 <div id="checkInModeBanner" class="checkin-mode-banner" hidden>
-<div><span class="organizer-eyebrow">Live Check-In Mode</span><h3><span id="checkInLiveCount">0</span> checked in · <span id="checkInRemainingCount">0</span> remaining</h3><p>Unchecked participants are shown first. This list refreshes automatically.</p></div>
+<div><span class="organizer-eyebrow">Fast Event-Day Check-In</span><h3><span id="checkInLiveCount">0</span> checked in · <span id="checkInRemainingCount">0</span> remaining</h3><p>Checked-in parties disappear automatically. Select several parties to check them in together.</p></div>
+<div class="checkin-mode-actions">
+<button id="scanQrButton" class="organizer-primary-link" type="button">Scan QR Code</button>
+<label class="checkin-show-checked"><input id="showCheckedToggle" type="checkbox"> Show checked-in</label>
 <button id="exitCheckInModeButton" class="organizer-secondary-button" type="button">Exit Check-In Mode</button>
+</div>
 </div>
 <div class="organizer-registration-metrics">
 <div><strong id="registrationCount">0</strong><span>Registrations</span></div><div><strong id="peopleCount">0</strong><span>Total People</span></div><div><strong id="adultCount">0</strong><span>Adults</span></div><div><strong id="childCount">0</strong><span>Children</span></div><div><strong id="waitlistCount">0</strong><span>Waitlist</span></div><div><strong id="checkedInCount">0</strong><span>Checked In</span></div><div><strong id="paidCount">0</strong><span>Paid</span></div><div><strong id="needsPaymentCount">0</strong><span>Needs Payment</span></div>
@@ -73,4 +77,21 @@
 <p id="detailStatusMessage" class="organizer-results-summary" aria-live="polite"></p>
 </form>
 </dialog>
-<script src="config.js"></script><script src="organizer-registrations-m69.js?v=m6.9"></script><script src="organizer-polish.js?v=m6.8"></script></body></html>
+<dialog id="checkInQrDialog" class="checkin-qr-dialog">
+<form method="dialog" class="checkin-qr-shell">
+<div class="organizer-panel-heading"><div><span>Participant Check-In Code</span><h2 id="checkInQrName">Registration QR Code</h2></div><button class="dialog-close" value="cancel" aria-label="Close">×</button></div>
+<p>Participants can show this code to an organizer. Scanning it with a normal phone camera opens the secure check-in confirmation page.</p>
+<img id="checkInQrImage" alt="Registration check-in QR code" width="320" height="320">
+<a id="checkInQrLink" class="organizer-secondary-button" href="#" target="_blank" rel="noopener">Open Check-In Link</a>
+</form>
+</dialog>
+<dialog id="checkInScannerDialog" class="checkin-scanner-dialog">
+<div class="checkin-scanner-shell">
+<div class="organizer-panel-heading"><div><span>Camera Scanner</span><h2>Scan Participant QR Code</h2></div><button id="closeScannerButton" class="dialog-close" type="button" aria-label="Close">×</button></div>
+<video id="checkInScannerVideo" playsinline muted></video>
+<p id="checkInScannerStatus" class="organizer-results-summary">Point the camera at the participant's Community Connections QR code.</p>
+<div class="organizer-card-actions"><button id="stopScannerButton" class="organizer-secondary-button" type="button">Close Scanner</button></div>
+</div>
+</dialog>
+
+<script src="config.js"></script><script src="organizer-registrations-m610.js?v=m6.10"></script><script src="organizer-polish.js?v=m6.8"></script></body></html>

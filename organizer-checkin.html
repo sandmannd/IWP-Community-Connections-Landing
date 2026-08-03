@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Secure participant check-in for IWP Community Connections."><title>Participant Check-In | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-polish.css?v=m6.8"><link rel="stylesheet" href="organizer-checkin.css?v=m6.10"></head>
+<body class="organizer-page"><header class="cc-global-header"><a class="cc-global-brand" href="/"><img src="assets/iwp-community-connections-header.png" alt="IWP Community Connections, You Are Not Alone"></a></header>
+<main class="organizer-main checkin-confirm-main">
+<section id="qrCheckInLoading" class="organizer-state-card"><span class="organizer-spinner"></span><div><strong>Loading secure check-in</strong><p>Verifying the participant QR code and organizer session.</p></div></section>
+<section id="qrCheckInAccess" class="organizer-state-card organizer-access-card" hidden><div><strong>Organizer sign-in required</strong><p id="qrCheckInAccessMessage">Sign into the Organizer Command Center on this phone, then scan the QR code again.</p></div><a class="organizer-primary-link" href="/organizer.html">Open Command Center</a></section>
+<section id="qrCheckInWorkspace" class="organizer-panel checkin-confirm-card" hidden>
+<span class="organizer-eyebrow">Secure Participant Check-In</span>
+<h1 id="qrParticipantName">Participant</h1>
+<p id="qrAdventureName" class="checkin-confirm-event"></p>
+<div class="checkin-confirm-party"><strong id="qrPartyTotal">1 person</strong><span id="qrPartyDetails"></span></div>
+<div id="qrGuestNames" class="checkin-confirm-guests" hidden></div>
+<p id="qrCurrentStatus" class="organizer-count-badge"></p>
+<button id="qrCheckInButton" class="checkin-confirm-button" type="button">Check In Entire Party</button>
+<a id="qrBackToList" class="organizer-secondary-button" href="/organizer.html">Open Registration List</a>
+<p id="qrCheckInMessage" class="organizer-results-summary" aria-live="polite"></p>
+</section>
+</main><script src="config.js"></script><script src="organizer-checkin.js?v=m6.10"></script><script src="organizer-polish.js?v=m6.8"></script></body></html>
