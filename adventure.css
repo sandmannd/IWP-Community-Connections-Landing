@@ -5,3 +5,5 @@
 .adventure-action-card .adventure-secondary-button{background:#131d2e;color:#eef4ff;border-color:rgba(255,255,255,.16)}
 .adventure-action-card .adventure-secondary-button:hover,.adventure-action-card .adventure-secondary-button:focus-visible{background:#1a2940}
 .adventure-action-card .adventure-disabled-button{background:#253248;color:#aebbd0}
+
+.adventure-live-refresh{margin:0 0 12px;color:#9eb9df;font-size:.92rem;text-align:right}.adventure-live-refresh::before{content:'↻ ';color:#5cc8ff}
