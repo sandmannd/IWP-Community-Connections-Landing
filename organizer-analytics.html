@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Organizer analytics for IWP Community Connections."><title>Organizer Analytics | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-analytics.css?v=m6.7"></head>
+<body class="organizer-page"><header class="cc-global-header" aria-label="IWP Community Connections navigation"><a class="cc-global-brand" href="/"><img src="assets/iwp-community-connections-header.png" alt="IWP Community Connections, You Are Not Alone"></a><nav class="cc-global-nav"><a href="/">Home</a><a class="is-active" href="/organizer.html">Adventure Builder</a></nav></header>
+<main class="organizer-main"><a class="organizer-back-link" href="/organizer.html">← Back to Command Center</a>
+<section class="organizer-hero"><div><span class="organizer-eyebrow">Organizer Insights</span><h1>Community Connections Analytics</h1><p>Review registrations, attendance, repeat participation, event activity, and the adventure types people join most often.</p></div><div class="organizer-hero-actions"><button id="refreshAnalytics" class="organizer-secondary-button" type="button">Refresh Analytics</button></div></section>
+<section id="analyticsLoading" class="organizer-state-card"><span class="organizer-spinner"></span><div><strong>Loading organizer analytics</strong><p>Reviewing adventures and registration activity.</p></div></section>
+<section id="analyticsAccess" class="organizer-state-card organizer-access-card" hidden><div><strong>Organizer sign-in required</strong><p id="analyticsAccessMessage">Return to the Organizer Command Center and sign in.</p></div><a class="organizer-primary-link" href="/organizer.html">Open Command Center</a></section>
+<div id="analyticsWorkspace" hidden>
+<section class="analytics-stat-grid">
+<article><span>Total Adventures</span><strong id="statEvents">0</strong><small id="statEventBreakdown">0 upcoming · 0 completed</small></article>
+<article><span>Registrations</span><strong id="statRegistrations">0</strong><small id="statPeople">0 total people</small></article>
+<article><span>Attendance Rate</span><strong id="statAttendance">0%</strong><small>Completed adventures</small></article>
+<article><span>Repeat Participants</span><strong id="statRepeat">0</strong><small>Joined more than one adventure</small></article>
+<article><span>Waitlisted</span><strong id="statWaitlist">0</strong><small>Current waitlist registrations</small></article>
+<article><span>Registration Cancellations</span><strong id="statCancellationRate">0%</strong><small id="statCancelled">0 cancelled registrations</small></article>
+</section>
+<section class="analytics-grid">
+<article class="organizer-panel"><div class="organizer-panel-heading"><div><span>Last 12 Months</span><h2>Registration Activity</h2></div></div><div id="monthlyChart" class="analytics-bar-chart"></div></article>
+<article class="organizer-panel"><div class="organizer-panel-heading"><div><span>Participation</span><h2>Most Popular Adventure Types</h2></div></div><div id="categoryChart" class="analytics-category-list"></div></article>
+</section>
+<section class="organizer-panel analytics-summary-panel"><div><span class="organizer-eyebrow">Snapshot</span><h2>Current Organizer Picture</h2><p id="analyticsSummary">Analytics are loading.</p></div><span id="analyticsUpdated" class="organizer-updated"></span></section>
+</div></main><script src="config.js"></script><script src="organizer-analytics.js?v=m6.7"></script></body></html>
