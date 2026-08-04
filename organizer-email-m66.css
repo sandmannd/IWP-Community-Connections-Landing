@@ -1,0 +1,13 @@
+.organizer-email-panel{max-width:1100px;margin:0 auto}.organizer-email-grid{display:grid;grid-template-columns:minmax(220px,.7fr) minmax(300px,1.3fr);gap:20px;margin:24px 0}.organizer-email-grid label,.organizer-email-message-label{display:grid;gap:10px;font-weight:800}.organizer-email-grid input,.organizer-email-grid select,.organizer-email-message-label textarea{width:100%;box-sizing:border-box;background:#17243a;color:#fff;border:1px solid #334866;border-radius:18px;padding:16px 18px;font:inherit}.organizer-email-message-label textarea{resize:vertical;line-height:1.55}.organizer-email-actions{justify-content:flex-start;margin-top:20px}.organizer-email-actions button{border:0;cursor:pointer}.organizer-email-history{margin-top:32px;padding-top:24px;border-top:1px solid #334866}.organizer-email-history-item{padding:14px 0;border-bottom:1px solid #273b58}.organizer-email-history-item p{margin:5px 0}.organizer-email-history-item small{color:#91b8ed}@media(max-width:760px){.organizer-email-grid{grid-template-columns:1fr}.organizer-email-actions{align-items:stretch}.organizer-email-actions>*{text-align:center}}
+
+.organizer-email-template-tools{display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,1fr);gap:16px;background:#17243a;border:1px solid #30425d;border-radius:18px;padding:18px;margin-bottom:18px}
+.organizer-email-template-tools label{display:grid;gap:7px;color:#b9cbea}
+.organizer-template-actions{grid-column:1/-1;justify-content:flex-start}
+.organizer-template-help{grid-column:1/-1;margin:0;color:#9eb9df}
+.organizer-template-help code{display:inline-block;background:#101c31;border:1px solid #30425d;border-radius:7px;padding:3px 7px;margin:2px;color:#dceaff}
+.organizer-danger-button.small{padding:10px 15px}
+.organizer-email-preview-dialog{width:min(760px,calc(100% - 28px));max-height:88vh;border:1px solid #3d5270;border-radius:22px;background:#101c31;color:#fff;padding:0}
+.organizer-email-preview-dialog::backdrop{background:rgba(2,8,18,.78)}
+.organizer-email-preview-shell{padding:24px}
+.organizer-email-preview-body{white-space:pre-wrap;background:#fff;color:#17243a;border-radius:16px;padding:20px;min-height:260px;max-height:55vh;overflow:auto;font:inherit;line-height:1.55}
+@media(max-width:720px){.organizer-email-template-tools{grid-template-columns:1fr}.organizer-template-actions,.organizer-template-help{grid-column:1}.organizer-template-actions>*{width:100%;text-align:center}}
