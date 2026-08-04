@@ -1,10 +1,38 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Email registered participants for an IWP Community Connections adventure."><title>Email Participants | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-email.css"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Email registered participants for an IWP Community Connections adventure."><title>Email Participants | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-email-m66.css?v=m6.6"><link rel="stylesheet" href="organizer-polish.css?v=m6.8"></head>
 <body class="organizer-page"><header class="cc-global-header" aria-label="IWP Community Connections navigation"><a class="cc-global-brand" href="/"><img src="assets/iwp-community-connections-header.png" alt="IWP Community Connections, You Are Not Alone"></a><nav class="cc-global-nav"><a href="/">Home</a><a class="is-active" href="/organizer.html">Adventure Builder</a></nav></header>
 <main class="organizer-main"><a class="organizer-back-link" href="/organizer.html">← Back to Command Center</a><section class="organizer-hero"><div><span class="organizer-eyebrow">Organizer Communication</span><h1 id="emailPageHeading">Send Event Reminder</h1><p>Review the message, choose the audience, and send it when you are ready.</p></div></section>
 <section id="emailLoading" class="organizer-state-card"><span class="organizer-spinner"></span><div><strong>Loading email details</strong><p>Retrieving the event and participant counts.</p></div></section>
 <section id="emailAccess" class="organizer-state-card organizer-access-card" hidden><div><strong>Organizer sign-in required</strong><p id="emailAccessMessage">Return to the Organizer Command Center and sign in.</p></div><a class="organizer-primary-link" href="/organizer.html">Open Command Center</a></section>
 <section id="emailWorkspace" class="organizer-panel organizer-email-panel" hidden><div class="organizer-panel-heading"><div><span id="emailTaskLabel">Organizer Reminder</span><h2 id="emailEventTitle">Adventure</h2></div><span id="emailRecipientBadge" class="organizer-count-badge">0 recipients</span></div>
+<div class="organizer-email-template-tools">
+<label>Template
+<select id="emailTemplate" class="organizer-select">
+<option value="">Current draft</option>
+<option value="three-day">Three-Day Reminder</option>
+<option value="day-before">Day-Before Reminder</option>
+<option value="weather">Weather Update</option>
+<option value="location">Location or Meetup Change</option>
+<option value="cancellation">Cancellation Notice</option>
+<option value="thank-you">Thank You</option>
+</select>
+</label>
+<label>Saved template name<input id="templateName" class="organizer-search" type="text" maxlength="80" placeholder="Optional custom template name"></label>
+<div class="organizer-card-actions organizer-template-actions">
+<button id="applyTemplateButton" class="organizer-secondary-button" type="button">Apply Template</button>
+<button id="saveTemplateButton" class="organizer-secondary-button" type="button">Save Current</button>
+<button id="deleteTemplateButton" class="organizer-danger-button small" type="button" disabled>Delete Saved</button>
+<button id="previewEmailButton" class="organizer-secondary-button" type="button">Preview</button>
+</div>
+<p class="organizer-template-help">Available placeholders: <code>{FirstName}</code> <code>{AdventureName}</code> <code>{StartDate}</code> <code>{StartTime}</code> <code>{Location}</code> <code>{Address}</code> <code>{OrganizerName}</code></p>
+</div>
 <div class="organizer-email-grid"><label>Audience<select id="emailAudience" class="organizer-select"><option value="registered">Registered participants</option><option value="waitlist">Waitlist only</option><option value="all">Registered and waitlist</option></select></label><label>Subject<input id="emailSubject" class="organizer-search" type="text" maxlength="180"></label></div>
 <label class="organizer-email-message-label">Message<textarea id="emailBody" rows="16"></textarea></label><p id="emailStatus" class="organizer-results-summary" aria-live="polite"></p><div class="organizer-card-actions organizer-email-actions"><button id="sendEmailButton" class="organizer-primary-link" type="button">Send Reminder</button><a class="organizer-secondary-button" href="/organizer.html">Cancel</a></div>
-<div class="organizer-email-history"><h3>Recent emails for this event</h3><div id="emailHistory"><div class="organizer-empty">No email history.</div></div></div></section></main><script src="config.js"></script><script src="organizer-email.js?v=m5.3.3"></script></body></html>
+<div class="organizer-email-history"><h3>Recent emails for this event</h3><div id="emailHistory"><div class="organizer-empty">No email history.</div></div></div></section></main><dialog id="emailPreviewDialog" class="organizer-email-preview-dialog">
+<form method="dialog" class="organizer-email-preview-shell">
+<div class="organizer-panel-heading"><div><span>Recipient Preview</span><h2 id="previewSubject">Email Preview</h2></div><button class="dialog-close" value="cancel" aria-label="Close">×</button></div>
+<p class="organizer-results-summary">Placeholders are shown using a sample participant before sending.</p>
+<pre id="previewBody" class="organizer-email-preview-body"></pre>
+<div class="organizer-card-actions"><button class="organizer-primary-link" value="cancel">Close Preview</button></div>
+</form>
+</dialog><script src="config.js"></script><script src="organizer-email-m66.js?v=m6.6"></script><script src="organizer-polish.js?v=m6.8"></script></body></html>
