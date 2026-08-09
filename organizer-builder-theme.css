@@ -1,0 +1,105 @@
+/* Organizer Theme Consistency Sprint — Adventure Builder and AI Help */
+:root{
+  --builder-bg:#08110e;
+  --builder-panel:#0b1512;
+  --builder-panel-soft:#101e19;
+  --builder-panel-deep:#0d1915;
+  --builder-border:rgba(255,255,255,.14);
+  --builder-border-strong:#66756d;
+  --builder-text:#f4f7f5;
+  --builder-muted:#b6c1ba;
+  --builder-green:#39b955;
+  --builder-green-dark:#126f28;
+}
+body.organizer-page.builder-themed-page{
+  background:linear-gradient(180deg,#0a1712 0,#08110e 38%,#06100c 100%);
+  color:var(--builder-text);
+}
+body.organizer-page.builder-themed-page .organizer-main{padding-bottom:78px}
+body.organizer-page.builder-themed-page .organizer-hero,
+body.organizer-page.builder-themed-page .organizer-state-card{
+  background:linear-gradient(180deg,var(--builder-panel),var(--builder-bg));
+  border-color:var(--builder-border);
+  box-shadow:0 22px 55px rgba(0,0,0,.42);
+}
+body.organizer-page.builder-themed-page .organizer-hero p,
+body.organizer-page.builder-themed-page .organizer-state-card p{color:var(--builder-muted)}
+body.organizer-page.builder-themed-page .organizer-eyebrow,
+body.organizer-page.builder-themed-page .organizer-back-link{color:#8be39d}
+body.organizer-page.builder-themed-page .organizer-secondary-button{
+  border-color:rgba(255,255,255,.55);
+  background:transparent;
+}
+body.organizer-page.builder-themed-page .organizer-secondary-button:hover,
+body.organizer-page.builder-themed-page .organizer-secondary-button:focus-visible{
+  border-color:var(--builder-green);
+  background:rgba(31,157,58,.13);
+}
+.builder-card,.builder-savebar,.builder-ai-dialog,.builder-danger-zone{
+  color:var(--builder-text);
+  background:linear-gradient(180deg,var(--builder-panel),var(--builder-bg));
+  border-color:var(--builder-border);
+  box-shadow:0 22px 55px rgba(0,0,0,.42);
+}
+.builder-card-heading>span{
+  background:linear-gradient(135deg,var(--builder-green),var(--builder-green-dark));
+  box-shadow:0 8px 22px rgba(31,157,58,.25);
+}
+.builder-card h2,.builder-savebar strong,.builder-ai-dialog h2,
+.builder-danger-heading h2,.builder-danger-action strong{color:#fff}
+.builder-card p,.builder-card small,.builder-savebar p,.builder-ai-dialog p,
+.builder-danger-heading p,.builder-danger-action p,.builder-lifecycle-dialog p,
+.builder-validation-dialog p,.builder-conditional-heading p,.builder-helper{color:var(--builder-muted)}
+.builder-card label,.builder-ai-select-all label,.builder-ai-options label,
+.builder-delete-confirm-label{color:#f3f6f4}
+.builder-card input,.builder-card select,.builder-card textarea,
+.builder-lifecycle-dialog input{
+  border-color:var(--builder-border-strong);
+  background:#fff;
+  color:#111827;
+  border-radius:10px;
+}
+.builder-card input::placeholder,.builder-card textarea::placeholder{color:#6b7280}
+.builder-card select option{background:#fff;color:#111827}
+.builder-card input:focus,.builder-card select:focus,.builder-card textarea:focus{
+  outline:3px solid rgba(57,185,85,.32);
+  border-color:var(--builder-green);
+}
+.builder-checks label,.builder-image-preview,.builder-ai-select-all,
+.builder-conditional-panel,.builder-danger-action{
+  border-color:rgba(255,255,255,.16);
+  background:var(--builder-panel-soft);
+  color:var(--builder-text);
+}
+.builder-checks label:hover,.builder-ai-select-all:hover,.builder-danger-action:hover{
+  border-color:rgba(57,185,85,.55);
+}
+.builder-checks input,.builder-ai-options input[type="checkbox"],
+.builder-ai-select-all input[type="checkbox"]{accent-color:var(--builder-green)}
+.builder-card-heading .builder-ai-button,.builder-savebar .primary,.builder-ai-generate{
+  background:linear-gradient(135deg,var(--builder-green),var(--builder-green-dark));
+  color:#fff;
+  box-shadow:0 10px 30px rgba(31,157,58,.2);
+}
+.builder-card-heading .builder-ai-button:hover,.builder-card-heading .builder-ai-button:focus-visible,
+.builder-savebar .primary:hover,.builder-savebar .primary:focus-visible,
+.builder-ai-generate:hover,.builder-ai-generate:focus-visible{filter:brightness(1.08)}
+.builder-text-button,.builder-cancel-button,.builder-ai-options button{
+  border-color:rgba(255,255,255,.55);
+  background:transparent;
+  color:#fff;
+}
+.builder-text-button:hover,.builder-text-button:focus-visible,
+.builder-cancel-button:hover,.builder-cancel-button:focus-visible,
+.builder-ai-options button:hover,.builder-ai-options button:focus-visible{
+  border-color:var(--builder-green);
+  background:rgba(31,157,58,.13);
+}
+.builder-ai-dialog::backdrop{background:rgba(2,9,6,.84)}
+.builder-dialog-close:hover,.builder-dialog-close:focus-visible{color:#8be39d}
+.builder-danger-zone{border-color:rgba(245,158,11,.32)}
+.builder-danger-delete{border-color:rgba(239,68,68,.38);background:#241717}
+@media(max-width:720px){
+  body.organizer-page.builder-themed-page .organizer-main{padding-bottom:52px}
+  .builder-card,.builder-savebar,.builder-ai-dialog,.builder-danger-zone{border-radius:18px}
+}
