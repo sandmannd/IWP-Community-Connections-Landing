@@ -1,0 +1,16 @@
+
+/* M6.17 public/member experience polish */
+.public-status-note{margin:0 0 16px;padding:12px 14px;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:#101e19;color:#dce7e1}
+.registration-success .registration-next-steps{max-width:660px;margin:20px auto;text-align:left;padding:18px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:#101e19}
+.registration-success .registration-next-steps strong{display:block;margin-bottom:6px;color:#fff}
+.registration-success .registration-next-steps p{margin:0;color:#bdc7c1}
+@media(max-width:760px){
+ .adventure-page-body .cc-global-nav,.registration-page~.cc-global-nav{display:none}
+ .cc-global-header .cc-global-nav{display:none;width:100%;flex-direction:column;align-items:stretch;gap:0;padding:8px 0 14px}
+ .cc-global-header .cc-global-nav.is-open{display:flex}
+ .cc-global-header .cc-global-nav a{display:block;padding:12px 16px}
+ .cc-global-header{flex-wrap:wrap}
+ .cc-global-header .mobile-menu-button{display:inline-flex}
+ .adventure-action-card .adventure-primary-button,.adventure-action-card .adventure-secondary-button,.registration-success .submit-row a{min-height:52px}
+ .registration-success .submit-row{display:grid;grid-template-columns:1fr;width:100%}
+}

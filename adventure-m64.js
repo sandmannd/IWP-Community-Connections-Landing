@@ -91,7 +91,7 @@
       : '<div class="adventure-image-fallback" aria-hidden="true">' + icon(event.EventType) + '</div>';
     var max = Number(event.MaxParticipants || 0);
     var remaining = data.spotsRemaining === null || data.spotsRemaining === undefined ? null : Number(data.spotsRemaining);
-    var availability = max <= 0 ? 'Registration open' : remaining > 0 ? remaining + ' spot' + (remaining === 1 ? '' : 's') + ' remaining' : bool(event.WaitlistEnabled) ? 'Full · Waitlist available' : 'Adventure full';
+    var availability = max <= 0 ? 'Registration open' : remaining > 0 ? remaining + ' spot' + (remaining === 1 ? '' : 's') + ' remaining' : bool(event.WaitlistEnabled) ? 'Full · Waitlist available' : 'Adventure full'; var registrationRequired=bool(event.RegistrationRequired);
     var registerLabel = max > 0 && remaining <= 0 && bool(event.WaitlistEnabled) ? 'Join Waitlist' : 'Register Now';
     var canRegister = String(event.Status || '') === 'Published' && bool(event.RegistrationRequired) && !(max > 0 && remaining <= 0 && !bool(event.WaitlistEnabled));
     var maps = event.Address ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(event.Address) : '';
@@ -125,7 +125,7 @@
             '<p class="adventure-availability">' + escapeHtml(availability) + '</p>' +
             (event.Address ? '<address>' + escapeHtml(event.Address) + '</address>' : '') +
             (maps ? '<a class="adventure-secondary-button" target="_blank" rel="noopener" href="' + escapeAttr(maps) + '">Get Directions</a>' : '') +
-            (canRegister ? '<a class="adventure-primary-button" href="' + escapeAttr('/register.html?id=' + encodeURIComponent(event.EventId || '')) + '">' + registerLabel + '</a>' : '<span class="adventure-disabled-button">Registration unavailable</span>') +
+            (canRegister ? '<a class="adventure-primary-button" href="' + escapeAttr('/register.html?id=' + encodeURIComponent(event.EventId || '')) + '">' + registerLabel + '</a>' : (!registrationRequired ? '<div class="public-status-note">No registration is required for this adventure.</div>' : '<span class="adventure-disabled-button">Registration unavailable</span>')) +
             '<button id="shareAdventure" class="adventure-secondary-button" type="button">Copy Adventure Link</button>' +
           '</aside>' +
         '</div>' +

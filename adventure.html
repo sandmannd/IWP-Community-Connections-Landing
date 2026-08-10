@@ -7,18 +7,16 @@
   <title>Adventure Details | IWP Community Connections</title>
   <meta name="description" content="View adventure details and registration information for IWP Community Connections.">
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="adventure.css">
+  <link rel="stylesheet" href="adventure.css"><link rel="stylesheet" href="public-polish-m617.css?v=m6.17">
 </head>
 <body class="adventure-page-body">
   <header class="cc-global-header" aria-label="IWP Community Connections navigation">
-    <a class="cc-global-brand" href="/" aria-label="IWP Community Connections home">
-      <img src="assets/iwp-community-connections-header.png" alt="IWP Community Connections, You Are Not Alone">
-    </a>
-    <nav class="cc-global-nav" aria-label="Main navigation">
-      <a href="/">Home</a>
-      <a href="/organizer.html">Adventure Builder</a>
-    </nav>
-  </header>
+  <a class="cc-global-brand" href="/" aria-label="IWP Community Connections home"><img src="assets/iwp-community-connections-header.png" alt="IWP Community Connections, You Are Not Alone"></a>
+  <button class="mobile-menu-button cc-menu-button" type="button" aria-expanded="false" aria-controls="mainNavigation">Menu</button>
+  <nav class="cc-global-nav" id="mainNavigation" aria-label="Main navigation">
+    <a href="/">Home</a><a href="/#next-30-days">Coming Adventures</a><a href="/#adventure-categories">Categories</a><a href="/organizer.html">Organizer</a>
+  </nav>
+</header>
 
   <main id="adventureRoot" class="adventure-shell" aria-live="polite">
     <section class="adventure-loading" aria-busy="true">
@@ -33,6 +31,6 @@
   </footer>
 
   <script src="config.js"></script>
-  <script src="adventure-m64.js?v=m6.4"></script>
+  <script src="public-polish-m617.js?v=m6.17"></script><script src="adventure-m64.js?v=m6.17"></script>
 </body>
 </html>
