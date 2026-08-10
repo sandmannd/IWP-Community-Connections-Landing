@@ -1,9 +1,13 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Manage registrations for an IWP Community Connections adventure."><title>Adventure Registrations | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-registrations-m610.css?v=m6.10"><link rel="stylesheet" href="organizer-polish.css?v=m6.15"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Manage registrations for an IWP Community Connections adventure."><title>Adventure Registrations | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-registrations-m610.css?v=m6.16"><link rel="stylesheet" href="organizer-polish.css?v=m6.15"></head>
 <body class="organizer-page"><header class="cc-global-header" aria-label="IWP Community Connections navigation"><a class="cc-global-brand" href="/" aria-label="IWP Community Connections home"><img src="assets/iwp-community-connections-header.png" alt="IWP Community Connections, You Are Not Alone"></a><button class="mobile-menu-button cc-menu-button" type="button" aria-expanded="false" aria-controls="mainNavigation">Menu</button><nav class="cc-global-nav" id="mainNavigation" aria-label="Organizer navigation"><a href="/">Home</a><a href="/organizer.html">Command Center</a><a class="is-active" href="/organizer-adventures.html">Manage Adventures</a><a href="/organizer-analytics.html">Analytics</a></nav></header>
 <main class="organizer-main"><a class="organizer-back-link" href="/organizer-adventures.html">← Back to Manage Adventures</a>
 <section class="organizer-hero"><div><span class="organizer-eyebrow">Organizer Registration Manager</span><h1 id="registrationPageHeading">Adventure Registrations</h1><p>Search participants, manage check-in and payment, contact attendees, and export the event roster.</p></div></section>
 <section id="registrationLoading" class="organizer-state-card"><span class="organizer-spinner"></span><div><strong>Loading registrations</strong><p>Retrieving the adventure and participant list.</p></div></section>
+<section id="registrationNetworkStatus" class="registration-network-status" hidden aria-live="polite">
+<strong id="registrationNetworkTitle">Connection issue</strong>
+<span id="registrationNetworkMessage">Community Connections cannot reach the network right now.</span>
+</section>
 <section id="registrationAccess" class="organizer-state-card organizer-access-card" hidden><div><strong>Organizer sign-in required</strong><p id="registrationAccessMessage">Return to the Organizer Command Center and sign in.</p></div><a class="organizer-primary-link" href="/organizer.html">Open Command Center</a></section>
 <div id="registrationWorkspace" hidden>
 <section class="organizer-panel"><div class="organizer-panel-heading"><div><span>Adventure</span><h2 id="registrationEventTitle">Adventure</h2><p id="registrationEventDetails" class="organizer-results-summary"></p></div><div class="organizer-card-actions"><button id="checkInModeButton" class="organizer-primary-link" type="button">Check-In Mode</button><a id="emailParticipantsLink" class="primary" href="#">Email Participants</a><button id="exportCsvButton" class="organizer-secondary-button" type="button">Export CSV</button><a id="viewAdventureLink" class="secondary" href="#">View Adventure</a><a id="editAdventureLink" class="secondary" href="#">Edit Adventure</a></div></div>
@@ -20,7 +24,7 @@
 </div>
 <div id="registrationStickyTools" class="registration-sticky-tools">
 <div class="organizer-adventure-controls">
-<input id="registrationSearch" class="organizer-search" type="search" placeholder="Search name, email, phone, guest, or status">
+<input id="registrationSearch" class="organizer-search" type="search" placeholder="Search name, email, phone, or guest"><p id="registrationSearchHelp" class="registration-search-help">In Check-In Mode, narrow this to one party and press Enter to check them in.</p>
 <label class="registration-sort-label">Sort
 <select id="registrationSort">
 <option value="name-asc">Name A–Z</option>
@@ -106,4 +110,4 @@
 <label class="organizer-delete-confirm-label">Type <strong>DELETE</strong> to continue<input id="registrationDeleteConfirmation" type="text" autocomplete="off" spellcheck="false"></label>
 <div class="organizer-dialog-actions"><button value="cancel" class="organizer-secondary-button">Keep Adventure</button><button id="confirmRegistrationDeleteAdventure" type="button" class="organizer-danger-button" disabled>Delete Permanently</button></div>
 </form></dialog>
-<script src="config.js"></script><script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script><script src="organizer-registrations-m610.js?v=m6.15"></script><script src="organizer-polish.js?v=m6.15"></script></body></html>
+<script src="config.js"></script><script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script><script src="organizer-registrations-m610.js?v=m6.16"></script><script src="organizer-polish.js?v=m6.15"></script></body></html>

@@ -40,3 +40,52 @@ body.checkin-mode .organizer-registration-card.checkin-card h3{font-size:1.35rem
 .checkin-qr-shell img{display:block;margin:18px auto;background:#fff;border-radius:16px;padding:12px;max-width:100%;height:auto}
 .checkin-scanner-shell video{display:block;width:100%;max-height:58vh;background:#000;border-radius:18px;margin:16px 0;object-fit:cover}
 @media(max-width:760px){.checkin-mode-actions{width:100%;align-items:stretch;flex-direction:column}.checkin-mode-actions>*{width:100%;box-sizing:border-box;justify-content:center}body.checkin-mode .organizer-registration-card.checkin-card{grid-template-columns:auto 1fr}body.checkin-mode .organizer-registration-card.checkin-card .organizer-registration-contact{grid-column:2}}
+
+/* M6.16 event-day live check-in refinements */
+.registration-network-status{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:14px 0;
+  padding:12px 15px;
+  border:1px solid #86652f;
+  border-radius:14px;
+  background:#332814;
+  color:#fff1c2;
+}
+.registration-network-status[hidden]{display:none}
+.registration-network-status.offline,
+.registration-network-status.error{border-color:#a94450;background:#3a1d24;color:#ffd2d7}
+.registration-network-status.online{border-color:#3c9d72;background:#17352b;color:#c8f7df}
+.registration-network-status strong{font-weight:800}
+.registration-search-help{margin:6px 0 0;color:#9eb9df;font-size:.9rem}
+.registration-search-help[hidden]{display:none}
+.registration-name-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.registration-name-row h3{margin:0}
+.checkin-status-mark{
+  display:inline-flex;
+  align-items:center;
+  border:1px solid #3c9d72;
+  border-radius:999px;
+  padding:5px 9px;
+  color:#a8f1cb;
+  background:#18352d;
+  font-size:.82rem;
+  font-weight:800;
+}
+.organizer-registration-card.is-checked-in{
+  border-color:#3c9d72;
+  background:#132d2a;
+}
+.organizer-registration-card.is-checked-in .registration-action-row .secondary{
+  border-color:#658171;
+  background:#17243a;
+}
+body.checkin-mode .organizer-registration-card.is-checked-in{
+  opacity:.86;
+}
+@media(max-width:620px){
+  .registration-network-status{align-items:flex-start;flex-direction:column}
+  .registration-name-row{align-items:flex-start;flex-direction:column;gap:6px}
+}
