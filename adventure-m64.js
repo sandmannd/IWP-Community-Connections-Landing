@@ -124,9 +124,9 @@
             '<h2>Adventure Information</h2>' +
             '<p class="adventure-availability">' + escapeHtml(availability) + '</p>' +
             (event.Address ? '<address>' + escapeHtml(event.Address) + '</address>' : '') +
-            (maps ? '<a class="adventure-secondary-button" target="_blank" rel="noopener" href="' + escapeAttr(maps) + '">Get Directions</a>' : '') +
-            (canRegister ? '<a class="adventure-primary-button" href="' + escapeAttr('/register.html?id=' + encodeURIComponent(event.EventId || '')) + '">' + registerLabel + '</a>' : (!registrationRequired ? '<div class="public-status-note">No registration is required for this adventure.</div>' : '<span class="adventure-disabled-button">Registration unavailable</span>')) +
-            '<button id="shareAdventure" class="adventure-secondary-button" type="button">Copy Adventure Link</button>' +
+            (maps ? '<a class="adventure-secondary-button" target="_blank" rel="noopener" href="' + escapeAttr(maps) + '">Open in Maps</a>' : '') +
+            (canRegister ? '<a class="adventure-primary-button" href="' + escapeAttr('/register.html?id=' + encodeURIComponent(event.EventId || '')) + '">' + registerLabel + '</a><p class="adventure-registration-help">Registration takes just a minute. You’ll receive a confirmation email with event details and your personal event-day QR code.</p>' : (!registrationRequired ? '<div class="public-status-note">No registration is required for this adventure. Just review the details and show up.</div>' : '<div class="public-status-note is-closed">Registration is not available for this adventure right now.</div>')) +
+            '<button id="shareAdventure" class="adventure-secondary-button" type="button">Share Adventure</button>' +
           '</aside>' +
         '</div>' +
       '</article>';

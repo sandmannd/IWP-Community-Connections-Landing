@@ -7,3 +7,26 @@
 .adventure-action-card .adventure-disabled-button{background:#253248;color:#aebbd0}
 
 .adventure-live-refresh{margin:0 0 12px;color:#9eb9df;font-size:.92rem;text-align:right}.adventure-live-refresh::before{content:'↻ ';color:#5cc8ff}
+
+/* M6.19 public registration clarity */
+.adventure-registration-help{
+  margin:10px 2px 0;
+  color:#526174;
+  font-size:.9rem;
+  line-height:1.45;
+}
+.public-status-note.is-closed{
+  border-color:#b78a3c;
+  background:#fff8e8;
+  color:#6b4b12;
+}
+@media(max-width:560px){
+  .adventure-action-card{
+    padding:20px 18px;
+  }
+  .adventure-primary-button,
+  .adventure-secondary-button,
+  .adventure-disabled-button{
+    min-height:52px;
+  }
+}
