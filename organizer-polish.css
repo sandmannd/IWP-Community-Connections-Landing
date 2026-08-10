@@ -23,3 +23,68 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   .organizer-page .organizer-hero-actions>a,
   .organizer-page .organizer-hero-actions>button{flex:1 1 180px}
 }
+
+/* M6.14 final organizer usability pass */
+.organizer-lifecycle-dialog{
+  width:min(560px,calc(100% - 28px));
+  border:1px solid var(--cc-border,#d6ddd9);
+  border-radius:18px;
+  padding:0;
+  box-shadow:0 24px 70px rgba(0,0,0,.35);
+}
+.organizer-lifecycle-dialog::backdrop{background:rgba(0,0,0,.62)}
+.organizer-lifecycle-shell{display:grid;gap:20px;padding:24px}
+.organizer-lifecycle-shell h2{margin:.25rem 0 .5rem}
+.organizer-lifecycle-shell p{margin:0}
+.organizer-dialog-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.organizer-warning-button{border:0;border-radius:10px;padding:.72rem 1rem;background:#9a6500;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+.organizer-delete-confirm-label{display:grid;gap:8px;font-weight:700}
+.organizer-delete-confirm-label input{width:100%;box-sizing:border-box;padding:.8rem .9rem;border:1px solid #9aa7a0;border-radius:10px;font:inherit}
+@media(max-width:560px){
+  .organizer-dialog-actions{flex-direction:column-reverse}
+  .organizer-dialog-actions>button{width:100%}
+}
+
+/* M6.15 mobile event-day polish */
+@media(max-width:720px){
+  .organizer-page .organizer-hero-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:12px;
+    width:100%;
+  }
+  .organizer-page .organizer-hero-actions>a,
+  .organizer-page .organizer-hero-actions>button{
+    width:100%;
+    min-height:52px;
+    box-sizing:border-box;
+    justify-content:center;
+    margin:0;
+  }
+  .organizer-page .organizer-adventure-card .organizer-card-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+    width:100%;
+    min-width:0;
+  }
+  .organizer-page .organizer-adventure-card .organizer-card-actions>a,
+  .organizer-page .organizer-adventure-card .organizer-card-actions>button{
+    width:100%;
+    min-height:48px;
+    box-sizing:border-box;
+    justify-content:center;
+  }
+}
+@media(max-width:560px){
+  .organizer-page .registration-action-row{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+  .organizer-page .registration-action-row>button,
+  .organizer-page .registration-action-row>.inline-payment-label{
+    width:100%;
+    box-sizing:border-box;
+  }
+}

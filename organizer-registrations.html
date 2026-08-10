@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Manage registrations for an IWP Community Connections adventure."><title>Adventure Registrations | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-registrations-m610.css?v=m6.10"><link rel="stylesheet" href="organizer-polish.css?v=m6.8"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Manage registrations for an IWP Community Connections adventure."><title>Adventure Registrations | IWP Community Connections</title><link rel="icon" href="assets/favicon.ico" sizes="any"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="organizer.css"><link rel="stylesheet" href="organizer-registrations-m610.css?v=m6.10"><link rel="stylesheet" href="organizer-polish.css?v=m6.15"></head>
 <body class="organizer-page"><header class="cc-global-header" aria-label="IWP Community Connections navigation"><a class="cc-global-brand" href="/" aria-label="IWP Community Connections home"><img src="assets/iwp-community-connections-header.png" alt="IWP Community Connections, You Are Not Alone"></a><button class="mobile-menu-button cc-menu-button" type="button" aria-expanded="false" aria-controls="mainNavigation">Menu</button><nav class="cc-global-nav" id="mainNavigation" aria-label="Organizer navigation"><a href="/">Home</a><a href="/organizer.html">Command Center</a><a class="is-active" href="/organizer-adventures.html">Manage Adventures</a><a href="/organizer-analytics.html">Analytics</a></nav></header>
 <main class="organizer-main"><a class="organizer-back-link" href="/organizer-adventures.html">← Back to Manage Adventures</a>
 <section class="organizer-hero"><div><span class="organizer-eyebrow">Organizer Registration Manager</span><h1 id="registrationPageHeading">Adventure Registrations</h1><p>Search participants, manage check-in and payment, contact attendees, and export the event roster.</p></div></section>
@@ -8,9 +8,9 @@
 <div id="registrationWorkspace" hidden>
 <section class="organizer-panel"><div class="organizer-panel-heading"><div><span>Adventure</span><h2 id="registrationEventTitle">Adventure</h2><p id="registrationEventDetails" class="organizer-results-summary"></p></div><div class="organizer-card-actions"><button id="checkInModeButton" class="organizer-primary-link" type="button">Check-In Mode</button><a id="emailParticipantsLink" class="primary" href="#">Email Participants</a><button id="exportCsvButton" class="organizer-secondary-button" type="button">Export CSV</button><a id="viewAdventureLink" class="secondary" href="#">View Adventure</a><a id="editAdventureLink" class="secondary" href="#">Edit Adventure</a></div></div>
 <div id="checkInModeBanner" class="checkin-mode-banner" hidden>
-<div><span class="organizer-eyebrow">Fast Event-Day Check-In</span><h3><span id="checkInLiveCount">0</span> checked in · <span id="checkInRemainingCount">0</span> remaining</h3><p>Checked-in parties disappear automatically. Select several parties to check them in together.</p></div>
+<div><span class="organizer-eyebrow">Fast Event-Day Check-In</span><h3><span id="checkInLiveCount">0</span> checked in · <span id="checkInRemainingCount">0</span> remaining</h3><p>Participants receive their personal QR code in the registration confirmation email. Scan it here, or check them in directly from the list.</p></div>
 <div class="checkin-mode-actions">
-<button id="scanQrButton" class="organizer-primary-link" type="button">Scan QR Code</button>
+<button id="scanQrButton" class="organizer-primary-link" type="button">Scan Participant QR Code</button>
 <label class="checkin-show-checked"><input id="showCheckedToggle" type="checkbox"> Show checked-in</label>
 <button id="exitCheckInModeButton" class="organizer-secondary-button" type="button">Exit Check-In Mode</button>
 </div>
@@ -47,7 +47,7 @@
 <button type="button" data-bulk-action="cancel">Cancel Registrations</button>
 <button id="clearSelectionButton" type="button">Clear</button>
 </div></div>
-<div class="registration-list-heading"><label class="filter-check select-all"><input id="selectAllVisible" type="checkbox"> Select visible</label><p id="registrationResultsSummary" class="organizer-results-summary"></p></div>
+<div class="registration-list-heading"><label class="filter-check select-all"><input id="selectAllVisible" type="checkbox"> Select visible</label><p id="registrationResultsSummary" class="organizer-results-summary" aria-live="polite"></p></div>
 <div id="registrationList" class="organizer-registration-list"></div></section>
 <section class="organizer-panel organizer-danger-zone"><div><span class="organizer-eyebrow">Adventure Controls</span><h2>Cancel or Delete Adventure</h2><p>Cancellation preserves registrations and email history. Deletion permanently removes the adventure and its associated records.</p></div><div class="organizer-card-actions"><button id="cancelAdventureButton" class="organizer-secondary-button" type="button">Cancel Adventure</button><button id="deleteAdventureButton" class="organizer-danger-button" type="button">Delete Adventure</button></div></section>
 </div></main>
@@ -80,7 +80,7 @@
 <dialog id="checkInQrDialog" class="checkin-qr-dialog">
 <form method="dialog" class="checkin-qr-shell">
 <div class="organizer-panel-heading"><div><span>Participant Check-In Code</span><h2 id="checkInQrName">Registration QR Code</h2></div><button class="dialog-close" value="cancel" aria-label="Close">×</button></div>
-<p>Participants can show this code to an organizer. Scanning it with a normal phone camera opens the secure check-in confirmation page.</p>
+<p>Participants receive this personal QR code in their registration confirmation email. They can show it on their phone when they arrive.</p>
 <img id="checkInQrImage" alt="Registration check-in QR code" width="320" height="320">
 <a id="checkInQrLink" class="organizer-secondary-button" href="#" target="_blank" rel="noopener">Open Check-In Link</a>
 </form>
@@ -89,9 +89,21 @@
 <div class="checkin-scanner-shell">
 <div class="organizer-panel-heading"><div><span>Camera Scanner</span><h2>Scan Participant QR Code</h2></div><button id="closeScannerButton" class="dialog-close" type="button" aria-label="Close">×</button></div>
 <video id="checkInScannerVideo" playsinline muted></video>
-<p id="checkInScannerStatus" class="organizer-results-summary">Point the camera at the participant's Community Connections QR code.</p>
+<p id="checkInScannerStatus" class="organizer-results-summary" aria-live="polite">Allow camera access, then point the camera at the participant's Community Connections QR code from their confirmation email.</p><canvas id="checkInScannerCanvas" hidden></canvas>
 <div class="organizer-card-actions"><button id="stopScannerButton" class="organizer-secondary-button" type="button">Close Scanner</button></div>
 </div>
 </dialog>
 
-<script src="config.js"></script><script src="organizer-registrations-m610.js?v=m6.10"></script><script src="organizer-polish.js?v=m6.8"></script></body></html>
+
+<dialog id="registrationCancelAdventureDialog" class="organizer-lifecycle-dialog">
+<form method="dialog" class="organizer-lifecycle-shell">
+<div><span class="organizer-eyebrow">Adventure Management</span><h2>Cancel this adventure?</h2><p>Registration will close, but participant registrations and email history will be preserved.</p></div>
+<div class="organizer-dialog-actions"><button value="cancel" class="organizer-secondary-button">Keep Adventure</button><button id="confirmRegistrationCancelAdventure" type="button" class="organizer-warning-button">Cancel Adventure</button></div>
+</form></dialog>
+<dialog id="registrationDeleteAdventureDialog" class="organizer-lifecycle-dialog">
+<form method="dialog" class="organizer-lifecycle-shell">
+<div><span class="organizer-eyebrow">Permanent Deletion</span><h2>Delete this adventure permanently?</h2><p>This removes the adventure and its associated registrations, tasks, resources, queued emails, and email history. This cannot be undone.</p></div>
+<label class="organizer-delete-confirm-label">Type <strong>DELETE</strong> to continue<input id="registrationDeleteConfirmation" type="text" autocomplete="off" spellcheck="false"></label>
+<div class="organizer-dialog-actions"><button value="cancel" class="organizer-secondary-button">Keep Adventure</button><button id="confirmRegistrationDeleteAdventure" type="button" class="organizer-danger-button" disabled>Delete Permanently</button></div>
+</form></dialog>
+<script src="config.js"></script><script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script><script src="organizer-registrations-m610.js?v=m6.15"></script><script src="organizer-polish.js?v=m6.15"></script></body></html>
