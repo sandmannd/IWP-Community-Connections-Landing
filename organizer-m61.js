@@ -36,7 +36,7 @@
   function signOut(){clearActiveTimeout();removeRequests();var session=readSession();clearSession();if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();if(session&&session.token&&appUrl){var x=document.createElement('script');x.src=appUrl+(appUrl.indexOf('?')===-1?'?':'&')+'api=organizer-signout&callback=iwpOrganizerSignOutCallback&session='+encodeURIComponent(session.token)+'&_='+Date.now();document.head.appendChild(x);}location.href='/organizer.html';} window.iwpOrganizerSignOutCallback=function(){};
 
   var menu=document.querySelector('.mobile-menu-button'),nav=byId('mainNavigation');
-  if(menu&&nav){menu.addEventListener('click',function(){var open=menu.getAttribute('aria-expanded')==='true';menu.setAttribute('aria-expanded',String(!open));nav.classList.toggle('is-open',!open);menu.textContent=open?'Menu':'Close';});}
+  if(menu&&nav){menu.dataset.iwpMenuBound='1';menu.addEventListener('click',function(){var open=menu.getAttribute('aria-expanded')==='true';menu.setAttribute('aria-expanded',String(!open));nav.classList.toggle('is-open',!open);menu.textContent=open?'Menu':'Close';});}
   ['organizerSignOutTop','organizerSignOutBottom'].forEach(function(id){var el=byId(id);if(el)el.addEventListener('click',signOut);});
 
   window.iwpOrganizerSessionCallback=function(payload){
@@ -58,7 +58,7 @@
     setState('dashboard');
     try{
       var displayName=(payload.user&&payload.user.name)||data.greetingName||'';
-      text('organizerGreeting',displayName?'Welcome back, '+displayName.split(' ')[0]:'Adventure Builder');
+      text('organizerGreeting',displayName?'Welcome back, '+displayName.split(' ')[0]:'Command Center');
       text('healthTitle',data.health&&data.health.title);text('healthMessage',data.health&&data.health.message);text('dashboardUpdated','Updated '+(data.updatedAt||'just now'));
       var health=byId('organizerHealth');if(health)health.classList.toggle('is-warning',!(data.health&&data.health.ok));
       text('statUpcoming',data.upcomingEvents||0);text('statWeek',(data.eventsThisWeek||0)+' '+plural(data.eventsThisWeek,'adventure','adventures')+' this week');

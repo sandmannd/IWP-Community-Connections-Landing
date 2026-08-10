@@ -10,4 +10,23 @@ else if(q.get('emailSent'))message='Participant email sent successfully.';
 else if(q.get('cancelled'))message='Adventure cancelled.';
 else if(q.get('deleted'))message='Adventure deleted.';
 if(message){window.IWPToast(message,'success');['saved','emailSent','cancelled','deleted'].forEach(function(k){q.delete(k)});history.replaceState(null,'',location.pathname+(q.toString()?'?'+q.toString():'')+location.hash)}
+
+function bindOrganizerMenu(){
+  var menu=document.querySelector('.mobile-menu-button'),nav=document.getElementById('mainNavigation');
+  if(!menu||!nav||menu.dataset.iwpMenuBound==='1')return;
+  menu.dataset.iwpMenuBound='1';
+  menu.addEventListener('click',function(){
+    var open=menu.getAttribute('aria-expanded')==='true';
+    menu.setAttribute('aria-expanded',String(!open));
+    nav.classList.toggle('is-open',!open);
+    menu.textContent=open?'Menu':'Close';
+  });
+  nav.addEventListener('click',function(e){
+    if(!e.target.closest('a')||menu.getAttribute('aria-expanded')!=='true')return;
+    menu.setAttribute('aria-expanded','false');
+    nav.classList.remove('is-open');
+    menu.textContent='Menu';
+  });
+}
+bindOrganizerMenu();
 })();
