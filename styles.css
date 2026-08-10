@@ -2559,3 +2559,15 @@ a.button:active,.lp9d-actions a:active,.featured-actions a:active{transform:tran
   .next-30-grid{grid-template-columns:1fr!important}
   .cc-global-nav a{min-height:46px;display:flex;align-items:center}
 }
+
+/* M6.20 category browsing */
+.landing-category-results{padding:10px 0 54px;scroll-margin-top:96px}
+.landing-category-results-heading{display:flex;align-items:end;justify-content:space-between;gap:18px}
+.landing-category-kicker{display:block;margin-bottom:4px;color:#62d279;font-size:.82rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.landing-category-clear{min-height:44px;padding:0 15px;border:1px solid rgba(255,255,255,.45);border-radius:9px;background:transparent;color:#fff;font:inherit;font-weight:850;cursor:pointer}
+.landing-category-clear:hover,.landing-category-clear:focus-visible{border-color:#62d279;background:rgba(31,157,58,.13)}
+.activity-category-card{cursor:pointer}
+@media(max-width:680px){
+  .landing-category-results-heading{align-items:stretch;flex-direction:column}
+  .landing-category-clear{width:100%}
+}

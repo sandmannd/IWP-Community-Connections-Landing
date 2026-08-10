@@ -8,7 +8,7 @@
   <link rel="icon" href="assets/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=m6.18">
+  <link rel="stylesheet" href="styles.css?v=m6.20">
   <link rel="preload" as="image" href="assets/iwp-main-banner.webp" type="image/webp" fetchpriority="high">
 </head>
 <body data-build="Pre-S11-Next-30-Days">
@@ -58,6 +58,16 @@
   <section class="activity-button-showcase reveal" id="adventure-categories" aria-label="Browse adventures by type">
     <div id="landingCategoryGrid" class="activity-button-grid" aria-live="polite" aria-busy="true">
       <div class="category-loading">Loading adventure categories...</div>
+    </div>
+  </section>
+
+  <section class="landing-category-results reveal" id="browse-adventures" aria-labelledby="browseAdventuresHeading" hidden>
+    <div class="next-30-shell">
+      <div class="next-30-heading landing-category-results-heading">
+        <div><span class="landing-category-kicker">Browse Adventures</span><h2 id="browseAdventuresHeading">Upcoming Adventures</h2></div>
+        <button id="clearAdventureCategory" class="landing-category-clear" type="button">Show All Categories</button>
+      </div>
+      <div id="landingCategoryResults" class="next-30-grid" aria-live="polite"></div>
     </div>
   </section>
 
