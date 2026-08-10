@@ -644,6 +644,7 @@
     return '<span><b>' + icon + '</b>' + escapeHtml(text || "") + '</span>';
   }
 
+  function landingEmptyState(title,message){return '<div class="landing-empty-state"><strong>'+escapeHtml(title)+'</strong><span>'+escapeHtml(message)+'</span></div>'}
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")

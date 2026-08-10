@@ -2539,3 +2539,23 @@ a.button:active,.lp9d-actions a:active,.featured-actions a:active{transform:tran
 .cc-menu-button{display:none}
 @media(max-width:900px){.cc-global-header{min-height:92px;padding:0 14px}.cc-global-brand{max-width:72vw}.cc-menu-button{display:block;position:absolute;right:14px;top:26px;z-index:3}.cc-global-nav{display:none;position:absolute;top:100%;left:0;right:0;padding:12px 18px;background:#020914;border-bottom:1px solid rgba(255,255,255,.15);flex-direction:column;align-items:flex-start;gap:2px}.cc-global-nav.is-open{display:flex}.cc-global-nav a{padding:10px 0;font-size:.9rem}}
 @media(max-width:560px){.cc-global-header{min-height:76px}.cc-global-brand{max-width:78vw}.cc-global-brand img{max-height:74px}.cc-menu-button{top:18px}}
+
+/* M6.18 public discovery polish */
+.landing-empty-state{
+  display:grid;
+  gap:6px;
+  padding:22px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:14px;
+  background:#0b1512;
+  text-align:center;
+}
+.landing-empty-state strong{color:#fff;font-size:1.05rem}
+.landing-empty-state span{color:#b6bcb8}
+@media(max-width:680px){
+  .activity-button-grid{grid-template-columns:1fr!important}
+  .activity-button-grid a,
+  .activity-button-grid button{min-height:54px}
+  .next-30-grid{grid-template-columns:1fr!important}
+  .cc-global-nav a{min-height:46px;display:flex;align-items:center}
+}

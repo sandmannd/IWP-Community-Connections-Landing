@@ -133,7 +133,17 @@
 
     var share = document.getElementById('shareAdventure');
     if (share) share.addEventListener('click', function () {
-      navigator.clipboard.writeText(window.location.href).then(function () { share.textContent = 'Link Copied'; }, function () { window.prompt('Copy this adventure link:', window.location.href); });
+      if (navigator.share) {
+        navigator.share({title:event.Title||'Community Adventure',text:event.Title||'Community Adventure',url:window.location.href}).catch(function(){});
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(window.location.href).then(function () {
+          var old=share.textContent;share.textContent='Link Copied';setTimeout(function(){share.textContent=old},1800);
+        }, function () { window.prompt('Copy this adventure link:', window.location.href); });
+      } else {
+        window.prompt('Copy this adventure link:', window.location.href);
+      }
     });
   }
   function renderError(message) {
