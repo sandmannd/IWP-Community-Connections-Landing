@@ -44,25 +44,14 @@
     if(!payload||payload.success!==true||payload.authorized!==true){showAccess(payload&&payload.error||'Organizer authorization was not accepted.');return;}
     var session=writeSession(payload);
     if(!session){showAccess('The organizer session could not be saved. Please allow site storage and sign in again.');return;}
-    setState('dashboard');
-    text('organizerGreeting',payload.user&&payload.user.name?'Welcome back, '+String(payload.user.name).split(' ')[0]:'Command Center');
-    text('dashboardUpdated','Signed in. Loading dashboard…');
     loadDashboard(session);
   };
 
   window.iwpOrganizerDashboardCallback=function(payload){
     clearActiveTimeout();removeRequests();
     if(!payload||payload.success!==true||payload.authorized!==true){
-      var message=String(payload&&payload.error||'The Command Center data could not be loaded.');
-      if(/session|sign in|expired|approved|authorized|account/i.test(message)){
-        clearSession();
-        showAccess(message);
-        return;
-      }
-      setState('dashboard');
-      text('dashboardUpdated','Signed in. Dashboard data could not refresh.');
-      text('healthTitle','Dashboard temporarily unavailable');
-      text('healthMessage',message+' You are still signed in and can use Manage Adventures.');
+      if(payload&&payload.authenticated&&payload.user&&payload.user.email)clearSession();
+      showAccess(payload&&payload.error||'Organizer authorization was not accepted.');
       return;
     }
     transientRetries=0;var activeSession=readSession();if(activeSession)writeDashboardCache(activeSession,payload);var data=payload.dashboard||{};
@@ -99,9 +88,9 @@
     else setState('loading');
     var script=document.createElement('script');script.async=true;script.id='organizerApiRequest'+(++requestNumber);
     script.src=appUrl+(appUrl.indexOf('?')===-1?'?':'&')+'api=organizer-dashboard&callback=iwpOrganizerDashboardCallback&session='+encodeURIComponent(session.token)+'&_='+Date.now();
-    script.onerror=function(){if(transientRetries<1){transientRetries++;setTimeout(function(){loadDashboard(readSession())},1200);return}if(dashboardCacheRendered){clearActiveTimeout();text('dashboardUpdated','Showing recently saved dashboard data. Refresh to try again.');return}setState('dashboard');text('dashboardUpdated','Signed in. Unable to refresh dashboard right now.');text('healthTitle','Dashboard temporarily unavailable');text('healthMessage','Your organizer login is active. You can still use Manage Adventures and try refreshing later.');};
+    script.onerror=function(){if(transientRetries<1){transientRetries++;setTimeout(function(){loadDashboard(readSession())},1200);return}if(dashboardCacheRendered){clearActiveTimeout();text('dashboardUpdated','Showing recently saved dashboard data. Refresh to try again.');return}showAccess('Unable to reach the organizer service. Your login is still saved; refresh to retry.');};
     document.head.appendChild(script);
-    activeTimeout=setTimeout(function(){var loading=byId('organizerLoading');if(loading&&!loading.hidden){if(transientRetries<1){transientRetries++;loadDashboard(readSession());return}if(dashboardCacheRendered){clearActiveTimeout();text('dashboardUpdated','Showing recently saved dashboard data while the service catches up.');return}setState('dashboard');text('dashboardUpdated','Signed in. Dashboard refresh is taking longer than expected.');text('healthTitle','Dashboard temporarily unavailable');text('healthMessage','Your organizer login is active. You can still use Manage Adventures.');}},45000);
+    activeTimeout=setTimeout(function(){var loading=byId('organizerLoading');if(loading&&!loading.hidden){if(transientRetries<1){transientRetries++;loadDashboard(readSession());return}if(dashboardCacheRendered){clearActiveTimeout();text('dashboardUpdated','Showing recently saved dashboard data while the service catches up.');return}showAccess('The organizer service is taking longer than expected. Your login is still saved; refresh to retry.');}},45000);
   }
   function handleGoogleCredential(response){var credential=response&&response.credential?String(response.credential):'';if(!credential){showAccess('Google did not return a sign-in credential. Please try again.');return;}setState('loading');var script=document.createElement('script');script.async=true;script.id='organizerApiRequest'+(++requestNumber);script.src=appUrl+(appUrl.indexOf('?')===-1?'?':'&')+'api=organizer-session&callback=iwpOrganizerSessionCallback&credential='+encodeURIComponent(credential)+'&_='+Date.now();script.onerror=function(){showAccess('Unable to start the organizer session. Please try again.');};document.head.appendChild(script);}
   function renderGoogleButton(){var target=byId('googleSignInButton');if(!target||target.dataset.rendered==='true')return;if(!clientId){text('organizerAccessMessage','The Google sign-in client has not been configured.');return;}if(!(window.google&&google.accounts&&google.accounts.id)){setTimeout(renderGoogleButton,150);return;}google.accounts.id.initialize({client_id:clientId,callback:handleGoogleCredential,auto_select:false,cancel_on_tap_outside:true});google.accounts.id.renderButton(target,{theme:'outline',size:'large',shape:'pill',text:'signin_with',width:300});target.dataset.rendered='true';}
