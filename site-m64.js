@@ -10,6 +10,7 @@
     parent.innerHTML = '<span>' + escapeHtml(icon) + '</span>';
   };
   var c = window.IWP_SITE_CONFIG || {};
+  var landingUpcomingEvents = [];
 
   function appendQueryParam(url, key, value) {
     var source = String(url || '').trim();
@@ -285,11 +286,16 @@
       seedAdventurePreviewCache(data);
     }
     var upcoming = data && data.upcoming ? data.upcoming : [];
+    landingUpcomingEvents = upcoming.slice();
     var nextThirtyDays = filterEventsForNextThirtyDays(upcoming);
     document.documentElement.classList.toggle('one-live-adventure', nextThirtyDays.length === 1);
     renderUpcomingAdventures(nextThirtyDays);
     renderCompactFeaturedAdventures(collectFeaturedAdventures(data, upcoming));
     renderLandingCategories(upcoming, data && data.featured ? data.featured : null);
+    var upcomingGrid = document.getElementById('upcomingAdventureGrid');
+    var categoryGrid = document.getElementById('landingCategoryGrid');
+    if (upcomingGrid) upcomingGrid.setAttribute('aria-busy', 'false');
+    if (categoryGrid) categoryGrid.setAttribute('aria-busy', 'false');
     activateFastNavigation(document);
     activateAdventurePrefetch(document);
   };
@@ -389,12 +395,13 @@
       });
 
     if (!items.length) {
-      grid.innerHTML = '<a class="activity-category-card activity-category-card--browse" href="' + escapeAttr(publicAppUrl(c.appUrl) || '#') + '">' +
+      grid.innerHTML = '<a class="activity-category-card activity-category-card--browse" href="#browse-adventures" data-landing-category="all" data-category-label="Upcoming Adventures">' +
         '<span class="activity-category-photo is-loading" data-bg="assets/hands-community.webp"></span>' +
         '<span class="activity-category-shade"></span>' +
         '<span class="activity-category-content"><span class="activity-category-icon">' + categorySvg('browse') + '</span><strong>Browse Adventures</strong><span class="activity-category-count">New adventures coming soon</span></span>' +
       '</a>';
       activateLazyCategoryImages(grid);
+      bindLandingCategoryBrowse(grid);
       return;
     }
 
@@ -403,7 +410,7 @@
       var countLabel = category.count + ' ' + (category.count === 1 ? 'Adventure' : 'Adventures');
       var featuredBadge = category.featured ? '<span class="activity-category-featured">★ Featured</span>' : '';
 
-      return '<a class="activity-category-card' + (category.featured ? ' is-featured' : '') + '" href="' + escapeAttr(publicAppUrl(c.appUrl) || '#') + '" aria-label="View ' + escapeAttr(category.label) + ' adventures, ' + category.count + ' available">' +
+      return '<a class="activity-category-card' + (category.featured ? ' is-featured' : '') + '" href="#browse-adventures" data-landing-category="' + escapeAttr(category.key) + '" data-category-label="' + escapeAttr(category.label) + '" aria-label="View ' + escapeAttr(category.label) + ' adventures, ' + category.count + ' available">' +
         '<span class="activity-category-photo is-loading" data-bg="' + escapeAttr(visual.image) + '"></span>' +
         '<span class="activity-category-shade"></span>' +
         featuredBadge +
@@ -415,6 +422,63 @@
       '</a>';
     }).join('');
     activateLazyCategoryImages(grid);
+    bindLandingCategoryBrowse(grid);
+  }
+
+  function bindLandingCategoryBrowse(grid) {
+    Array.prototype.forEach.call((grid || document).querySelectorAll('[data-landing-category]'), function (card) {
+      if (card.dataset.iwpCategoryBrowseBound === '1') return;
+      card.dataset.iwpCategoryBrowseBound = '1';
+      card.addEventListener('click', function (event) {
+        event.preventDefault();
+        renderLandingCategoryResults(
+          card.getAttribute('data-landing-category') || 'all',
+          card.getAttribute('data-category-label') || 'Upcoming Adventures'
+        );
+      });
+    });
+  }
+
+  function landingAdventureCard(event) {
+    var detailsUrl = cloudflareAdventureUrl(event);
+    var imageUrl = normalizeLandingImageUrl(event.imageUrl);
+    var image = isSafeLandingImageUrl(imageUrl)
+      ? '<img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" loading="lazy" decoding="async" src="' + escapeAttr(imageUrl) + '" alt="">'
+      : '<span class="next-30-image-fallback" aria-hidden="true">' + categoryIcon(event.type) + '</span>';
+    return '<a class="next-30-card" href="' + escapeAttr(detailsUrl) + '" aria-label="View ' + escapeAttr(event.title || 'community adventure') + ', ' + escapeAttr(formatEventDateOnly(event)) + '">' +
+      '<span class="next-30-image">' + image + '<span class="next-30-shade"></span></span>' +
+      '<span class="next-30-copy"><strong>' + escapeHtml(event.title || 'Community Adventure') + '</strong><span>' + escapeHtml(formatEventDateOnly(event)) + '</span></span></a>';
+  }
+
+  function renderLandingCategoryResults(categoryKey, label) {
+    var section = document.getElementById('browse-adventures');
+    var results = document.getElementById('landingCategoryResults');
+    var heading = document.getElementById('browseAdventuresHeading');
+    if (!section || !results || !heading) return;
+
+    var events = (landingUpcomingEvents || []).filter(function (event) {
+      return categoryKey === 'all' || canonicalLandingCategory(event.type).key === categoryKey;
+    }).sort(function (a, b) {
+      var aDate = parseDateKey(firstEventValue(a, ['startDate', 'StartDate', 'dateStart', 'start_date']));
+      var bDate = parseDateKey(firstEventValue(b, ['startDate', 'StartDate', 'dateStart', 'start_date']));
+      return (aDate ? aDate.getTime() : 0) - (bDate ? bDate.getTime() : 0);
+    });
+
+    heading.textContent = categoryKey === 'all' ? 'All Upcoming Adventures' : label + ' Adventures';
+    section.hidden = false;
+    results.classList.remove('has-1', 'has-2', 'has-3', 'has-4-plus');
+
+    if (!events.length) {
+      results.innerHTML = '<div class="next-30-empty"><strong>No upcoming ' + escapeHtml(String(label || 'adventure').toLowerCase()) + ' adventures right now.</strong><span>Choose another category or check back soon.</span></div>';
+    } else {
+      results.classList.add(events.length === 1 ? 'has-1' : events.length === 2 ? 'has-2' : events.length === 3 ? 'has-3' : 'has-4-plus');
+      results.innerHTML = events.map(landingAdventureCard).join('');
+      activateAdventureImageFallbacks(results);
+      activatePremiumPolish(results);
+      activateAdventurePrefetch(results);
+    }
+
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function activateLazyCategoryImages(root) {
@@ -647,21 +711,7 @@
     }
 
     grid.classList.add(events.length === 1 ? "has-1" : events.length === 2 ? "has-2" : events.length === 3 ? "has-3" : "has-4-plus");
-    grid.innerHTML = events.map(function (event) {
-      var detailsUrl = cloudflareAdventureUrl(event);
-      var imageUrl = normalizeLandingImageUrl(event.imageUrl);
-      var image = isSafeLandingImageUrl(imageUrl)
-        ? '<img data-adventure-image data-fallback-icon="' + escapeAttr(categoryIcon(event.type)) + '" onerror="window.iwpAdventureImageFallback(this)" loading="lazy" decoding="async" src="' + escapeAttr(imageUrl) + '" alt="">'
-        : '<span class="next-30-image-fallback" aria-hidden="true">' + categoryIcon(event.type) + '</span>';
-
-      return '<a class="next-30-card" href="' + escapeAttr(detailsUrl) + '" aria-label="View ' + escapeAttr(event.title || "community adventure") + ', ' + escapeAttr(formatEventDateOnly(event)) + '">' +
-        '<span class="next-30-image">' + image + '<span class="next-30-shade"></span></span>' +
-        '<span class="next-30-copy">' +
-          '<strong>' + escapeHtml(event.title || "Community Adventure") + '</strong>' +
-          '<span>' + escapeHtml(formatEventDateOnly(event)) + '</span>' +
-        '</span>' +
-      '</a>';
-    }).join("");
+    grid.innerHTML = events.map(landingAdventureCard).join("");
     activateAdventureImageFallbacks(grid);
     activatePremiumPolish(grid);
   }
@@ -716,14 +766,26 @@
     });
   }
 
+  document.addEventListener('click', function (event) {
+    var clear = event.target.closest('#clearAdventureCategory');
+    if (!clear) return;
+    var section = document.getElementById('browse-adventures');
+    if (section) section.hidden = true;
+    var categories = document.getElementById('adventure-categories');
+    if (categories) categories.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
   function renderLandingDataError() {
     renderLandingCategories([]);
     var grid = document.getElementById("upcomingAdventureGrid");
+    var categoryGrid = document.getElementById("landingCategoryGrid");
 
     if (grid) {
+      grid.setAttribute('aria-busy', 'false');
       grid.innerHTML =
         '<div class="live-empty"><strong>Live schedule temporarily unavailable.</strong><span>Open Community Connections to see current adventures.</span></div>';
     }
+    if (categoryGrid) categoryGrid.setAttribute('aria-busy', 'false');
   }
 
   function formatEventDate(event) {

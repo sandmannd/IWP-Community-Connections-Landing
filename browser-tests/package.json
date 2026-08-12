@@ -4,7 +4,8 @@
   "private": true,
   "description": "One-click browser and backend regression runner for IWP Community Connections",
   "scripts": {
-    "test": "node run-tests.js"
+    "test": "node run-tests.js",
+    "validate": "node static-validation.js"
   },
   "dependencies": {
     "playwright": "^1.54.1"
