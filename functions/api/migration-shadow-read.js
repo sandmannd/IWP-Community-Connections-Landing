@@ -46,6 +46,23 @@ function availabilityLabel(spotsRemaining, maxParticipants, waitlistEnabled) {
   return waitlistEnabled ? 'Full · Waitlist available' : 'Full';
 }
 
+function displayTime(value) {
+  const text = String(value == null ? '' : value).trim();
+  if (!text) return '';
+  if (/\b(?:AM|PM)\b/i.test(text)) return text;
+
+  const match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (!match) return text;
+
+  const hour24 = Number(match[1]);
+  if (!Number.isInteger(hour24) || hour24 < 0 || hour24 > 23) return text;
+
+  const minute = match[2];
+  const suffix = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${minute} ${suffix}`;
+}
+
 async function getD1Payload(db, upstreamBaseUrl) {
   const todayKey = chicagoDateKey();
   const eventsResult = await db.prepare(`
@@ -79,9 +96,9 @@ async function getD1Payload(db, upstreamBaseUrl) {
       type: String(event.event_type || 'Adventure'),
       imageUrl: String(event.image_url || ''),
       startDate: String(event.start_date || ''),
-      startTime: String(event.start_time || ''),
+      startTime: displayTime(event.start_time),
       endDate: String(event.end_date || ''),
-      endTime: String(event.end_time || ''),
+      endTime: displayTime(event.end_time),
       location: String(event.location_name || ''),
       description: String(event.description || event.what_to_expect || ''),
       costLabel: costLabel(event),
@@ -119,9 +136,9 @@ function stableEvent(event) {
     type: event.type || '',
     imageUrl: event.imageUrl || '',
     startDate: event.startDate || '',
-    startTime: event.startTime || '',
+    startTime: displayTime(event.startTime || ''),
     endDate: event.endDate || '',
-    endTime: event.endTime || '',
+    endTime: displayTime(event.endTime || ''),
     location: event.location || '',
     description: event.description || '',
     costLabel: event.costLabel || '',
@@ -158,9 +175,9 @@ function comparePayloads(google, d1) {
 export async function onRequestGet(context) {
   const db = context.env.COMMUNITY_DB;
   const appUrl = String(context.env.IWP_APPS_SCRIPT_URL || '').trim();
-  if (!db) return json({ success: false, migration: 'M7.3', error: 'COMMUNITY_DB binding is not configured.' }, 503);
+  if (!db) return json({ success: false, migration: 'M7.3.2', error: 'COMMUNITY_DB binding is not configured.' }, 503);
   if (!appUrl || !appUrl.startsWith('https://script.google.com/')) {
-    return json({ success: false, migration: 'M7.3', error: 'IWP_APPS_SCRIPT_URL is not configured.' }, 503);
+    return json({ success: false, migration: 'M7.3.2', error: 'IWP_APPS_SCRIPT_URL is not configured.' }, 503);
   }
 
   try {
@@ -181,7 +198,7 @@ export async function onRequestGet(context) {
 
     return json({
       success: true,
-      migration: 'M7.3',
+      migration: 'M7.3.2',
       productionCutover: false,
       googleLive: true,
       d1ShadowRead: true,
@@ -202,7 +219,7 @@ export async function onRequestGet(context) {
   } catch (error) {
     return json({
       success: false,
-      migration: 'M7.3',
+      migration: 'M7.3.2',
       productionCutover: false,
       googleLive: true,
       d1ShadowRead: false,
