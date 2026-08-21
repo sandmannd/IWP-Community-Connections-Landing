@@ -108,3 +108,20 @@ V20.6: Browser regression now calls the Apps Script backend summary with a direc
 2. Run `runFullRegressionTest()`.
 3. Run the one-click browser regression suite.
 4. Confirm memory upload, caption-only save, approve/unapprove, feature/unfeature, and delete on one test adventure.
+
+## M7.1 - Cloudflare D1 Foundation (August 20, 2026)
+- Began the backend migration away from Google Apps Script / Google Sheets.
+- Added a D1 schema that mirrors the current production Sheets data model.
+- Added migration tracking and indexes needed by public schedule, organizer, registration, resource, and memory workloads.
+- Added `/api/migration-health` as an isolated migration-only D1 connectivity/schema check.
+- Production behavior is intentionally unchanged in this sprint. Existing Pages API routes still use Apps Script and `config.js` still points to the current Apps Script deployment.
+- The D1 binding name is settled as `COMMUNITY_DB` and the intended database name is `iwp-community-connections`.
+- Do not retire Apps Script or the production Google Sheet until import reconciliation and side-by-side regression are complete.
+
+### Next action
+1. Push the M7.1 landing repository package to Git.
+2. Allow the normal Cloudflare Pages deployment. This is safe because no live route was switched.
+3. Create the D1 database `iwp-community-connections` in Cloudflare and bind it to the Pages project as `COMMUNITY_DB`.
+4. Apply `migrations/0001_d1_foundation.sql`.
+5. Verify `/api/migration-health` reports `d1Configured: true` and schema version `0001_d1_foundation`.
+6. Continue to M7.2: controlled production data import and reconciliation, still without production cutover.
