@@ -1,34 +1,3 @@
-export async function onRequestPost(context) {
-  try {
-    const body = await context.request.json();
-    const appUrl = String(context.env.IWP_APPS_SCRIPT_URL || body.appUrl || '').trim();
-    if (!appUrl || !appUrl.startsWith('https://script.google.com/')) {
-      return Response.json({ success: false, error: 'Image upload service is not configured.' }, { status: 500 });
-    }
-    const upstream = await fetch(appUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        action: 'organizerUploadImageApi',
-        session: body.session || '',
-        fileName: body.fileName || 'adventure-image.jpg',
-        mimeType: body.mimeType || 'image/jpeg',
-        dataUrl: body.dataUrl || ''
-      }),
-      redirect: 'follow'
-    });
-    const text = await upstream.text();
-    let result;
-    try { result = JSON.parse(text); }
-    catch (_) { throw new Error('The image service returned an invalid response.'); }
-    return Response.json(result, {
-      status: result.success ? 200 : 400,
-      headers: { 'cache-control': 'no-store' }
-    });
-  } catch (error) {
-    return Response.json({
-      success: false,
-      error: error && error.message ? error.message : 'The image could not be uploaded.'
-    }, { status: 500, headers: { 'cache-control': 'no-store' } });
-  }
-}
+import {verifySession,json} from './_organizer-auth.js';
+function safeName(v){return String(v||'image.jpg').replace(/[^a-zA-Z0-9._-]+/g,'-').slice(-100)}
+export async function onRequestPost({request,env}){try{if(!env.ADVENTURE_IMAGES)throw new Error('Adventure image storage is not configured.');const b=await request.json();await verifySession(env,b.session);const dataUrl=String(b.dataUrl||''),m=dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/i);if(!m)throw new Error('The selected file is not a supported image.');const bytes=Uint8Array.from(atob(m[2]),c=>c.charCodeAt(0));if(bytes.byteLength>8*1024*1024)throw new Error('The image is too large.');const ext=m[1].split('/')[1].replace('jpeg','jpg'),key=`adventures/${new Date().toISOString().slice(0,10)}/${crypto.randomUUID()}.${ext}`;await env.ADVENTURE_IMAGES.put(key,bytes,{httpMetadata:{contentType:m[1],cacheControl:'public, max-age=31536000, immutable'},customMetadata:{originalName:safeName(b.fileName)}});return json({success:true,source:'r2',migration:'M7.8',imageUrl:'/api/adventure-image?key='+encodeURIComponent(key)})}catch(e){return json({success:false,error:e.message||'The image could not be uploaded.'},400)}}

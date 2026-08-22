@@ -30,3 +30,8 @@
     min-height:52px;
   }
 }
+
+/* M7.8 public attendee presence */
+.adventure-attendees{margin-top:1.25rem;padding:1.1rem 1.2rem;border:1px solid rgba(148,163,184,.24);border-radius:16px;background:rgba(15,23,42,.48)}
+.adventure-attendees-heading{display:flex;gap:.75rem;justify-content:space-between;align-items:baseline;flex-wrap:wrap}.adventure-attendees-heading h2{margin:0}.adventure-attendees-heading strong{font-size:.95rem}
+.adventure-attendee-list{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:.9rem}.adventure-attendee-list span{padding:.45rem .7rem;border-radius:999px;background:rgba(255,255,255,.08);font-weight:700}.adventure-attendee-note{margin:.8rem 0 0;opacity:.82}

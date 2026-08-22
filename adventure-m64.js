@@ -81,6 +81,16 @@
     if (!String(value || '').trim()) return '';
     return '<article class="adventure-info-card"><h3>' + escapeHtml(title) + '</h3><p>' + richText(value) + '</p></article>';
   }
+  function attendeeSection(data,event) {
+    var count=Number(data.attendeeCount!==undefined?data.attendeeCount:data.spotsTaken||0);
+    var names=Array.isArray(data.registrations)?data.registrations:[];
+    var label=count+' '+(count===1?'person':'people')+' registered';
+    var html='<section class="adventure-attendees"><div class="adventure-attendees-heading"><h2>Who’s Going</h2><strong>'+escapeHtml(label)+'</strong></div>';
+    if(names.length){html+='<div class="adventure-attendee-list">'+names.map(function(r){return '<span>'+escapeHtml(r.Name||'Participant')+'</span>'}).join('')+'</div>';if(names.length<count)html+='<p class="adventure-attendee-note">Plus '+(count-names.length)+' '+((count-names.length)===1?'person':'people')+' attending privately.</p>';}
+    else if(count>0){html+='<p class="adventure-attendee-note">Attendee names are private unless participants choose to share them.</p>';}
+    else{html+='<p class="adventure-attendee-note">Be the first to register for this adventure.</p>';}
+    return html+'</section>';
+  }
   function render(data) {
     if (!data || !data.success || !data.event) return renderError(data && data.message);
     var event = data.event;
@@ -118,7 +128,7 @@
               infoCard('What To Expect', event.WhatToExpect) + infoCard('What To Bring', event.WhatToBring) +
               infoCard('Provided', event.Provided) + infoCard('Special Notes', event.SpecialNotes) +
             '</section>' +
-            '<section class="adventure-disclaimer"><strong>Member-Organized Activity</strong><p>This activity is member-organized and is not facilitated, monitored, or organized by IWP staff.</p></section>' +
+            '<section class="adventure-disclaimer"><strong>Member-Organized Activity</strong><p>This activity is member-organized and is not facilitated, monitored, or organized by IWP staff.</p></section>' + attendeeSection(data,event) +
           '</div>' +
           '<aside class="adventure-action-card">' +
             '<h2>Adventure Information</h2>' +
@@ -207,7 +217,7 @@
       finished = true;
       if (!renderedFromCache) renderError('The adventure took too long to load. Please try again.');
     }, 15000);
-    fetch('/api/public-adventure?id=' + encodeURIComponent(eventId) + '&_=m74-' + Date.now(), { headers: { 'accept': 'application/json' } })
+    fetch('/api/public-adventure?id=' + encodeURIComponent(eventId) + '&_=m78-' + Date.now(), { headers: { 'accept': 'application/json' } })
       .then(function (response) { if (!response.ok) throw new Error('Adventure request failed.'); return response.json(); })
       .then(function (payload) {
         if (finished) return;

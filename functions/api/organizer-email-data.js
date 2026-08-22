@@ -1,32 +1,3 @@
-export async function onRequestPost(context) {
-  try {
-    const body = await context.request.json();
-    const appUrl = String(context.env.IWP_APPS_SCRIPT_URL || body.appUrl || '').trim();
-    if (!appUrl || !appUrl.startsWith('https://script.google.com/')) {
-      return Response.json({ success: false, error: 'Organizer email service is not configured.' }, { status: 500 });
-    }
-    const upstream = await fetch(appUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        action: 'organizerEmailDataApi',
-        session: body.session || '',
-        eventId: body.eventId || ''
-      }),
-      redirect: 'follow'
-    });
-    const raw = await upstream.text();
-    let result;
-    try { result = JSON.parse(raw); }
-    catch (_) { throw new Error('The organizer email service returned an invalid response.'); }
-    return Response.json(result, {
-      status: result && result.success ? 200 : 400,
-      headers: { 'cache-control': 'no-store' }
-    });
-  } catch (error) {
-    return Response.json({ success: false, error: error && error.message ? error.message : 'Unable to load reminder.' }, {
-      status: 500,
-      headers: { 'cache-control': 'no-store' }
-    });
-  }
-}
+import {verifySession,json,displayTime} from './_organizer-auth.js';
+function countBy(regs,kind){if(kind==='waitlist')return regs.filter(r=>String(r.status||'').toLowerCase()==='waitlist'&&r.email).length;if(kind==='registered')return regs.filter(r=>!['waitlist','cancelled','canceled'].includes(String(r.status||'').toLowerCase())&&r.email).length;return regs.filter(r=>!['cancelled','canceled'].includes(String(r.status||'').toLowerCase())&&r.email).length}
+export async function onRequestPost({request,env}){try{const b=await request.json(),user=await verifySession(env,b.session),eventId=String(b.eventId||'').trim();if(!eventId)throw new Error('Adventure ID is required.');const e=await env.COMMUNITY_DB.prepare('SELECT * FROM events WHERE event_id=?').bind(eventId).first();if(!e)throw new Error('Adventure not found.');const regs=(await env.COMMUNITY_DB.prepare('SELECT status,email FROM registrations WHERE event_id=?').bind(eventId).all()).results||[];const logs=(await env.COMMUNITY_DB.prepare("SELECT details,created_at FROM logs WHERE message='Organizer email sent' AND details LIKE ? ORDER BY created_at DESC LIMIT 20").bind('%"eventId":"'+eventId+'"%').all()).results||[];const history=logs.map(x=>{let d={};try{d=JSON.parse(x.details||'{}')}catch(_){}return {subject:d.subject||'Organizer email',sent:Number(d.sent||0),failed:Number(d.failed||0),sentAt:x.created_at||'',sentBy:d.sentBy||''}});return json({success:true,authorized:true,user,source:'d1',migration:'M7.8',data:{event:{eventId:e.event_id,title:e.title,startDate:e.start_date,startTime:displayTime(e.start_time),location:e.location_name,address:e.address,organizerName:e.organizer_name},counts:{registered:countBy(regs,'registered'),waitlist:countBy(regs,'waitlist'),all:countBy(regs,'all')},history}})}catch(e){return json({success:false,error:e.message||'Unable to load email details.'},400)}}
