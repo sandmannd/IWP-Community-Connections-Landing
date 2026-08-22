@@ -333,12 +333,13 @@
     var value = String(url || '').trim();
     if (!value) return '';
 
-    // Event uploads are saved as public Google Drive thumbnail URLs. Keep those
-    // intact, and also normalize older Drive share/view links when encountered.
+    // Keep legacy Google Drive images working while also allowing images stored
+    // privately in R2 and served through our same-origin image endpoint.
     var driveIdMatch = value.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?[^#]*[?&]id=)([-_a-zA-Z0-9]+)/i);
     if (driveIdMatch && driveIdMatch[1]) {
       return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(driveIdMatch[1]) + '&sz=w1600';
     }
+    if (/^\/api\/adventure-image\?key=adventures%2F/i.test(value) || /^\/api\/adventure-image\?key=adventures\//i.test(value)) return value;
 
     return /^https:\/\//i.test(value) ? value : '';
   }

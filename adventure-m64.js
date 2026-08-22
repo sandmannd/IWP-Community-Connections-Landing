@@ -59,8 +59,10 @@
   }
   function normalizeImage(url) {
     var value = String(url || '').trim();
+    if (!value) return '';
     var match = value.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?[^#]*[?&]id=)([-_a-zA-Z0-9]+)/i);
     if (match) return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(match[1]) + '&sz=w1600';
+    if (/^\/api\/adventure-image\?key=adventures%2F/i.test(value) || /^\/api\/adventure-image\?key=adventures\//i.test(value)) return value;
     return /^https:\/\//i.test(value) ? value : '';
   }
   function detailCacheKey(eventId) { return detailCachePrefix + String(eventId || '').trim(); }
