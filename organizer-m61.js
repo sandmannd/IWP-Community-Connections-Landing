@@ -33,7 +33,7 @@
   function readDashboardCache(session){try{var raw=window.sessionStorage.getItem(dashboardCacheKey(session))||window.localStorage.getItem(dashboardCacheKey(session))||'',cached=raw?JSON.parse(raw):null;if(!cached||!cached.savedAt||!cached.payload)return null;if(Date.now()-Number(cached.savedAt)>dashboardCacheMaxAge)return null;return cached.payload;}catch(ignore){return null;}}
   function writeDashboardCache(session,payload){try{var raw=JSON.stringify({savedAt:Date.now(),payload:payload});window.sessionStorage.setItem(dashboardCacheKey(session),raw);window.localStorage.setItem(dashboardCacheKey(session),raw);}catch(ignore){}}
   function showAccess(message){clearActiveTimeout();removeRequests();setState('access');text('organizerAccessMessage',message||'Sign in with the approved Google account used for Community Connections.');renderGoogleButton();}
-  function signOut(){clearActiveTimeout();removeRequests();var session=readSession();clearSession();if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();if(session&&session.token&&appUrl){var x=document.createElement('script');x.src=appUrl+(appUrl.indexOf('?')===-1?'?':'&')+'api=organizer-signout&callback=iwpOrganizerSignOutCallback&session='+encodeURIComponent(session.token)+'&_='+Date.now();document.head.appendChild(x);}location.href='/organizer.html';} window.iwpOrganizerSignOutCallback=function(){};
+  function signOut(){clearActiveTimeout();removeRequests();var session=readSession();clearSession();try{fetch('/api/organizer-signout',{method:'POST',credentials:'same-origin',keepalive:true});}catch(ignore){}if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();if(session&&session.token&&appUrl){var x=document.createElement('script');x.src=appUrl+(appUrl.indexOf('?')===-1?'?':'&')+'api=organizer-signout&callback=iwpOrganizerSignOutCallback&session='+encodeURIComponent(session.legacyToken||session.token)+'&_='+Date.now();document.head.appendChild(x);}setTimeout(function(){location.href='/organizer.html';},50);} window.iwpOrganizerSignOutCallback=function(){};
 
   var menu=document.querySelector('.mobile-menu-button'),nav=byId('mainNavigation');
   if(menu&&nav){menu.dataset.iwpMenuBound='1';menu.addEventListener('click',function(){var open=menu.getAttribute('aria-expanded')==='true';menu.setAttribute('aria-expanded',String(!open));nav.classList.toggle('is-open',!open);menu.textContent=open?'Menu':'Close';});}
@@ -83,5 +83,18 @@
   async function handleGoogleCredential(response){var credential=response&&response.credential?String(response.credential):'';if(!credential){showAccess('Google did not return a sign-in credential. Please try again.');return;}setState('loading');try{var r=await fetch('/api/organizer-session',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({credential:credential})});var p=await r.json();window.iwpOrganizerSessionCallback(p);}catch(e){showAccess('Unable to start the organizer session. Please try again.');}}
   function renderGoogleButton(){var target=byId('googleSignInButton');if(!target||target.dataset.rendered==='true')return;if(!clientId){text('organizerAccessMessage','The Google sign-in client has not been configured.');return;}if(!(window.google&&google.accounts&&google.accounts.id)){setTimeout(renderGoogleButton,150);return;}google.accounts.id.initialize({client_id:clientId,callback:handleGoogleCredential,auto_select:false,cancel_on_tap_outside:true});google.accounts.id.renderButton(target,{theme:'outline',size:'large',shape:'pill',text:'signin_with',width:300});target.dataset.rendered='true';}
 
-  var existing=readSession();if(existing)loadDashboard(existing);else showAccess();
+  async function restoreRememberedSession(){
+    setState('loading');
+    try{
+      var r=await fetch('/api/organizer-session-restore',{method:'GET',credentials:'same-origin',headers:{'accept':'application/json'}});
+      var p=await r.json();
+      if(r.ok&&p&&p.success&&p.authorized){
+        var session=writeSession(p);
+        if(session){loadDashboard(session);return;}
+      }
+    }catch(ignore){}
+    showAccess();
+  }
+
+  var existing=readSession();if(existing)loadDashboard(existing);else restoreRememberedSession();
 })();
