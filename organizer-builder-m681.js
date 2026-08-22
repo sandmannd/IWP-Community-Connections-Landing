@@ -30,7 +30,7 @@ async function publishSavedAdventure(){
   var response=await fetch('/api/organizer-event-action',{
     method:'POST',
     headers:{'content-type':'application/json'},
-    body:JSON.stringify({appUrl:appUrl,session:session.token,eventId:eventId,eventAction:'publish'})
+    body:JSON.stringify({appUrl:appUrl,session:(session.legacyToken||session.token),eventId:eventId,eventAction:'publish'})
   });
   var result=await response.json();
   if(!response.ok||!result||!result.success)throw new Error(result&&result.error||'Adventure could not be published.');
@@ -43,7 +43,7 @@ function updatePaidOptions(){var free=byId('FreeEvent').checked,buyOwn=byId('Buy
 function normalizeMoneyInput(e){var value=String(e.value||'').replace(/[^0-9.]/g,''),parts=value.split('.');if(parts.length>2)value=parts.shift()+'.'+parts.join('');e.value=value}
 function timeToMinutes(value){var match=String(value||'').match(/^(\d{1,2}):(\d{2})/);return match?(Number(match[1])*60+Number(match[2])):null}
 function validateSaveData(data){var title=byId('Title').value.trim(),type=byId('EventType').value;if(!title){showValidationPopup('Adventure name required','Enter an adventure name before saving.','Title');return false}if(!type){showValidationPopup('Adventure type required','Choose an adventure type before saving.','EventType');return false}if(!data.StartDate||!data.EndDate){showValidationPopup('Check the dates','Enter both dates as MM/DD/YYYY.','StartDate');return false}if(data.EndDate<data.StartDate){showValidationPopup('Check the dates','The end date and time cannot be before the start date and time.','EndDate');return false}var startMinutes=timeToMinutes(data.StartTime),endMinutes=timeToMinutes(data.EndTime);if(data.StartDate===data.EndDate&&startMinutes!==null&&endMinutes!==null&&endMinutes<=startMinutes){showValidationPopup('Check the times','For a one-day adventure, the end time must be later than the start time.','EndTime');return false}return true}
-function submitSave(){var session=readSession();if(!session){fail();return}var data=payload();if(!validateSaveData(data))return;var b=byId('saveAdventureButton'),pub=byId('publishAdventureButton');isSaving=true;b.disabled=true;if(pub)pub.disabled=true;if(saveMode==='published'){if(pub)pub.textContent='Publishing…';text('builderStatus','Publishing adventure');text('builderMessage','Making this adventure live in Community Connections.')}else{b.textContent='Saving…';text('builderStatus',currentEventStatus==='published'?'Updating adventure':'Saving draft');text('builderMessage',currentEventStatus==='published'?'Updating the live Community Connections adventure.':'Writing the adventure to the Community Connections database.')}jsonp('organizer-save-adventure','iwpOrganizerSaveAdventureCallback',{session:session.token,eventId:eventId,data:JSON.stringify(data)},'builderSave')}
+function submitSave(){var session=readSession();if(!session){fail();return}var data=payload();if(!validateSaveData(data))return;var b=byId('saveAdventureButton'),pub=byId('publishAdventureButton');isSaving=true;b.disabled=true;if(pub)pub.disabled=true;if(saveMode==='published'){if(pub)pub.textContent='Publishing…';text('builderStatus','Publishing adventure');text('builderMessage','Making this adventure live in Community Connections.')}else{b.textContent='Saving…';text('builderStatus',currentEventStatus==='published'?'Updating adventure':'Saving draft');text('builderMessage',currentEventStatus==='published'?'Updating the live Community Connections adventure.':'Writing the adventure to the Community Connections database.')}jsonp('organizer-save-adventure','iwpOrganizerSaveAdventureCallback',{session:(session.legacyToken||session.token),eventId:eventId,data:JSON.stringify(data)},'builderSave')}
 byId('builderForm').addEventListener('submit',function(e){e.preventDefault();saveMode=currentEventStatus==='published'?'published':'draft';if(pendingUpload)uploadImage(pendingUpload);else submitSave()});
 byId('publishAdventureButton').addEventListener('click',function(){saveMode='published';if(!window.confirm('Publish this adventure now? It will become visible to Community Connections members.'))return;if(pendingUpload)uploadImage(pendingUpload);else submitSave()});
 
@@ -66,7 +66,7 @@ function uploadImage(item){
     credentials:'same-origin',
     body:JSON.stringify({
       appUrl:appUrl,
-      session:session.token,
+      session:(session.legacyToken||session.token),
       fileName:item.file.name||'adventure-image.jpg',
       mimeType:'image/jpeg',
       dataUrl:item.dataUrl
@@ -101,7 +101,7 @@ function lifecycleAction(action){
   setLifecycleBusy(true,action==='delete'?'Deleting adventure':'Cancelling adventure');
   fetch('/api/organizer-event-action',{
     method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',
-    body:JSON.stringify({appUrl:appUrl,session:session.token,eventId:eventId,eventAction:action})
+    body:JSON.stringify({appUrl:appUrl,session:(session.legacyToken||session.token),eventId:eventId,eventAction:action})
   }).then(function(response){return response.json().catch(function(){throw new Error('The adventure service returned an invalid response.')}).then(function(result){if(!response.ok||!result||!result.success)throw new Error(result&&(result.error||result.message)||'The adventure could not be updated.');return result})})
   .then(function(result){
     isDirty=false;isSaving=false;
@@ -130,5 +130,5 @@ if(byId('confirmDeleteAdventure'))byId('confirmDeleteAdventure').addEventListene
 byId('validationDialogClose').addEventListener('click',function(){byId('validationDialog').close()});
 byId('organizerSignOutTop').addEventListener('click',function(){areas().forEach(function(a){try{a.removeItem(sessionKey)}catch(e){}});location.href='/organizer.html'});
 document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='s'){e.preventDefault();var button=byId('saveAdventureButton');if(button&&!button.disabled){window.IWPToast&&window.IWPToast('Saving adventure draft…','info','Save Draft');button.click()}}});
-var session=readSession();if(!session){fail()}else if(!appUrl){fail('The organizer service URL has not been configured.')}else jsonp('organizer-builder','iwpOrganizerBuilderCallback',{session:session.token,eventId:eventId},'builderLoad');
+var session=readSession();if(!session){fail()}else if(!appUrl){fail('The organizer service URL has not been configured.')}else jsonp('organizer-builder','iwpOrganizerBuilderCallback',{session:(session.legacyToken||session.token),eventId:eventId},'builderLoad');
 })();
