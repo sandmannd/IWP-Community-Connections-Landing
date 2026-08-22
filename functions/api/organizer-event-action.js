@@ -1,33 +1,34 @@
-export async function onRequestPost(context) {
-  try {
-    const body = await context.request.json();
-    const appUrl = String(context.env.IWP_APPS_SCRIPT_URL || body.appUrl || '').trim();
-    if (!appUrl || !appUrl.startsWith('https://script.google.com/')) {
-      return Response.json({ success: false, error: 'Organizer service is not configured.' }, { status: 500 });
+import {verifySession,json} from './_organizer-auth.js';
+export async function onRequestPost({request,env}){
+  try{
+    const b=await request.json();
+    const user=await verifySession(env,b.session);
+    const eventId=String(b.eventId||'').trim(), action=String(b.eventAction||'').trim().toLowerCase();
+    if(!eventId) throw new Error('Adventure ID is required.');
+    const event=await env.COMMUNITY_DB.prepare('SELECT event_id,status,title FROM events WHERE event_id=?').bind(eventId).first();
+    if(!event) throw new Error('Adventure not found.');
+    const now=new Date().toISOString();
+    if(action==='publish'){
+      await env.COMMUNITY_DB.prepare("UPDATE events SET status='Published',updated_at=? WHERE event_id=?").bind(now,eventId).run();
+      return json({success:true,authorized:true,user,eventId,message:'Adventure published.',source:'d1',migration:'M7.7'});
     }
-    const upstream = await fetch(appUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        action: 'organizerEventLifecycleApi',
-        session: body.session || '',
-        eventId: body.eventId || '',
-        eventAction: body.eventAction || ''
-      }),
-      redirect: 'follow'
-    });
-    const raw = await upstream.text();
-    let result;
-    try { result = JSON.parse(raw); }
-    catch (_) { throw new Error('The organizer service returned an invalid response.'); }
-    return Response.json(result, {
-      status: result && result.success ? 200 : 400,
-      headers: { 'cache-control': 'no-store' }
-    });
-  } catch (error) {
-    return Response.json({ success: false, error: error && error.message ? error.message : 'Adventure action failed.' }, {
-      status: 500,
-      headers: { 'cache-control': 'no-store' }
-    });
-  }
+    if(action==='cancel'){
+      await env.COMMUNITY_DB.prepare("UPDATE events SET status='Cancelled',updated_at=? WHERE event_id=?").bind(now,eventId).run();
+      return json({success:true,authorized:true,user,eventId,message:'Adventure cancelled. Registrations were preserved.',source:'d1',migration:'M7.7'});
+    }
+    if(action==='close'){
+      await env.COMMUNITY_DB.prepare("UPDATE events SET status='Closed',updated_at=? WHERE event_id=?").bind(now,eventId).run();
+      return json({success:true,authorized:true,user,eventId,message:'Adventure registration closed.',source:'d1',migration:'M7.7'});
+    }
+    if(action==='delete'){
+      await env.COMMUNITY_DB.batch([
+        env.COMMUNITY_DB.prepare('DELETE FROM registrations WHERE event_id=?').bind(eventId),
+        env.COMMUNITY_DB.prepare('DELETE FROM memories WHERE event_id=?').bind(eventId),
+        env.COMMUNITY_DB.prepare('DELETE FROM adventure_resources WHERE event_id=?').bind(eventId),
+        env.COMMUNITY_DB.prepare('DELETE FROM events WHERE event_id=?').bind(eventId)
+      ]);
+      return json({success:true,authorized:true,user,eventId,message:'Adventure permanently deleted.',source:'d1',migration:'M7.7'});
+    }
+    throw new Error('Unknown adventure action.');
+  }catch(e){return json({success:false,authorized:false,error:e.message||'Adventure action failed.'},400);}
 }
