@@ -103,6 +103,8 @@
       : '<div class="adventure-image-fallback" aria-hidden="true">' + icon(event.EventType) + '</div>';
     var max = Number(event.MaxParticipants || 0);
     var remaining = data.spotsRemaining === null || data.spotsRemaining === undefined ? null : Number(data.spotsRemaining);
+    var registeredCount = Number(data.attendeeCount !== undefined ? data.attendeeCount : data.spotsTaken || 0);
+    var registeredLabel = registeredCount + ' ' + (registeredCount === 1 ? 'person registered' : 'people registered');
     var availability = max <= 0 ? 'Registration open' : remaining > 0 ? remaining + ' spot' + (remaining === 1 ? '' : 's') + ' remaining' : bool(event.WaitlistEnabled) ? 'Full · Waitlist available' : 'Adventure full'; var registrationRequired=bool(event.RegistrationRequired);
     var registerLabel = max > 0 && remaining <= 0 && bool(event.WaitlistEnabled) ? 'Join Waitlist' : 'Register Now';
     var canRegister = String(event.Status || '') === 'Published' && bool(event.RegistrationRequired) && !(max > 0 && remaining <= 0 && !bool(event.WaitlistEnabled));
@@ -134,6 +136,7 @@
           '</div>' +
           '<aside class="adventure-action-card">' +
             '<h2>Adventure Information</h2>' +
+            '<p class="adventure-registered-count">' + escapeHtml(registeredLabel) + '</p>' +
             '<p class="adventure-availability">' + escapeHtml(availability) + '</p>' +
             (event.Address ? '<address>' + escapeHtml(event.Address) + '</address>' : '') +
             (maps ? '<a class="adventure-secondary-button" target="_blank" rel="noopener" href="' + escapeAttr(maps) + '">Open in Maps</a>' : '') +
