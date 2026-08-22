@@ -2,7 +2,7 @@
   'use strict';
   var config = window.IWP_SITE_CONFIG || {};
   var root = document.getElementById('adventureRoot');
-  var detailCachePrefix = 'iwpAdventureDetailCacheV1:';
+  var detailCachePrefix = 'iwpAdventureDetailCacheV2M74:';
   var detailCacheMaxAge = 15 * 60 * 1000;
   var renderedFromCache = false;
   var renderedPreview = false;
@@ -201,38 +201,29 @@
       } catch (ignore) {}
     }
 
-    var callbackName = 'iwpPublicAdventureCallback';
     var finished = false;
-    var script = document.createElement('script');
     var timeout = window.setTimeout(function () {
       if (finished) return;
       finished = true;
-      script.remove();
       if (!renderedFromCache) renderError('The adventure took too long to load. Please try again.');
-    }, 20000);
-
-    window[callbackName] = function (payload) {
-      if (finished) return;
-      finished = true;
-      window.clearTimeout(timeout);
-      script.remove();
-      if (payload && payload.success && payload.event) {
-        writeDetailCache(eventId, payload);
-        render(payload);
-      } else if (!renderedFromCache) {
-        renderError(payload && (payload.message || payload.error));
-      }
-    };
-    script.async = true;
-    script.src = config.appUrl + (config.appUrl.indexOf('?') === -1 ? '?' : '&') + 'api=public-adventure&eventId=' + encodeURIComponent(eventId) + '&callback=' + encodeURIComponent(callbackName) + '&_=' + Date.now();
-    script.onerror = function () {
-      if (finished) return;
-      finished = true;
-      window.clearTimeout(timeout);
-      script.remove();
-      if (!renderedFromCache) renderError('The adventure service is temporarily unavailable.');
-    };
-    document.head.appendChild(script);
+    }, 15000);
+    fetch('/api/public-adventure?id=' + encodeURIComponent(eventId) + '&_=m74-' + Date.now(), { headers: { 'accept': 'application/json' } })
+      .then(function (response) { if (!response.ok) throw new Error('Adventure request failed.'); return response.json(); })
+      .then(function (payload) {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(timeout);
+        if (payload && payload.success && payload.event) {
+          writeDetailCache(eventId, payload);
+          render(payload);
+        } else if (!renderedFromCache) renderError(payload && (payload.message || payload.error));
+      })
+      .catch(function () {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(timeout);
+        if (!renderedFromCache) renderError('The adventure service is temporarily unavailable.');
+      });
   }
   document.querySelectorAll('[data-launch-app]').forEach(function (link) { link.href = config.appUrl || '/'; });
   load();

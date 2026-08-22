@@ -1,27 +1,8 @@
-export async function onRequestGet(context) {
-  try {
-    const appUrl = String(context.env.IWP_APPS_SCRIPT_URL || '').trim();
-    if (!appUrl || !appUrl.startsWith('https://script.google.com/')) {
-      return Response.json({ success: false, error: 'Landing data service is not configured.' }, { status: 500 });
-    }
-    const upstream = await fetch(appUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'landingDataApi' }),
-      redirect: 'follow'
-    });
-    const raw = await upstream.text();
-    let result;
-    try { result = JSON.parse(raw); }
-    catch (_) { throw new Error('The landing data service returned an invalid response.'); }
-    return Response.json(result, {
-      status: result && result.success ? 200 : 502,
-      headers: { 'cache-control': 'public, max-age=60, s-maxage=60' }
-    });
-  } catch (error) {
-    return Response.json({ success: false, error: error && error.message ? error.message : 'Landing data could not be loaded.' }, {
-      status: 500,
-      headers: { 'cache-control': 'no-store' }
-    });
-  }
-}
+function bool(v){return v===true||v===1||v==='1'||String(v||'').toLowerCase()==='true'}
+function displayTime(v){const t=String(v??'').trim();if(!t||/\b(?:AM|PM)\b/i.test(t))return t;const m=t.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);if(!m)return t;const h=Number(m[1]);if(h<0||h>23)return t;return `${h%12||12}:${m[2]} ${h>=12?'PM':'AM'}`}
+function cleanMoney(v){const t=String(v??'').replace(/^\$/,'').trim();if(!t)return '';const n=Number(t);return Number.isFinite(n)?(Number.isInteger(n)?String(n):String(n).replace(/0+$/,'').replace(/\.$/,'')):t}
+function costLabel(e){if(bool(e.free_event))return 'Free';const a=cleanMoney(e.adult_cost),c=cleanMoney(e.child_cost);if(a&&c)return `$${a} adult / $${c} child`;if(a)return `$${a}`;if(c)return `$${c} child`;return 'Cost listed in details'}
+function availabilityLabel(r,m,w){if(!m)return 'Registration open';if(r>0)return `${r} spot${r===1?'':'s'} remaining`;return w?'Full · Waitlist available':'Full'}
+function chicagoDateKey(){const p=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const v=Object.fromEntries(p.map(x=>[x.type,x.value]));return `${v.year}-${v.month}-${v.day}`}
+function build(e){const max=Number(e.max_participants||0),people=Number(e.people_count||0),remaining=max>0?Math.max(0,max-people):null,wait=bool(e.waitlist_enabled);return {eventId:String(e.event_id||''),title:String(e.title||'Community Adventure'),type:String(e.event_type||'Adventure'),imageUrl:String(e.image_url||''),startDate:String(e.start_date||''),startTime:displayTime(e.start_time),endDate:String(e.end_date||''),endTime:displayTime(e.end_time),location:String(e.location_name||''),description:String(e.description||e.what_to_expect||''),costLabel:costLabel(e),maxParticipants:max,peopleCount:people,spotsRemaining:remaining,waitlistCount:Number(e.waitlist_count||0),waitlistEnabled:wait,full:max>0&&remaining===0,availabilityLabel:availabilityLabel(remaining,max,wait),detailsUrl:`https://connections.redlinecreates.com/adventure.html?id=${encodeURIComponent(e.event_id)}`,legacyDetailsUrl:'',registrationUrl:`https://connections.redlinecreates.com/register.html?id=${encodeURIComponent(e.event_id)}`,featured:bool(e.featured)}}
+export async function onRequestGet(context){const db=context.env.COMMUNITY_DB;if(!db)return Response.json({success:false,error:'Community database is not configured.'},{status:503});try{const q=await db.prepare(`SELECT e.*,COALESCE(SUM(CASE WHEN lower(r.status) NOT IN ('cancelled','waitlist') THEN COALESCE(r.adult_count,0)+COALESCE(r.child_count,0) ELSE 0 END),0) people_count,COALESCE(SUM(CASE WHEN lower(r.status)='waitlist' THEN 1 ELSE 0 END),0) waitlist_count FROM events e LEFT JOIN registrations r ON r.event_id=e.event_id GROUP BY e.event_id`).all();const all=q.results||[],today=chicagoDateKey();const upcoming=all.filter(e=>e.status==='Published'&&String(e.end_date||e.start_date||'')>=today).sort((a,b)=>String(a.start_date||'').localeCompare(String(b.start_date||''))||String(a.start_time||'').localeCompare(String(b.start_time||'')));const past=all.filter(e=>String(e.status||'').toLowerCase()==='complete').sort((a,b)=>String(b.start_date||'').localeCompare(String(a.start_date||''))||String(b.start_time||'').localeCompare(String(a.start_time||'')));const featured=upcoming.find(e=>bool(e.featured))||upcoming[0]||null;return Response.json({success:true,source:'d1',migration:'M7.4',generatedAt:new Date().toISOString(),featured:featured?build(featured):null,upcoming:upcoming.map(build),past:past.slice(0,12).map(build),stats:{upcomingAdventures:upcoming.length,publishedAdventures:all.filter(e=>e.status==='Published').length,completedAdventures:past.length}},{headers:{'cache-control':'public, max-age=30, s-maxage=60'}})}catch(err){return Response.json({success:false,source:'d1',migration:'M7.4',error:String(err?.message||err)},{status:500,headers:{'cache-control':'no-store'}})}}

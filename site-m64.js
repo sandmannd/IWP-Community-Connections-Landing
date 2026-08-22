@@ -133,7 +133,7 @@
   });
 
 
-  var landingCacheKey = 'iwpLandingDataCacheV1';
+  var landingCacheKey = 'iwpLandingDataCacheV2M74';
   var landingCacheMaxAge = 6 * 60 * 60 * 1000;
   var landingCacheRendered = false;
   var adventureDetailCachePrefix = 'iwpAdventureDetailCacheV1:';
@@ -306,39 +306,27 @@
       landingCacheRendered = true;
       window.iwpLandingDataCallback(cachedLandingData);
     }
-    if (!c.appUrl) {
-      if (!landingCacheRendered) renderLandingDataError();
-      return;
-    }
-    var callbackName = 'iwpLandingDataCallback';
-    var script = document.createElement('script');
-    var separator = c.appUrl.indexOf('?') === -1 ? '?' : '&';
     var finished = false;
     var timeout = window.setTimeout(function () {
       if (finished) return;
       finished = true;
-      script.remove();
       if (!landingCacheRendered) renderLandingDataError();
-    }, 30000);
-    var originalCallback = window[callbackName];
-    window[callbackName] = function (data) {
-      if (finished) return;
-      finished = true;
-      window.clearTimeout(timeout);
-      script.remove();
-      window[callbackName] = originalCallback;
-      originalCallback(data);
-    };
-    script.src = c.appUrl + separator + 'api=landing&callback=' + encodeURIComponent(callbackName) + '&_=' + Date.now();
-    script.onerror = function () {
-      if (finished) return;
-      finished = true;
-      window.clearTimeout(timeout);
-      script.remove();
-      window[callbackName] = originalCallback;
-      if (!landingCacheRendered) renderLandingDataError();
-    };
-    document.head.appendChild(script);
+    }, 15000);
+    fetch('/api/landing-data?_=m74-' + Date.now(), { headers: { 'accept': 'application/json' } })
+      .then(function (response) { if (!response.ok) throw new Error('Landing data request failed.'); return response.json(); })
+      .then(function (data) {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(timeout);
+        if (!data || !data.success) throw new Error((data && data.error) || 'Landing data unavailable.');
+        window.iwpLandingDataCallback(data);
+      })
+      .catch(function () {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(timeout);
+        if (!landingCacheRendered) renderLandingDataError();
+      });
   }
 
   function normalizeLandingImageUrl(url) {
