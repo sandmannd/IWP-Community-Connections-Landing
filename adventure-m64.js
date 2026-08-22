@@ -164,7 +164,6 @@
   function load() {
     var eventId = new URLSearchParams(window.location.search).get('id');
     if (!eventId) return renderError('No adventure was selected.');
-    if (!config.appUrl) return renderError('The Community Connections service is not configured.');
 
     var cached = readDetailCache(eventId);
     if (cached) {
@@ -237,6 +236,6 @@
         if (!renderedFromCache) renderError('The adventure service is temporarily unavailable.');
       });
   }
-  document.querySelectorAll('[data-launch-app]').forEach(function (link) { link.href = config.appUrl || '/'; });
+  document.querySelectorAll('[data-launch-app]').forEach(function(link){link.href='/';});
   load();
 })();

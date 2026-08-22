@@ -1,5 +1,11 @@
 import {authenticateCredential,issueSession,json} from './_organizer-auth.js';
-export async function onRequestPost({request,env}){try{const b=await request.json();const user=await authenticateCredential(env,String(b.credential||''));const s=await issueSession(env,user);let legacyToken='',legacyExpiresAt='';const app=String(env.IWP_APPS_SCRIPT_URL||'');if(app){try{const u=new URL(app);u.searchParams.set('api','organizer-session');u.searchParams.set('callback','x');u.searchParams.set('credential',String(b.credential||''));const r=await fetch(u.toString(),{redirect:'follow'});const t=await r.text();const m=t.match(/^x\((.*)\);?$/s);if(m){const p=JSON.parse(m[1]);if(p&&p.success){legacyToken=String(p.sessionToken||'');legacyExpiresAt=String(p.expiresAt||'');}}}catch(_){}}
-const response=json({success:true,authorized:true,authenticated:true,sessionToken:s.token,expiresAt:s.expiresAt,legacyToken,legacyExpiresAt,user:{email:user.email,name:user.name,picture:user.picture,role:user.role},source:'cloudflare-d1',migration:'M7.5.1'});
-response.headers.append('set-cookie','iwp_organizer_session='+encodeURIComponent(s.token)+'; Max-Age=2592000; Path=/; HttpOnly; Secure; SameSite=Lax');
-return response;}catch(e){return json({success:false,authorized:false,authenticated:false,error:e.message||'Unable to start organizer session.',migration:'M7.5.1'},401);}}
+export async function onRequestPost({request,env}){
+  try{
+    const body=await request.json();
+    const user=await authenticateCredential(env,String(body.credential||''));
+    const session=await issueSession(env,user);
+    return json({success:true,authorized:true,user,sessionToken:session.token,expiresAt:session.expiresAt,source:'cloudflare',migration:'M7.9'});
+  }catch(e){
+    return json({success:false,authorized:false,error:e.message||'Unable to start organizer session.'},401);
+  }
+}

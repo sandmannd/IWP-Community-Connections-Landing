@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-var cfg=window.IWP_SITE_CONFIG||{},appUrl=String(cfg.appUrl||''),sessionKey='iwpOrganizerSessionV1',request=0,timer=0,eventId=new URLSearchParams(location.search).get('id')||'',pendingUpload=null,isDirty=false,isSaving=false,currentEventStatus='draft',saveMode='draft';
+var cfg=window.IWP_SITE_CONFIG||{},sessionKey='iwpOrganizerSessionV1',request=0,timer=0,eventId=new URLSearchParams(location.search).get('id')||'',pendingUpload=null,isDirty=false,isSaving=false,currentEventStatus='draft',saveMode='draft';
 function clearPublicAdventureCache(id){try{if(id)localStorage.removeItem('iwpAdventureDetailCacheV1:'+String(id));localStorage.removeItem('iwpLandingDataCacheV1')}catch(e){}}
 function byId(id){return document.getElementById(id)} function text(id,v){var e=byId(id);if(e)e.textContent=v==null?'':String(v)}
 function areas(){var a=[];try{a.push(sessionStorage)}catch(e){}try{a.push(localStorage)}catch(e){}return a}
@@ -11,7 +11,6 @@ function markDirty(){if(isSaving)return;isDirty=true;text('builderStatus','Unsav
 function leaveBuilder(){if(isDirty&&!window.confirm('You have unsaved changes. Leave without saving?'))return;isDirty=false;window.location.href='/organizer-adventures.html'}
 function fail(msg){clearTimer();state('access');text('builderAccessMessage',msg||'Open the Organizer Command Center and sign in first.')}
 function showValidationPopup(title,message,focusId){text('validationDialogTitle',title||'Check the adventure details');text('validationDialogMessage',message||'Please correct the highlighted information and try again.');var dialog=byId('validationDialog');if(dialog&&typeof dialog.showModal==='function')dialog.showModal();else window.alert(message);if(focusId){var target=byId(focusId);if(target)window.setTimeout(function(){target.focus()},50)}}
-function jsonp(route,callback,params,prefix){clearTimer();remove(prefix);var s=document.createElement('script');s.id=prefix+(++request);var q='api='+encodeURIComponent(route)+'&callback='+encodeURIComponent(callback);Object.keys(params||{}).forEach(function(k){q+='&'+encodeURIComponent(k)+'='+encodeURIComponent(params[k])});s.src=appUrl+(appUrl.indexOf('?')<0?'?':'&')+q+'&_='+Date.now();s.onerror=function(){fail('Unable to reach the organizer service. Please sign in again.')};document.head.appendChild(s);timer=setTimeout(function(){fail('The organizer service took too long to respond.')},20000)}
 function bool(v){return v===true||String(v).toLowerCase()==='true'||String(v)==='1'}
 function apiDateToDisplay(v){var m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[2]+'/'+m[3]+'/'+m[1]:String(v||'')}
 function displayDateToApi(v){var m=String(v||'').trim().match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2}|\d{4})$/);if(!m)return '';var y=m[3].length===2?'20'+m[3]:m[3],mo=('0'+m[1]).slice(-2),d=('0'+m[2]).slice(-2);return y+'-'+mo+'-'+d}
@@ -30,7 +29,7 @@ async function publishSavedAdventure(){
   var response=await fetch('/api/organizer-event-action',{
     method:'POST',
     headers:{'content-type':'application/json'},
-    body:JSON.stringify({appUrl:appUrl,session:(session.legacyToken||session.token),eventId:eventId,eventAction:'publish'})
+    body:JSON.stringify({session:session.token,eventId:eventId,eventAction:'publish'})
   });
   var result=await response.json();
   if(!response.ok||!result||!result.success)throw new Error(result&&result.error||'Adventure could not be published.');
@@ -100,7 +99,7 @@ function lifecycleAction(action){
   setLifecycleBusy(true,action==='delete'?'Deleting adventure':'Cancelling adventure');
   fetch('/api/organizer-event-action',{
     method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',
-    body:JSON.stringify({appUrl:appUrl,session:(session.legacyToken||session.token),eventId:eventId,eventAction:action})
+    body:JSON.stringify({session:session.token,eventId:eventId,eventAction:action})
   }).then(function(response){return response.json().catch(function(){throw new Error('The adventure service returned an invalid response.')}).then(function(result){if(!response.ok||!result||!result.success)throw new Error(result&&(result.error||result.message)||'The adventure could not be updated.');return result})})
   .then(function(result){
     isDirty=false;isSaving=false;

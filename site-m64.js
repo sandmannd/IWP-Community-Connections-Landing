@@ -28,17 +28,11 @@
 
   function cloudflareAdventureUrl(event) {
     var eventId = String((event && (event.eventId || event.EventId)) || '').trim();
-    if (!eventId) return publicAppUrl((event && (event.detailsUrl || event.registrationUrl)) || c.appUrl) || '#';
+    if (!eventId) return '/';
     return (c.publicAdventurePage || '/adventure.html') + '?id=' + encodeURIComponent(eventId);
   }
 
-  function publicAppUrl(url) {
-    var source = String(url || c.appUrl || '').trim();
-    if (!source) return source;
-    return /script\.google\.com\/macros\/s\//i.test(source)
-      ? appendQueryParam(source, 'public', '1')
-      : source;
-  }
+  function publicAppUrl(url) { var source=String(url||'').trim(); if(!source)return '/'; if(/script\.google\.com\/macros\/s\//i.test(source))return '/'; return source; }
 
   function showAppLaunchOverlay() {
     var overlay = document.getElementById('appLaunchOverlay');
@@ -47,14 +41,7 @@
     overlay.setAttribute('aria-hidden', 'false');
   }
 
-  function warmCommunityConnections() {
-    var url = publicAppUrl(c.appUrl);
-    if (!url || window.__iwpAppWarmStarted) return;
-    window.__iwpAppWarmStarted = true;
-    try {
-      fetch(url, { mode: 'no-cors', credentials: 'omit', cache: 'no-store', keepalive: true }).catch(function () {});
-    } catch (error) {}
-  }
+  function warmCommunityConnections(){ if(window.__iwpAppWarmStarted)return; window.__iwpAppWarmStarted=true; fetch('/api/landing-data',{headers:{'accept':'application/json'},cache:'no-store'}).catch(function(){}); }
 
   document.querySelectorAll("[data-config]").forEach(function (el) {
     var key = el.getAttribute("data-config");
@@ -71,36 +58,7 @@
     if (c[key]) el.href = "mailto:" + c[key];
   });
 
-  document.querySelectorAll("[data-launch-app]").forEach(function (el) {
-  if (!c.appUrl || c.appUrl.indexOf("PASTE_") === 0) {
-    el.href = "#launch";
-
-    el.addEventListener("click", function (event) {
-      event.preventDefault();
-      alert("The Community Connections application link is being finalized.");
-    });
-  } else {
-    var isAdventureBuilder =
-      el.dataset.organizerLaunch === "true" ||
-      el.textContent.trim().toLowerCase().indexOf("adventure builder") !== -1;
-
-    if (isAdventureBuilder) {
-      el.href = c.appUrl;
-      el.dataset.organizerLaunch = "true";
-    } else {
-      el.href = publicAppUrl(c.appUrl);
-    }
-
-    el.removeAttribute("target");
-    el.removeAttribute("rel");
-    el.addEventListener("pointerenter", warmCommunityConnections, { once: true });
-    el.addEventListener("touchstart", warmCommunityConnections, {
-      once: true,
-      passive: true
-    });
-    el.addEventListener("click", showAppLaunchOverlay);
-  }
-});
+  document.querySelectorAll('[data-launch-app]').forEach(function(el){var isOrganizer=el.dataset.organizerLaunch==='true'||el.textContent.trim().toLowerCase().indexOf('adventure builder')!==-1||el.textContent.trim().toLowerCase().indexOf('organizer')!==-1;el.href=isOrganizer?(c.organizerPage||'/organizer.html'):'/';el.removeAttribute('target');el.removeAttribute('rel');});
 
 
   var menuButton = document.querySelector(".mobile-menu-button");
@@ -212,35 +170,7 @@
     });
   }
 
-  function prefetchAdventureDetail(eventId) {
-    eventId = String(eventId || '').trim();
-    if (!eventId || !c.appUrl || adventurePrefetchQueue[eventId]) return;
-    try {
-      var cachedRaw = window.localStorage.getItem(adventureDetailCacheKey(eventId));
-      var cached = cachedRaw ? JSON.parse(cachedRaw) : null;
-      if (cached && cached.savedAt && Date.now() - Number(cached.savedAt) < adventureDetailCacheMaxAge) return;
-    } catch (ignore) {}
-
-    adventurePrefetchQueue[eventId] = true;
-    var callbackName = 'iwpAdventurePrefetch' + eventId.replace(/[^a-zA-Z0-9]/g, '') + Date.now();
-    var script = document.createElement('script');
-    var separator = c.appUrl.indexOf('?') === -1 ? '?' : '&';
-    var timeout = window.setTimeout(cleanup, 20000);
-    function cleanup() {
-      window.clearTimeout(timeout);
-      try { delete window[callbackName]; } catch (ignore) { window[callbackName] = undefined; }
-      script.remove();
-      delete adventurePrefetchQueue[eventId];
-    }
-    window[callbackName] = function (payload) {
-      writeAdventureDetailCache(eventId, payload);
-      cleanup();
-    };
-    script.onerror = cleanup;
-    script.async = true;
-    script.src = c.appUrl + separator + 'api=public-adventure&eventId=' + encodeURIComponent(eventId) + '&callback=' + encodeURIComponent(callbackName) + '&_=' + Date.now();
-    document.head.appendChild(script);
-  }
+  function prefetchAdventureDetail(eventId) { eventId=String(eventId||'').trim(); if(!eventId||adventurePrefetchQueue[eventId])return; try{var cachedRaw=window.localStorage.getItem(adventureDetailCacheKey(eventId));var cached=cachedRaw?JSON.parse(cachedRaw):null;if(cached&&cached.savedAt&&Date.now()-Number(cached.savedAt)<adventureDetailCacheMaxAge)return}catch(ignore){} adventurePrefetchQueue[eventId]=true; fetch('/api/public-adventure?id='+encodeURIComponent(eventId),{headers:{'accept':'application/json'},cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(payload){if(payload&&payload.success)writeAdventureDetailCache(eventId,payload)}).catch(function(){}).finally(function(){delete adventurePrefetchQueue[eventId]}); }
 
   function activateAdventurePrefetch(root) {
     root = root || document;
@@ -868,39 +798,8 @@
     });
   }
 
-  function activateFastNavigation(root) {
-    root = root || document;
+  function activateFastNavigation(root){return;}
 
-    Array.prototype.forEach.call(
-  root.querySelectorAll('a[href*="script.google.com/macros/s/"]'),
-  function (link) {
-
-    var isOrganizerLink =
-      link.dataset.organizerLaunch === "true" ||
-      link.textContent.toLowerCase().indexOf("adventure builder") !== -1 ||
-      link.textContent.toLowerCase().indexOf("organizer") !== -1;
-
-    if (isOrganizerLink) {
-      link.href = c.appUrl;
-      link.dataset.organizerLaunch = "true";
-    } else {
-      link.href = publicAppUrl(link.href);
-    }
-
-    if (link.dataset.iwpFastNavBound === "1") return;
-    link.dataset.iwpFastNavBound = "1";
-
-    link.addEventListener("pointerenter", warmCommunityConnections, { once: true });
-    link.addEventListener("touchstart", warmCommunityConnections, {
-      once: true,
-      passive: true
-    });
-    link.addEventListener("click", showAppLaunchOverlay);
-  }
-);
-
-    // Story cards are intentionally not whole-card links. Only their visible CTA links navigate.
-  }
 
   activatePremiumPolish(document);
   activateFastNavigation(document);

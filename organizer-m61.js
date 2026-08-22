@@ -1,7 +1,6 @@
 (function(){
   'use strict';
   var config=window.IWP_SITE_CONFIG||{};
-  var appUrl=String(config.appUrl||'');
   var clientId=String(config.googleClientId||'');
   var sessionKey='iwpOrganizerSessionV1';
   var requestNumber=0;
@@ -25,7 +24,7 @@
     var actions=byId('organizerTopActions');if(actions)actions.hidden=name!=='dashboard';
   }
   function storageAreas(){var areas=[];try{if(window.sessionStorage)areas.push(window.sessionStorage);}catch(ignore){}try{if(window.localStorage)areas.push(window.localStorage);}catch(ignore){}return areas;}
-  function normalizeSession(payload){var session={token:String(payload&&payload.sessionToken||payload&&payload.token||''),expiresAt:String(payload&&payload.expiresAt||''),legacyToken:String(payload&&payload.legacyToken||''),legacyExpiresAt:String(payload&&payload.legacyExpiresAt||''),user:payload&&payload.user||{}};if(!session.token||!session.expiresAt||isNaN(Date.parse(session.expiresAt))||Date.parse(session.expiresAt)<=Date.now())return null;return session;}
+  function normalizeSession(payload){var session={token:String(payload&&payload.sessionToken||payload&&payload.token||''),expiresAt:String(payload&&payload.expiresAt||''),user:payload&&payload.user||{}};if(!session.token||!session.expiresAt||isNaN(Date.parse(session.expiresAt))||Date.parse(session.expiresAt)<=Date.now())return null;return session;}
   function readSession(){var areas=storageAreas();for(var i=0;i<areas.length;i++){try{var raw=areas[i].getItem(sessionKey)||'',data=raw?JSON.parse(raw):null,session=normalizeSession(data);if(session)return session;areas[i].removeItem(sessionKey);}catch(ignore){}}return null;}
   function writeSession(payload){var session=normalizeSession(payload);if(!session)return null;var raw=JSON.stringify(session);storageAreas().forEach(function(area){try{area.setItem(sessionKey,raw);}catch(ignore){}});return session;}
   function clearSession(){storageAreas().forEach(function(area){try{area.removeItem(sessionKey);}catch(ignore){}});}
@@ -33,7 +32,7 @@
   function readDashboardCache(session){try{var raw=window.sessionStorage.getItem(dashboardCacheKey(session))||window.localStorage.getItem(dashboardCacheKey(session))||'',cached=raw?JSON.parse(raw):null;if(!cached||!cached.savedAt||!cached.payload)return null;if(Date.now()-Number(cached.savedAt)>dashboardCacheMaxAge)return null;return cached.payload;}catch(ignore){return null;}}
   function writeDashboardCache(session,payload){try{var raw=JSON.stringify({savedAt:Date.now(),payload:payload});window.sessionStorage.setItem(dashboardCacheKey(session),raw);window.localStorage.setItem(dashboardCacheKey(session),raw);}catch(ignore){}}
   function showAccess(message){clearActiveTimeout();removeRequests();setState('access');text('organizerAccessMessage',message||'Sign in with the approved Google account used for Community Connections.');renderGoogleButton();}
-  function signOut(){clearActiveTimeout();removeRequests();var session=readSession();clearSession();try{fetch('/api/organizer-signout',{method:'POST',credentials:'same-origin',keepalive:true});}catch(ignore){}if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();if(session&&session.token&&appUrl){var x=document.createElement('script');x.src=appUrl+(appUrl.indexOf('?')===-1?'?':'&')+'api=organizer-signout&callback=iwpOrganizerSignOutCallback&session='+encodeURIComponent(session.legacyToken||session.token)+'&_='+Date.now();document.head.appendChild(x);}setTimeout(function(){location.href='/organizer.html';},50);} window.iwpOrganizerSignOutCallback=function(){};
+  function signOut(){clearActiveTimeout();removeRequests();var session=readSession();clearSession();try{fetch('/api/organizer-signout',{method:'POST',credentials:'same-origin',keepalive:true});}catch(ignore){}if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();setTimeout(function(){location.href='/organizer.html';},50);} window.iwpOrganizerSignOutCallback=function(){};
 
   var menu=document.querySelector('.mobile-menu-button'),nav=byId('mainNavigation');
   if(menu&&nav){menu.dataset.iwpMenuBound='1';menu.addEventListener('click',function(){var open=menu.getAttribute('aria-expanded')==='true';menu.setAttribute('aria-expanded',String(!open));nav.classList.toggle('is-open',!open);menu.textContent=open?'Menu':'Close';});}

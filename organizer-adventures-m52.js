@@ -1,12 +1,12 @@
 (function(){
   'use strict';
-  var config=window.IWP_SITE_CONFIG||{};var appUrl=String(config.appUrl||'');var clientId=String(config.googleClientId||'');var adventures=[];var showingPast=false;
+  var config=window.IWP_SITE_CONFIG||{};var clientId=String(config.googleClientId||'');var adventures=[];var showingPast=false;
   var sessionKey='iwpOrganizerSessionV1';
   var requestNumber=0;
   var activeTimeout=0;var transientRetries=0;
 
   function storageAreas(){var areas=[];try{if(window.sessionStorage)areas.push(window.sessionStorage);}catch(ignore){}try{if(window.localStorage)areas.push(window.localStorage);}catch(ignore){}return areas;}
-  function normalizeSession(payload){var session={token:String(payload&&payload.sessionToken||payload&&payload.token||''),expiresAt:String(payload&&payload.expiresAt||''),legacyToken:String(payload&&payload.legacyToken||''),legacyExpiresAt:String(payload&&payload.legacyExpiresAt||''),user:payload&&payload.user||{}};if(!session.token||!session.expiresAt||isNaN(Date.parse(session.expiresAt))||Date.parse(session.expiresAt)<=Date.now())return null;return session;}
+  function normalizeSession(payload){var session={token:String(payload&&payload.sessionToken||payload&&payload.token||''),expiresAt:String(payload&&payload.expiresAt||''),user:payload&&payload.user||{}};if(!session.token||!session.expiresAt||isNaN(Date.parse(session.expiresAt))||Date.parse(session.expiresAt)<=Date.now())return null;return session;}
   function readSession(){var areas=storageAreas();for(var i=0;i<areas.length;i++){try{var raw=areas[i].getItem(sessionKey)||'';var data=raw?JSON.parse(raw):null;var session=normalizeSession(data);if(session)return session;areas[i].removeItem(sessionKey);}catch(ignore){}}return null;}
   function writeSession(payload){var session=normalizeSession(payload);if(!session)return null;var raw=JSON.stringify(session);storageAreas().forEach(function(area){try{area.setItem(sessionKey,raw);}catch(ignore){}});return session;}
   function clearSession(){storageAreas().forEach(function(area){try{area.removeItem(sessionKey);}catch(ignore){}});}
@@ -17,7 +17,7 @@
   function text(id,value){var el=document.getElementById(id);if(el)el.textContent=value==null?'':String(value);}function esc(v){return String(v==null?'':v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});}
   function setState(name){document.getElementById('organizerLoading').hidden=name!=='loading';document.getElementById('organizerAccess').hidden=name!=='access';document.getElementById('organizerAdventureWorkspace').hidden=name!=='workspace';var out=document.getElementById('organizerSignOutTop');if(out)out.hidden=name!=='workspace';}
   function showAccess(message){clearRequestTimeout();setState('access');text('organizerAccessMessage',message||'Sign in with the approved Google account used for Community Connections.');renderGoogleButton();}
-  function signOut(){var session=readSession();clearSession();if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();if(session&&session.token&&appUrl){var script=document.createElement('script');script.src=appUrl+(appUrl.indexOf('?')===-1?'?':'&')+'api=organizer-signout&callback=iwpOrganizerSignOutCallback&session='+encodeURIComponent(session.token)+'&_='+Date.now();document.head.appendChild(script);}location.href='/organizer.html';}document.getElementById('organizerSignOutTop').addEventListener('click',signOut);window.iwpOrganizerSignOutCallback=function(){};
+  function signOut(){var session=readSession();clearSession();if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();location.href='/organizer.html';}document.getElementById('organizerSignOutTop').addEventListener('click',signOut);window.iwpOrganizerSignOutCallback=function(){};
   function dateDisplay(item){var start=String(item.startDate||''),end=String(item.endDate||'');if(!start)return 'Date not set';if(!end||end===start)return start+(item.startTime?' · '+item.startTime:'');return start+' through '+end;}
   function statusClass(status){var s=String(status||'').toLowerCase();return s==='published'?'is-published':s==='draft'?'is-draft':s==='cancelled'?'is-cancelled':'';}
   function apiDate(value){var raw=String(value||'').trim(),m=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m)return raw;m=raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);return m?m[3]+'-'+('0'+m[1]).slice(-2)+'-'+('0'+m[2]).slice(-2):'';}
