@@ -140,6 +140,7 @@
             '<p class="adventure-availability">' + escapeHtml(availability) + '</p>' +
             (event.Address ? '<address>' + escapeHtml(event.Address) + '</address>' : '') +
             (maps ? '<a class="adventure-secondary-button" target="_blank" rel="noopener" href="' + escapeAttr(maps) + '">Open in Maps</a>' : '') +
+            (event.TicketPurchaseLink && /^https:\/\//i.test(event.TicketPurchaseLink) ? '<a class="adventure-primary-button" style="display:block;margin-bottom:12px;text-align:center" target="_blank" rel="noopener noreferrer" href="' + escapeAttr(event.TicketPurchaseLink) + '">Book Your Ticket ↗</a><p class="adventure-registration-help">Purchase your ticket with the tour operator, then register below so we know you are coming.</p>' : '') +
             (canRegister ? '<a class="adventure-primary-button" href="' + escapeAttr('/register.html?id=' + encodeURIComponent(event.EventId || '')) + '">' + registerLabel + '</a><p class="adventure-registration-help">Registration takes just a minute. You’ll receive a confirmation email with event details and your personal event-day QR code.</p>' : (!registrationRequired ? '<div class="public-status-note">No registration is required for this adventure. Just review the details and show up.</div>' : '<div class="public-status-note is-closed">Registration is not available for this adventure right now.</div>')) +
             '<button id="shareAdventure" class="adventure-secondary-button" type="button">Share Adventure</button>' +
           '</aside>' +
