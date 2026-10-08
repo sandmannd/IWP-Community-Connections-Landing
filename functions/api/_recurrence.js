@@ -20,7 +20,13 @@ export function generateDates({start,frequency,weekday,ordinal,count,skipHoliday
  function blocked(s){const y=Number(s.slice(0,4));if(!cache.has(y))cache.set(y,holidaySet(y));return cache.get(y).has(s)||blackouts.some(b=>s>=b.start_date&&s<=b.end_date);}
  for(let step=0;step<2600&&dates.length<count;step++){
   let ms;
-  if(frequency==='weekly'){const offset=(weekday-new Date(floor).getUTCDay()+7)%7;ms=floor+offset*DAY+step*7*DAY;}
+  if(frequency==='weekly'||frequency==='biweekly'){
+   const period=frequency==='biweekly'?14:7;
+   // Anchor the two-week cycle to the template event's start week, not today's week.
+   const first=startMs+((weekday-new Date(startMs).getUTCDay()+7)%7)*DAY;
+   const offset=Math.max(0,Math.ceil((floor-first)/(period*DAY)));
+   ms=first+(offset+step)*period*DAY;
+  }
   else{const dt=new Date(floor),month=dt.getUTCMonth()+step,year=dt.getUTCFullYear()+Math.floor(month/12);ms=nthWeekday(year,month%12,weekday,ordinal);}
   if(ms===null||ms<floor)continue;const s=iso(ms);if(seen.has(s))continue;
   if(skipHolidays&&!allowHolidays&&blocked(s)){skipped.push(s);continue;}

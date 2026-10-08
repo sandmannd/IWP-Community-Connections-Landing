@@ -21,7 +21,7 @@ export async function onRequestPost({request,env}){
  const id=t(p.eventId);if(!id)throw Error('Save the adventure first.');
  const event=await db.prepare('SELECT * FROM events WHERE event_id=?').bind(id).first();if(!event)throw Error('Adventure not found.');
  const frequency=t(p.frequency),weekday=Number(p.weekday),ordinal=Number(p.ordinal),count=Number(p.count);
- if(!['weekly','monthly'].includes(frequency)||!Number.isInteger(weekday)||weekday<0||weekday>6||!Number.isInteger(count)||count<1||count>12||frequency==='monthly'&&![1,2,3,4,-1].includes(ordinal))throw Error('Invalid recurrence settings.');
+ if(!['weekly','biweekly','monthly'].includes(frequency)||!Number.isInteger(weekday)||weekday<0||weekday>6||!Number.isInteger(count)||count<1||count>12||frequency==='monthly'&&![1,2,3,4,-1].includes(ordinal))throw Error('Invalid recurrence settings.');
  const blackouts=(await db.prepare('SELECT start_date,end_date FROM recurring_blackouts').all()).results||[];
  const existing=(await db.prepare('SELECT occurrence_date FROM recurring_occurrences WHERE series_id=(SELECT series_id FROM recurring_series WHERE template_event_id=?)').bind(id).all()).results||[];
  const dates=generateDates({start:event.start_date,frequency,weekday,ordinal,count,skipHolidays:p.skipHolidays!==false,allowHolidays:p.allowHolidays===true,blackouts,existing:[event.start_date,...existing.map(x=>x.occurrence_date)]});

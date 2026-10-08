@@ -10,3 +10,5 @@ M7.13 — Recurring Adventures and Holiday Blackouts
 8. Christmas/New Year blackouts are Dec 24–31 and Jan 1–7 inclusive. Federal holidays include observed days; additional exclusions include Easter, Mother's Day, Father's Day and Halloween.
 
 NOTE: This is an additive feature. It does not delete or modify any existing event registrations. Test on a draft first before publishing multiple occurrences.
+
+M7.13.1: Added Every Other Week schedule, anchored to the original adventure start date. Holiday skips do not shift the 14-day cycle. No additional D1 migration is needed.
