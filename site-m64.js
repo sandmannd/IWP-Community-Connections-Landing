@@ -217,7 +217,7 @@
     }
     var upcoming = data && data.upcoming ? data.upcoming : [];
     landingUpcomingEvents = upcoming.slice();
-    var nextThirtyDays = filterEventsForNextThirtyDays(upcoming);
+    var nextThirtyDays = upcoming.slice(0, 3);
     document.documentElement.classList.toggle('one-live-adventure', nextThirtyDays.length === 1);
     renderUpcomingAdventures(nextThirtyDays);
     renderCompactFeaturedAdventures(collectFeaturedAdventures(data, upcoming));
@@ -368,6 +368,13 @@
       '<span class="next-30-image">' + image + '<span class="next-30-shade"></span></span>' +
       '<span class="next-30-copy"><strong>' + escapeHtml(event.title || 'Community Adventure') + '</strong><span>' + escapeHtml(formatEventDateOnly(event)) + '</span></span></a>';
   }
+
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest('[data-browse-all]');
+    if (!link) return;
+    event.preventDefault();
+    renderLandingCategoryResults('all', 'Upcoming Adventures');
+  });
 
   function renderLandingCategoryResults(categoryKey, label) {
     var section = document.getElementById('browse-adventures');
@@ -623,7 +630,7 @@
     if (!events.length) {
       grid.innerHTML =
         '<div class="next-30-empty">' +
-          '<strong>No adventures are scheduled in the next 30 days.</strong>' +
+          '<strong>No upcoming adventures are scheduled.</strong>' +
           '<span>Browse the adventure types below or check back soon.</span>' +
         '</div>';
       return;
