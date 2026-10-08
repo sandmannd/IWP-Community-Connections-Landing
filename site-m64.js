@@ -570,6 +570,7 @@
     }).join("");
 
     section.hidden = false;
+    section.classList.add("is-visible");
     activateAdventureImageFallbacks(container);
     activatePremiumPolish(container);
   }
